@@ -80,12 +80,70 @@
           <!-- Ayar paneli: dar ekranda altta, geniş ekranda sağda -->
           <aside class="col-12 col-lg-4 col-xxl-3">
             <div class="card h-100">
-              <div class="card-header fw-semibold">Ayarlar</div>
+              <div class="card-header fw-semibold">Vesikalık ölçüsü</div>
               <div class="card-body">
-                <p class="text-body-secondary mb-0">
-                  Ölçü, hizalama, rötuş ve dizme ayarları sonraki fazlarda bu panele
-                  eklenecek.
-                </p>
+                <div class="mb-3">
+                  <label for="onayar-secimi" class="form-label">Hazır ölçüler</label>
+                  <select id="onayar-secimi" class="form-select form-select-sm"></select>
+                </div>
+
+                <div class="row g-2 mb-3">
+                  <div class="col-6">
+                    <label for="genislik-mm" class="form-label">Genişlik (mm)</label>
+                    <input
+                      id="genislik-mm"
+                      type="number"
+                      class="form-control form-control-sm"
+                      min="10"
+                      max="300"
+                      step="0.5"
+                    />
+                  </div>
+                  <div class="col-6">
+                    <label for="yukseklik-mm" class="form-label">Yükseklik (mm)</label>
+                    <input
+                      id="yukseklik-mm"
+                      type="number"
+                      class="form-control form-control-sm"
+                      min="10"
+                      max="300"
+                      step="0.5"
+                    />
+                  </div>
+                  <div class="col-12">
+                    <div id="olcu-hatasi" class="form-text text-danger d-none">
+                      Ölçüler 10 ile 300 mm arasında olmalıdır.
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="dpi-secimi" class="form-label">Baskı çözünürlüğü</label>
+                  <select id="dpi-secimi" class="form-select form-select-sm"></select>
+                </div>
+
+                <hr />
+
+                <div class="small mb-2">
+                  <div class="d-flex justify-content-between">
+                    <span class="text-body-secondary">Çıktı boyutu</span>
+                    <span id="cikti-piksel" class="font-monospace">—</span>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <span class="text-body-secondary">Kaynak çözünürlük</span>
+                    <span id="efektif-dpi" class="font-monospace">—</span>
+                  </div>
+                </div>
+
+                <div id="cozunurluk-uyarisi" class="alert py-2 small d-none" role="status"></div>
+
+                <button
+                  id="btn-kirpmayi-sifirla"
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm w-100"
+                >
+                  Kırpmayı sıfırla
+                </button>
               </div>
             </div>
           </aside>
@@ -101,8 +159,10 @@
     </footer>
 
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="js/olcu.js"></script>
     <script src="js/gorsel.js"></script>
     <script src="js/tuval.js"></script>
+    <script src="js/kirpma.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>

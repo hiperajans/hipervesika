@@ -4,6 +4,7 @@
 // preload'daki window.hiperVesika koprusunden gelir.
 
 const { versions } = window.hiperVesika
+const olcuMotoru = window.HV.olcu
 
 const el = {
   tuval: document.getElementById('tuval'),
@@ -17,7 +18,16 @@ const el = {
   gorselBilgisi: document.getElementById('gorsel-bilgisi'),
   uyari: document.getElementById('uyari'),
   durum: document.getElementById('durum'),
-  surumBilgisi: document.getElementById('surum-bilgisi')
+  surumBilgisi: document.getElementById('surum-bilgisi'),
+  onayarSecimi: document.getElementById('onayar-secimi'),
+  genislikMm: document.getElementById('genislik-mm'),
+  yukseklikMm: document.getElementById('yukseklik-mm'),
+  olcuHatasi: document.getElementById('olcu-hatasi'),
+  dpiSecimi: document.getElementById('dpi-secimi'),
+  ciktiPiksel: document.getElementById('cikti-piksel'),
+  efektifDpi: document.getElementById('efektif-dpi'),
+  cozunurlukUyarisi: document.getElementById('cozunurluk-uyarisi'),
+  kirpmayiSifirla: document.getElementById('btn-kirpmayi-sifirla')
 }
 
 const tuval = new window.HV.Tuval(el.tuval, {
@@ -26,7 +36,15 @@ const tuval = new window.HV.Tuval(el.tuval, {
   }
 })
 
+const kirpma = new window.HV.KirpmaAraci(tuval, {
+  degisimde: () => ciktiBilgisiniGuncelle()
+})
+
 let yuklenenGorsel = null
+let olcuDurumu = { genislikMm: 50, yukseklikMm: 60 }
+let dpi = 300
+
+// --- Bicimlendirme -----------------------------------------------------------
 
 function baytBicimle (bayt) {
   const mb = bayt / (1024 * 1024)
@@ -53,8 +71,106 @@ function uyariGizle () {
 }
 
 function araclariEtkinlestir (etkin) {
-  for (const dugme of [el.yakinlas, el.uzaklas, el.sigdir]) dugme.disabled = !etkin
+  for (const dugme of [el.yakinlas, el.uzaklas, el.sigdir, el.kirpmayiSifirla]) {
+    dugme.disabled = !etkin
+  }
 }
+
+// --- Olcu paneli -------------------------------------------------------------
+
+function onayarlariDoldur () {
+  for (const onayar of olcuMotoru.FOTOGRAF_ONAYARLARI) {
+    const secenek = document.createElement('option')
+    secenek.value = onayar.kod
+    secenek.textContent = `${onayar.ad} — ${onayar.genislikMm}×${onayar.yukseklikMm} mm`
+    el.onayarSecimi.append(secenek)
+  }
+
+  const ozel = document.createElement('option')
+  ozel.value = 'ozel'
+  ozel.textContent = 'Özel ölçü'
+  el.onayarSecimi.append(ozel)
+}
+
+function dpiSecenekleriniDoldur () {
+  for (const secenekDpi of olcuMotoru.DPI_SECENEKLERI) {
+    const secenek = document.createElement('option')
+    secenek.value = String(secenekDpi)
+    secenek.textContent = `${secenekDpi} DPI`
+    if (secenekDpi === dpi) secenek.selected = true
+    el.dpiSecimi.append(secenek)
+  }
+}
+
+function olcuHatasiGoster (goster) {
+  el.olcuHatasi.classList.toggle('d-none', !goster)
+  el.genislikMm.classList.toggle('is-invalid', goster)
+  el.yukseklikMm.classList.toggle('is-invalid', goster)
+}
+
+// Girislerdeki degerleri okur, gecerliyse kirpma oranina uygular.
+function olculeriUygula () {
+  const genislik = Number.parseFloat(el.genislikMm.value)
+  const yukseklik = Number.parseFloat(el.yukseklikMm.value)
+
+  if (!olcuMotoru.olcuGecerliMi(genislik) || !olcuMotoru.olcuGecerliMi(yukseklik)) {
+    olcuHatasiGoster(true)
+    return
+  }
+
+  olcuHatasiGoster(false)
+  olcuDurumu = { genislikMm: genislik, yukseklikMm: yukseklik }
+  kirpma.oranAta(olcuMotoru.oran(genislik, yukseklik))
+  ciktiBilgisiniGuncelle()
+}
+
+function onayariUygula (kod) {
+  const onayar = olcuMotoru.FOTOGRAF_ONAYARLARI.find((o) => o.kod === kod)
+  if (!onayar) return
+
+  el.genislikMm.value = String(onayar.genislikMm)
+  el.yukseklikMm.value = String(onayar.yukseklikMm)
+  olculeriUygula()
+}
+
+function ciktiBilgisiniGuncelle () {
+  const cikti = olcuMotoru.ciktiBoyutu(olcuDurumu, dpi)
+  el.ciktiPiksel.textContent = `${cikti.genislik} × ${cikti.yukseklik} px`
+
+  if (!kirpma.cerceve) {
+    el.efektifDpi.textContent = '—'
+    el.cozunurlukUyarisi.classList.add('d-none')
+    return
+  }
+
+  // Kirpilan alanin kaynakta gercekten kac DPI ettigi. Secilen DPI'dan dusukse
+  // goruntu buyutulerek basilir.
+  const efektif = olcuMotoru.efektifDpi(kirpma.cerceve.genislik, olcuDurumu.genislikMm)
+  el.efektifDpi.textContent = `≈ ${Math.round(efektif)} DPI`
+
+  const durum = olcuMotoru.cozunurlukDurumu(efektif)
+  el.cozunurlukUyarisi.classList.remove('alert-warning', 'alert-danger')
+
+  if (durum === 'iyi') {
+    el.cozunurlukUyarisi.classList.add('d-none')
+    return
+  }
+
+  el.cozunurlukUyarisi.classList.remove('d-none')
+  if (durum === 'sinirda') {
+    el.cozunurlukUyarisi.classList.add('alert-warning')
+    el.cozunurlukUyarisi.textContent =
+      `Kırpılan alan ${olcuMotoru.HEDEF_DPI} DPI'ın altında kalıyor. Baskı kabul edilebilir, ` +
+      'ancak daha geniş bir alan seçmek daha net sonuç verir.'
+  } else {
+    el.cozunurlukUyarisi.classList.add('alert-danger')
+    el.cozunurlukUyarisi.textContent =
+      'Kırpılan alan bu ölçü için çok küçük. Baskı bulanık çıkar; ' +
+      'daha geniş bir alan seçin veya daha yüksek çözünürlüklü bir fotoğraf kullanın.'
+  }
+}
+
+// --- Gorsel yukleme ----------------------------------------------------------
 
 async function gorselYukle (dosya) {
   if (!dosya) return
@@ -66,6 +182,7 @@ async function gorselYukle (dosya) {
     const gorsel = await window.HV.gorsel.dosyadanYukle(dosya)
     yuklenenGorsel = gorsel
     tuval.gorselAta(gorsel)
+    kirpma.gorselAta(gorsel.asil)
 
     const { width, height } = gorsel.asil
     el.gorselBilgisi.textContent =
@@ -140,6 +257,32 @@ el.yakinlas.addEventListener('click', () => tuval.yakinlastir(1.25))
 el.uzaklas.addEventListener('click', () => tuval.yakinlastir(0.8))
 el.sigdir.addEventListener('click', () => tuval.sigdir())
 
+// --- Olcu denetimleri --------------------------------------------------------
+
+el.onayarSecimi.addEventListener('change', () => {
+  if (el.onayarSecimi.value !== 'ozel') onayariUygula(el.onayarSecimi.value)
+})
+
+// Olculeri elle degistirmek secimi otomatik olarak "Özel ölçü"ye tasir.
+for (const giris of [el.genislikMm, el.yukseklikMm]) {
+  giris.addEventListener('input', () => {
+    el.onayarSecimi.value = 'ozel'
+    olculeriUygula()
+  })
+}
+
+el.dpiSecimi.addEventListener('change', () => {
+  dpi = Number.parseInt(el.dpiSecimi.value, 10)
+  ciktiBilgisiniGuncelle()
+})
+
+el.kirpmayiSifirla.addEventListener('click', () => kirpma.sifirla())
+
+// --- Baslangic ---------------------------------------------------------------
+
+onayarlariDoldur()
+dpiSecenekleriniDoldur()
+onayariUygula(olcuMotoru.FOTOGRAF_ONAYARLARI[0].kod)
 araclariEtkinlestir(false)
 
 el.surumBilgisi.textContent =

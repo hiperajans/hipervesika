@@ -21,6 +21,12 @@ window.HV.Tuval = class Tuval {
     this.kaydirma = { x: 0, y: 0 }
     this.surukleme = null
 
+    // Goruntunun uzerine cizen katman (ornegin kirpma cercevesi) ve fare
+    // olaylarini once gorecek etkilesim nesnesi. Ikisi de istege baglidir.
+    this.ustKatman = null
+    this.etkilesim = null
+    this.etkilesimSuruyor = false
+
     this.#olcuyuGuncelle()
     new ResizeObserver(() => {
       const oncekiGorsel = this.gorsel
@@ -92,7 +98,20 @@ window.HV.Tuval = class Tuval {
     ctx.imageSmoothingQuality = 'high'
     ctx.drawImage(this.#kaynakSec(), 0, 0, asil.width, asil.height)
 
+    // Ust katman goruntu koordinat uzayinda cizer; ekranda sabit kalinligi olan
+    // cizgiler icin olcegi kullanir.
+    if (this.ustKatman) this.ustKatman(ctx, this.olcek)
+
     this.degisimde(this)
+  }
+
+  // Ekran koordinatini (tuvalin sol ust kosesine gore CSS pikseli) goruntunun
+  // piksel uzayina cevirir.
+  goruntuyeCevir (ekranNoktasi) {
+    return {
+      x: (ekranNoktasi.x - this.kaydirma.x) / this.olcek,
+      y: (ekranNoktasi.y - this.kaydirma.y) / this.olcek
+    }
   }
 
   // Ekranda gorunen boyut onizlemeden buyukse asil goruntuye gecilir; yakinlasinca
@@ -120,6 +139,16 @@ window.HV.Tuval = class Tuval {
     this.canvas.height = Math.max(1, Math.round(kutu.height * dpr))
   }
 
+  // Isaretci, olay islenene kadar birakilmis olabilir; yakalama basarisiz olursa
+  // surukleme yine de calisir, bu yuzden hata yutulur.
+  #yakala (olay) {
+    try {
+      this.canvas.setPointerCapture(olay.pointerId)
+    } catch {
+      /* yakalama zorunlu degil */
+    }
+  }
+
   #imlecKonumu (olay) {
     const kutu = this.canvas.getBoundingClientRect()
     return { x: olay.clientX - kutu.left, y: olay.clientY - kutu.top }
@@ -137,21 +166,52 @@ window.HV.Tuval = class Tuval {
 
     canvas.addEventListener('pointerdown', (olay) => {
       if (!this.gorsel) return
-      canvas.setPointerCapture(olay.pointerId)
-      this.surukleme = this.#imlecKonumu(olay)
+      const ekran = this.#imlecKonumu(olay)
+
+      // Once kirpma cercevesi gibi ust katmanlara sorulur; olayi o sahiplenmezse
+      // kaydirmaya duser.
+      if (this.etkilesim?.basla(this.goruntuyeCevir(ekran), this.olcek)) {
+        this.#yakala(olay)
+        this.etkilesimSuruyor = true
+        return
+      }
+
+      this.#yakala(olay)
+      this.surukleme = ekran
       canvas.classList.add('tasiniyor')
     })
 
     canvas.addEventListener('pointermove', (olay) => {
-      if (!this.surukleme) return
-      const konum = this.#imlecKonumu(olay)
-      this.kaydirma.x += konum.x - this.surukleme.x
-      this.kaydirma.y += konum.y - this.surukleme.y
-      this.surukleme = konum
-      this.ciz()
+      const ekran = this.#imlecKonumu(olay)
+
+      if (this.etkilesimSuruyor) {
+        this.etkilesim.hareket(this.goruntuyeCevir(ekran), this.olcek)
+        this.ciz()
+        return
+      }
+
+      if (this.surukleme) {
+        this.kaydirma.x += ekran.x - this.surukleme.x
+        this.kaydirma.y += ekran.y - this.surukleme.y
+        this.surukleme = ekran
+        this.ciz()
+        return
+      }
+
+      // Surukleme yokken imleci ust katmana gore guncelle.
+      if (this.gorsel && this.etkilesim) {
+        canvas.style.cursor = this.etkilesim.imlecTipi(this.goruntuyeCevir(ekran), this.olcek) ?? ''
+      }
     })
 
     const suruklemeyiBitir = (olay) => {
+      if (this.etkilesimSuruyor) {
+        this.etkilesimSuruyor = false
+        this.etkilesim.bitir()
+        if (canvas.hasPointerCapture(olay.pointerId)) canvas.releasePointerCapture(olay.pointerId)
+        return
+      }
+
       if (!this.surukleme) return
       this.surukleme = null
       canvas.classList.remove('tasiniyor')

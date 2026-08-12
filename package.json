@@ -6,6 +6,7 @@
   "scripts": {
     "start": "electron .",
     "test": "electron .",
+    "test:birim": "node --test \"test/*.test.js\"",
     "vendor": "node scripts/vendor.js",
     "postinstall": "node scripts/vendor.js"
   },
