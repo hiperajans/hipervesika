@@ -1,13 +1,33 @@
 /* Yalnizca Bootstrap'in karsilamadigi stiller. Bootstrap'in kendi dosyalari
    duzenlenmez (bkz. AGENTS.md, kural 6). */
 
-/* Bootstrap'te kesikli kenarlik yardimci sinifi yok. */
-.border-dashed {
-  border-style: dashed !important;
+/* Calisma alani kartinin tuval govdesi esnesin diye. */
+#tuval-sarmal {
+  min-height: 20rem;
 }
 
-/* Fotograf birakma alani; Faz 1'de islevsellik kazanacak. */
-.drop-zone {
-  min-height: 20rem;
+/* Fotografin uzerinde durdugu zemin. Vesikaligin beyaz kenarlari fark edilsin
+   diye kart zemininden biraz koyu tutuldu. */
+.tuval {
+  background-color: var(--bs-secondary-bg);
+  cursor: grab;
+  touch-action: none;
+}
+
+.tuval.tasiniyor {
+  cursor: grabbing;
+}
+
+/* Fotograf birakma katmani; tuvalin uzerinde durur, gorsel yuklenince gizlenir. */
+.drop-overlay {
   background-color: var(--bs-body-bg);
+  border: 2px dashed var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+  pointer-events: none;
+}
+
+/* Surukleme sirasinda birakma alani vurgulanir. */
+.surukleniyor .drop-overlay {
+  border-color: var(--bs-primary);
+  background-color: var(--bs-primary-bg-subtle);
 }

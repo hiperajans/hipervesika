@@ -26,14 +26,53 @@
         <div class="row g-3 h-100">
           <!-- Çalışma alanı: dar ekranda tam genişlik, geniş ekranda solda -->
           <section class="col-12 col-lg-8 col-xxl-9 d-flex">
-            <div id="calisma-alani" class="drop-zone card border-2 border-dashed w-100">
-              <div
-                class="card-body d-flex flex-column align-items-center justify-content-center text-center"
-              >
-                <p class="fs-5 mb-1">Fotoğrafı buraya sürükleyip bırakın</p>
-                <p class="text-body-secondary mb-0">
-                  Fotoğraf yükleme Faz 1'de etkinleşecek.
-                </p>
+            <div class="card w-100">
+              <div class="card-header d-flex flex-wrap align-items-center gap-2">
+                <button id="btn-dosya-sec" type="button" class="btn btn-primary btn-sm">
+                  Fotoğraf Seç
+                </button>
+                <input
+                  id="dosya-girisi"
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                  class="d-none"
+                />
+
+                <div class="btn-group btn-group-sm" role="group" aria-label="Yakınlık">
+                  <button id="btn-uzaklas" type="button" class="btn btn-outline-secondary" title="Uzaklaş">
+                    −
+                  </button>
+                  <button id="btn-sigdir" type="button" class="btn btn-outline-secondary">
+                    Sığdır
+                  </button>
+                  <button id="btn-yakinlas" type="button" class="btn btn-outline-secondary" title="Yakınlaş">
+                    +
+                  </button>
+                </div>
+                <span id="yakinlik-orani" class="small text-body-secondary font-monospace"></span>
+
+                <span
+                  id="gorsel-bilgisi"
+                  class="small text-body-secondary ms-auto text-truncate"
+                ></span>
+              </div>
+
+              <div id="uyari" class="alert alert-warning m-2 mb-0 py-2 d-none" role="alert"></div>
+
+              <div id="tuval-sarmal" class="card-body p-0 position-relative overflow-hidden">
+                <canvas id="tuval" class="tuval d-block w-100 h-100"></canvas>
+
+                <div
+                  id="birakma-katmani"
+                  class="drop-overlay position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center p-3"
+                >
+                  <p class="fs-5 mb-1">Fotoğrafı buraya sürükleyip bırakın</p>
+                  <p class="text-body-secondary mb-0">
+                    Panodan yapıştırabilir veya <em>Fotoğraf Seç</em> ile dosya açabilirsiniz.
+                    <br />
+                    JPG, PNG, WEBP
+                  </p>
+                </div>
               </div>
             </div>
           </section>
@@ -56,12 +95,14 @@
 
     <footer class="border-top bg-body flex-shrink-0">
       <div class="container-fluid d-flex justify-content-between py-1">
-        <span class="small text-body-secondary">Hazır</span>
+        <span id="durum" class="small text-body-secondary">Hazır</span>
         <span id="surum-bilgisi" class="small text-body-secondary font-monospace"></span>
       </div>
     </footer>
 
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="js/gorsel.js"></script>
+    <script src="js/tuval.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>
