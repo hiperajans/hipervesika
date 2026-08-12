@@ -5,7 +5,9 @@
   "main": "src/main/index.js",
   "scripts": {
     "start": "electron .",
-    "test": "electron ."
+    "test": "electron .",
+    "vendor": "node scripts/vendor.js",
+    "postinstall": "node scripts/vendor.js"
   },
   "repository": {
     "type": "git",
@@ -24,5 +26,11 @@
   "bugs": {
     "url": "https://github.com/hiperajans/hipervesika/issues"
   },
-  "homepage": "https://github.com/hiperajans/hipervesika#readme"
+  "homepage": "https://github.com/hiperajans/hipervesika#readme",
+  "devDependencies": {
+    "electron": "^43.4.0"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.8"
+  }
 }

@@ -1,0 +1,13 @@
+/* Yalnizca Bootstrap'in karsilamadigi stiller. Bootstrap'in kendi dosyalari
+   duzenlenmez (bkz. AGENTS.md, kural 6). */
+
+/* Bootstrap'te kesikli kenarlik yardimci sinifi yok. */
+.border-dashed {
+  border-style: dashed !important;
+}
+
+/* Fotograf birakma alani; Faz 1'de islevsellik kazanacak. */
+.drop-zone {
+  min-height: 20rem;
+  background-color: var(--bs-body-bg);
+}

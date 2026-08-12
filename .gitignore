@@ -147,6 +147,9 @@ release/
 out/
 dist-electron/
 
+# node_modules'tan kopyalanan Bootstrap dosyalari (npm install ile uretilir)
+src/renderer/vendor/
+
 # Kişisel veri — gerçek vesikalık fotoğraflar, taramalar ve uygulama çıktıları
 # asla depoya girmez (bkz. AGENTS.md, kural 5)
 fotograflar/
