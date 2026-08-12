@@ -141,3 +141,27 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Electron build output
+release/
+out/
+dist-electron/
+
+# Kişisel veri — gerçek vesikalık fotoğraflar, taramalar ve uygulama çıktıları
+# asla depoya girmez (bkz. AGENTS.md, kural 5)
+fotograflar/
+vesikalik/
+ciktilar/
+samples/
+test-photos/
+*.jpg
+*.jpeg
+*.png
+*.heic
+*.webp
+*.tiff
+*.pdf
+# Depoya girmesi gereken arayüz/ikon görselleri açıkça istisna edilir:
+!assets/**
+!build/icons/**
+!docs/**/*.png
