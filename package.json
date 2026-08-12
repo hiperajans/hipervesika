@@ -1,0 +1,28 @@
+{
+  "name": "hiper-vesika",
+  "version": "0.1.0",
+  "description": "Vesikalık fotoğraf düzenleme ve baskı dizme uygulaması",
+  "main": "src/main/index.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hiperajans/hipervesika.git"
+  },
+  "keywords": [
+    "vesikalik",
+    "biyometrik-fotograf",
+    "fotograf-dizme",
+    "electron",
+    "photo",
+    "print"
+  ],
+  "author": "Hiper Ajans <software@hiperajans.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/hiperajans/hipervesika/issues"
+  },
+  "homepage": "https://github.com/hiperajans/hipervesika#readme"
+}
