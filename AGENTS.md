@@ -10,6 +10,10 @@ tamamı okunmalı ve uygulanmalıdır. Diğer ajan dosyaları (`CLAUDE.md`,
 **Hiper Vesika** — vesikalık fotoğraf düzenleme ve dizdirme (baskı yerleşimi) uygulaması.
 Arayüz ve alan terimleri Türkçedir.
 
+Ürün kapsamı, geliştirme fazları ve teknik temel kararlar (ölçü birimi, DPI, Human
+kullanımı, süreç ayrımı) için: **[`docs/FAZLAR.md`](./docs/FAZLAR.md)**. Bir özellik üzerinde
+çalışmadan önce ilgili fazın maddeleri okunmalıdır.
+
 ## Bağlayıcı Kurallar
 
 ### 1. Her işlem commit'lenir
