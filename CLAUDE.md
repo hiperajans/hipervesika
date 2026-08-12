@@ -17,6 +17,8 @@ Herhangi bir işleme başlamadan önce `AGENTS.md` dosyasını oku ve tamamını
    yok, platforma özel kabuk komutu yok.
 5. **Kişisel bilgi asla depoya girmez** — gerçek vesikalık fotoğraflar, kimlik verileri,
    sırlar, yerel mutlak yollar commit edilmez.
+6. **Arayüz Bootstrap ile yazılır** — npm'den yerel olarak yüklenir (CDN yok), tasarım
+   responsive olur ve tema aydınlıktır (`data-bs-theme="light"`, karanlık tema yok).
 
 ## Proje
 

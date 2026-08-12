@@ -77,6 +77,26 @@ GitHub'a yüklenen hiçbir şey kişisel veri içeremez.
 - Kullanıcı fotoğrafları ve uygulama çıktıları `.gitignore` ile hariç tutulur; bu kayıtlar
   kaldırılmaz.
 
+### 6. Arayüz: Bootstrap, responsive, aydınlık tema
+
+GUI tarafı **Bootstrap** ile yazılır. Başka bir CSS çatısı (Tailwind, Bulma, Material vb.)
+veya bileşen kütüphanesi eklenmez.
+
+- Bootstrap **npm bağımlılığı olarak** projeye kurulur ve yerel dosyadan yüklenir. CDN
+  bağlantısı kullanılmaz: uygulama internet olmadan da tam çalışmak zorundadır ve harici
+  script yükleme Electron'un içerik güvenliği açısından kabul edilmez.
+- Elle CSS yazmadan önce Bootstrap'in hazır sınıfları (grid, utility, bileşenler) kullanılır.
+  Özel CSS yalnızca Bootstrap'in karşılamadığı yerler için, ayrı bir stil dosyasında yazılır;
+  Bootstrap'in kendi dosyaları düzenlenmez.
+- **Responsive zorunludur.** Yerleşim Bootstrap grid'i ve responsive yardımcı sınıflarıyla
+  (`col-*`, `row`, `d-*`, `flex-*`) kurulur; sabit piksel genişlikli, pencere yeniden
+  boyutlandırılınca bozulan tasarım yazılmaz. Pencere küçültüldüğünde arayüz kullanılabilir
+  kalmalıdır.
+- **Tema aydınlıktır.** `<html data-bs-theme="light">` kullanılır. Karanlık tema
+  uygulanmaz ve işletim sisteminin karanlık mod tercihi izlenmez; `prefers-color-scheme`
+  ile tema değiştiren kod yazılmaz. Renkler aydınlık zemine göre seçilir ve metin/zemin
+  kontrastı okunur tutulur.
+
 ## Yapı
 
 Depo henüz kod içermiyor. Uygulama iskeleti kurulduğunda (package.json, ana/renderer süreç
