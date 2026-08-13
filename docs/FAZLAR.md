@@ -405,6 +405,27 @@ birim testleri ubuntu'da, uçtan uca testler **ubuntu + macOS + Windows** üçl�
 Kural 4 kodun çapraz platform olmasını istiyordu ama bu hiç sınanmamıştı; ilk koşuda üç
 platform da geçti (uçtan uca adımı sırasıyla 80, 99 ve 81 saniye).
 
+### Baskı kalitesi
+
+`webContents.print` çağrısında **`dpi` hiç verilmiyordu**; Chromium sayfayı aygıtın
+varsayılan çözünürlüğünde noktaya çeviriyordu ve fotoğraf kağıdında gözle görülür biçimde
+yumuşak bir baskı çıkıyordu. Artık `Baskı kalitesi` seçimi (300 / 600 / 1200 DPI)
+`dpi: { horizontal, vertical }` olarak geçiriliyor; `color` de eklendi. Ayar kullanıcıya
+bağlıdır (`sonKullanilan.baskiDpi`), yazıcıya değil — fotoğrafçı aynı ayarı her makinede
+ister ve her baskıda yeniden seçmek zorunda kalmaz.
+
+**En keskin sonuç, baskı DPI'sı sayfa DPI'sına eşitken çıkar:** sayfa görüntüsünün her
+pikseli bir baskı noktasına birebir düşer, arada yeniden örneklem olmaz. Düşüğü ayrıntıyı
+küçültür, yükseği yalnızca büyütmedir. Arayüzdeki not üç durumu da ayırt edip söyler.
+
+**Uygulamanın ayarlayamadığı kısım.** Kağıt türü ve sürücünün kalite kipi Electron'un baskı
+arayüzünde yoktur. Ölçüldü (Canon iX6800, macOS/CUPS): sürücü varsayılanı
+`CNIJMediaType=0` (**Plain Paper**) ve `CNIJPrintQuality=10` (**Normal**) idi — fotoğraf
+kağıdına düz kağıt kipinde basmak, DPI ne olursa olsun soluk ve yumuşak bir sonuç verir.
+Bunlar işletim sisteminin yazıcı ayarlarından ya da `Yazıcı penceresi` açılarak seçilir;
+arayüzdeki not bunu yazar. Noritsu, Fujifilm gibi laboratuvar makinelerine sürücüden basmak
+yerine PDF ya da görüntü dosyasını vermek daha doğrudur.
+
 ## Riskler
 
 | Risk | Faz | Etki |

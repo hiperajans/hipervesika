@@ -76,3 +76,30 @@ test('PDF MediaBox okunur', () => {
   assert.deepEqual(baski.pdfMediaBox(sahte), { genislik: 283.46, yukseklik: 425.2 })
   assert.equal(baski.pdfMediaBox(Buffer.from('bos')), null)
 })
+
+test('baski cozunurlugu dogrulanir', () => {
+  // Verilmezse fotograf kipine uygun varsayilan.
+  assert.equal(baski.baskiCozunurlugu(undefined), 600)
+  assert.equal(baski.baskiCozunurlugu(null), 600)
+  assert.equal(baski.baskiCozunurlugu('abc'), 600)
+
+  // Listedeki degerler oldugu gibi gecer.
+  for (const nokta of baski.BASKI_COZUNURLUKLERI) {
+    assert.equal(baski.baskiCozunurlugu(nokta), nokta)
+  }
+
+  // Liste disi ama makul degerler de kabul edilir (ozel surucu profilleri).
+  assert.equal(baski.baskiCozunurlugu(720), 720)
+  assert.equal(baski.baskiCozunurlugu('1440'), 1440)
+
+  // Aralik disi degerler varsayilana duser. Kirpmak yanlis olurdu: 0 gelirse
+  // 72 DPI'ya inip sessizce berbat bir baski cikardi.
+  assert.equal(baski.baskiCozunurlugu(0), 600)
+  assert.equal(baski.baskiCozunurlugu(-300), 600)
+  assert.equal(baski.baskiCozunurlugu(50), 600)
+  assert.equal(baski.baskiCozunurlugu(99999), 600)
+
+  // Sinirlarin kendisi gecerlidir.
+  assert.equal(baski.baskiCozunurlugu(72), 72)
+  assert.equal(baski.baskiCozunurlugu(2400), 2400)
+})

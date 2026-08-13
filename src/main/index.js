@@ -180,6 +180,13 @@ function baskiyiKur () {
             printBackground: true,
             margins: { marginType: 'none' },
             scaleFactor: 100,
+            // Rasterlestirme cozunurlugu. Verilmezse aygitin varsayilanina
+            // duser ve fotograf kagidinda yumusak bir baski cikar.
+            dpi: (() => {
+              const nokta = baski.baskiCozunurlugu(istek.baskiDpi)
+              return { horizontal: nokta, vertical: nokta }
+            })(),
+            color: istek.renkli !== false,
             pageSize: {
               width: baski.mikron(kagitMm.genislik),
               height: baski.mikron(kagitMm.yukseklik)

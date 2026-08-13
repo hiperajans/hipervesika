@@ -30,6 +30,30 @@ function kopyaSayisi (deger) {
   return Math.min(99, Math.max(1, sayi))
 }
 
+// Baskinin rasterlestirme cozunurlugu.
+//
+// Chromium sayfayi bu cozunurlukte noktaya cevirip surucuye verir. Belirtilmezse
+// aygitin varsayilanina duser; fotograf kagidinda bu gozle gorulur biçimde
+// yumusak bir baski demektir. Varsayilan 600: mürekkep püskürtmeli yazicilarin
+// fotograf kipi bu civarda calisir ve 50x60 mm vesikalikta 1181x1417 nokta eder.
+const BASKI_COZUNURLUKLERI = [300, 600, 1200]
+const VARSAYILAN_BASKI_DPI = 600
+
+const EN_DUSUK_BASKI_DPI = 72
+const EN_YUKSEK_BASKI_DPI = 2400
+
+function baskiCozunurlugu (deger) {
+  const sayi = Math.trunc(Number(deger))
+
+  // Listedekiler disinda bir deger de kabul edilir (ozel surucu profilleri
+  // icin) ama aralik disi ya da anlamsiz her sey varsayilana duser. Kirpmak
+  // yanlis olurdu: 0 gelirse 72 DPI'ya inip sessizce berbat bir baski cikardi.
+  if (!Number.isFinite(sayi) || sayi < EN_DUSUK_BASKI_DPI || sayi > EN_YUKSEK_BASKI_DPI) {
+    return VARSAYILAN_BASKI_DPI
+  }
+  return sayi
+}
+
 // Kagit olcusunu dogrular. Ana surec arayuzden gelen degere guvenmez.
 function sayfaOlcusu (kagitMm) {
   const genislik = Number(kagitMm?.genislik)
@@ -90,10 +114,13 @@ function pdfMediaBox (baytlar) {
 
 module.exports = {
   INC_MM,
+  BASKI_COZUNURLUKLERI,
+  VARSAYILAN_BASKI_DPI,
   mikron,
   inc,
   punto,
   kopyaSayisi,
+  baskiCozunurlugu,
   sayfaOlcusu,
   baskiSayfasiHtml,
   pdfMediaBox

@@ -601,6 +601,23 @@
                   <input id="kopya-sayisi" type="number" class="form-control form-control-sm"
                     min="1" max="99" step="1" value="1" />
                 </div>
+                <div class="hv-alan">
+                  <label for="baski-dpi" class="hv-etiket"><span>Baskı kalitesi</span></label>
+                  <select id="baski-dpi" class="form-select form-select-sm">
+                    <option value="300">300 DPI — normal</option>
+                    <option value="600" selected>600 DPI — fotoğraf</option>
+                    <option value="1200">1200 DPI — en yüksek</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="hv-ikili">
+                <div class="hv-alan hv-alan-anahtar">
+                  <div class="form-check hv-anahtar">
+                    <input class="form-check-input" type="checkbox" id="baski-renkli" checked />
+                    <label class="form-check-label" for="baski-renkli">Renkli</label>
+                  </div>
+                </div>
                 <div class="hv-alan hv-alan-anahtar">
                   <div class="form-check hv-anahtar">
                     <input class="form-check-input" type="checkbox" id="yazici-penceresi" />
@@ -610,6 +627,8 @@
                   </div>
                 </div>
               </div>
+
+              <p id="baski-kalite-notu" class="hv-ipucu"></p>
 
               <button id="btn-sayfayi-bas" type="button" class="btn btn-primary btn-sm hv-dugme w-100">
                 <i class="bi bi-printer" aria-hidden="true"></i>
