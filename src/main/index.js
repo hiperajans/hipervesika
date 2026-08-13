@@ -1,8 +1,9 @@
 'use strict'
 
 const path = require('node:path')
+const fs = require('node:fs/promises')
 const { pathToFileURL } = require('node:url')
-const { app, BrowserWindow, shell, protocol, net } = require('electron')
+const { app, BrowserWindow, shell, protocol, net, ipcMain, dialog } = require('electron')
 
 app.setName('Hiper Vesika')
 
@@ -32,6 +33,41 @@ function protokoluKur () {
     }
 
     return net.fetch(pathToFileURL(hedef).toString())
+  })
+}
+
+// Kaydetme penceresini acar ve dosyayi yazar. Yol secimini kullanici yapar;
+// arayuz dosya sistemine dogrudan erisemez.
+function kaydetmeyiKur () {
+  ipcMain.handle('gorsel:kaydet', async (olay, istek) => {
+    const { baytlar, varsayilanAd, tur } = istek ?? {}
+
+    if (!(baytlar instanceof Uint8Array) || baytlar.length === 0) {
+      return { kaydedildi: false, hata: 'Kaydedilecek görüntü verisi geçersiz.' }
+    }
+
+    const uzanti = tur === 'png' ? 'png' : 'jpg'
+    const pencere = BrowserWindow.fromWebContents(olay.sender)
+
+    const { canceled, filePath } = await dialog.showSaveDialog(pencere, {
+      title: 'Vesikalığı kaydet',
+      // Sabit yol yazilmaz; kullanicinin resim klasoru platforma gore cozulur.
+      defaultPath: path.join(app.getPath('pictures'), varsayilanAd || `vesikalik.${uzanti}`),
+      filters: [
+        uzanti === 'png'
+          ? { name: 'PNG görüntü', extensions: ['png'] }
+          : { name: 'JPEG görüntü', extensions: ['jpg', 'jpeg'] }
+      ]
+    })
+
+    if (canceled || !filePath) return { kaydedildi: false }
+
+    try {
+      await fs.writeFile(filePath, baytlar)
+      return { kaydedildi: true, yol: filePath }
+    } catch (hata) {
+      return { kaydedildi: false, hata: hata.message }
+    }
   })
 }
 
@@ -70,6 +106,7 @@ function createWindow () {
 
 app.whenReady().then(() => {
   protokoluKur()
+  kaydetmeyiKur()
   createWindow()
 
   // macOS'ta Dock'tan tiklaninca pencere yeniden acilir.

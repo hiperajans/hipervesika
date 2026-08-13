@@ -325,6 +325,35 @@
                 </button>
               </div>
             </div>
+
+            <div class="card">
+              <div class="card-header fw-semibold">İndir</div>
+              <div class="card-body">
+                <div class="btn-group btn-group-sm w-100 mb-3" role="group" aria-label="Biçim">
+                  <input type="radio" class="btn-check" name="cikti-turu" id="tur-jpg" checked />
+                  <label class="btn btn-outline-secondary" for="tur-jpg">JPG</label>
+
+                  <input type="radio" class="btn-check" name="cikti-turu" id="tur-png" />
+                  <label class="btn btn-outline-secondary" for="tur-png">PNG</label>
+                </div>
+
+                <div id="kalite-alani">
+                  <label for="jpg-kalitesi" class="form-label d-flex justify-content-between mb-1">
+                    <span>JPEG kalitesi</span>
+                    <span id="jpg-kalitesi-degeri" class="font-monospace">%92</span>
+                  </label>
+                  <input type="range" class="form-range" id="jpg-kalitesi"
+                    min="60" max="100" step="1" value="92" />
+                </div>
+
+                <button id="btn-indir" type="button" class="btn btn-primary btn-sm w-100">
+                  Fotoğrafı indir
+                </button>
+                <p id="indirme-durumu" class="small text-body-secondary mt-2 mb-0">
+                  Kırpılan alan seçilen ölçüde ve çözünürlükte kaydedilir.
+                </p>
+              </div>
+            </div>
           </aside>
         </div>
       </div>
@@ -348,6 +377,8 @@
     <script src="js/yuz.js"></script>
     <script src="js/arkaplan.js"></script>
     <script src="js/firca.js"></script>
+    <script src="js/metaveri.js"></script>
+    <script src="js/disa-aktar.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>

@@ -53,7 +53,14 @@ const el = {
   lekeBoyu: document.getElementById('leke-boyu'),
   lekeBoyuDegeri: document.getElementById('leke-boyu-degeri'),
   lekeDurumu: document.getElementById('leke-durumu'),
-  rotusuSifirla: document.getElementById('btn-rotusu-sifirla')
+  rotusuSifirla: document.getElementById('btn-rotusu-sifirla'),
+  turJpg: document.getElementById('tur-jpg'),
+  turPng: document.getElementById('tur-png'),
+  kaliteAlani: document.getElementById('kalite-alani'),
+  jpgKalitesi: document.getElementById('jpg-kalitesi'),
+  jpgKalitesiDegeri: document.getElementById('jpg-kalitesi-degeri'),
+  indir: document.getElementById('btn-indir'),
+  indirmeDurumu: document.getElementById('indirme-durumu')
 }
 
 // Rotus kaydiraclari -50..+50 arasinda; motorun bekledigi carpanlara cevrilir.
@@ -138,7 +145,7 @@ function araclariEtkinlestir (etkin) {
   const ogeler = [
     el.yakinlas, el.uzaklas, el.sigdir, el.kirpmayiSifirla,
     el.otomatikHizala, el.donmeAcisi, el.donmeyiSifirla, el.arkaplanBeyazlat,
-    el.onceSonra, el.rotusuSifirla, el.aracKirpma, el.aracLeke,
+    el.onceSonra, el.rotusuSifirla, el.aracKirpma, el.aracLeke, el.indir,
     ...ROTUS_KAYDIRACLARI.map((k) => document.getElementById(k.giris))
   ]
   for (const oge of ogeler) oge.disabled = !etkin
@@ -774,6 +781,69 @@ el.rotusuSifirla.addEventListener('click', () => {
   durumuKaydet()
 })
 
+// --- Indirme -----------------------------------------------------------------
+
+function indirmeDurumu (mesaj, tur = 'bilgi') {
+  el.indirmeDurumu.textContent = mesaj
+  el.indirmeDurumu.classList.toggle('text-danger', tur === 'hata')
+  el.indirmeDurumu.classList.toggle('text-success', tur === 'basari')
+  el.indirmeDurumu.classList.toggle('text-body-secondary', tur === 'bilgi')
+}
+
+// Ciktida kullanilacak maske: onizlemedeki ile ayni kenar ayarlariyla uretilir.
+function ciktiMaskesi () {
+  if (!hamMaske || !el.arkaplanBeyazlat.checked) return null
+
+  return window.HV.arkaplan.maskeyiAyarla(hamMaske, {
+    genislet: Number.parseFloat(el.maskeGenislet.value) / 100,
+    yumusat: Number.parseFloat(el.maskeYumusat.value)
+  })
+}
+
+async function fotografiIndir () {
+  if (!yuklenenGorsel || !kirpma.cerceve) return
+
+  const tur = el.turPng.checked ? 'png' : 'jpg'
+  el.indir.disabled = true
+  indirmeDurumu('Görüntü hazırlanıyor…')
+
+  try {
+    const { baytlar, cikti } = await window.HV.disaAktar.baytlariUret({
+      gorsel: yuklenenGorsel,
+      cerceve: kirpma.cerceve,
+      maske: ciktiMaskesi(),
+      rotusAyarlari,
+      lekeler,
+      olcuMm: olcuDurumu,
+      dpi,
+      tur,
+      kalite: Number.parseInt(el.jpgKalitesi.value, 10) / 100
+    })
+
+    const sonuc = await window.hiperVesika.gorseliKaydet({
+      baytlar,
+      tur,
+      varsayilanAd: window.HV.disaAktar.varsayilanAd(olcuDurumu, dpi, tur)
+    })
+
+    if (sonuc.hata) {
+      indirmeDurumu(`Kaydedilemedi: ${sonuc.hata}`, 'hata')
+    } else if (sonuc.kaydedildi) {
+      indirmeDurumu(
+        `Kaydedildi: ${cikti.genislik}×${cikti.yukseklik} px, ${dpi} DPI ` +
+        `(${olcuDurumu.genislikMm}×${olcuDurumu.yukseklikMm} mm).`,
+        'basari'
+      )
+    } else {
+      indirmeDurumu('Kaydetme iptal edildi.')
+    }
+  } catch (hata) {
+    indirmeDurumu(`Görüntü hazırlanamadı: ${hata.message}`, 'hata')
+  } finally {
+    el.indir.disabled = false
+  }
+}
+
 // --- Once / sonra ------------------------------------------------------------
 
 // Dugme basili tutuldugu surece ozgun fotograf gosterilir.
@@ -787,6 +857,21 @@ el.onceSonra.addEventListener('pointerdown', () => oncesiniGoster(true))
 for (const olay of ['pointerup', 'pointerleave', 'pointercancel']) {
   el.onceSonra.addEventListener(olay, () => oncesiniGoster(false))
 }
+
+// --- Indirme denetimleri -----------------------------------------------------
+
+for (const secim of [el.turJpg, el.turPng]) {
+  secim.addEventListener('change', () => {
+    // Kalite ayari yalnizca JPEG icin anlamli.
+    el.kaliteAlani.classList.toggle('d-none', el.turPng.checked)
+  })
+}
+
+el.jpgKalitesi.addEventListener('input', () => {
+  el.jpgKalitesiDegeri.textContent = `%${el.jpgKalitesi.value}`
+})
+
+el.indir.addEventListener('click', () => fotografiIndir())
 
 // --- Geri al / yinele --------------------------------------------------------
 
