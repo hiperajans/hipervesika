@@ -60,7 +60,21 @@ const el = {
   jpgKalitesi: document.getElementById('jpg-kalitesi'),
   jpgKalitesiDegeri: document.getElementById('jpg-kalitesi-degeri'),
   indir: document.getElementById('btn-indir'),
-  indirmeDurumu: document.getElementById('indirme-durumu')
+  indirmeDurumu: document.getElementById('indirme-durumu'),
+  gorunumFoto: document.getElementById('gorunum-foto'),
+  gorunumSayfa: document.getElementById('gorunum-sayfa'),
+  sayfaTuvali: document.getElementById('sayfa-tuvali'),
+  kagitOnayari: document.getElementById('kagit-onayari'),
+  kagitGenislik: document.getElementById('kagit-genislik'),
+  kagitYukseklik: document.getElementById('kagit-yukseklik'),
+  kagitHatasi: document.getElementById('kagit-hatasi'),
+  kagitCevir: document.getElementById('btn-kagit-cevir'),
+  dizmeKenar: document.getElementById('dizme-kenar'),
+  dizmeAralik: document.getElementById('dizme-aralik'),
+  dizmeAdet: document.getElementById('dizme-adet'),
+  dizmeAdetSiniri: document.getElementById('dizme-adet-siniri'),
+  kesimKilavuzu: document.getElementById('kesim-kilavuzu'),
+  dizmeDurumu: document.getElementById('dizme-durumu')
 }
 
 // Rotus kaydiraclari -50..+50 arasinda; motorun bekledigi carpanlara cevrilir.
@@ -79,7 +93,10 @@ const tuval = new window.HV.Tuval(el.tuval, {
 })
 
 const kirpma = new window.HV.KirpmaAraci(tuval, {
-  degisimde: () => ciktiBilgisiniGuncelle()
+  degisimde: () => {
+    ciktiBilgisiniGuncelle()
+    sayfaKaresiniGecersizKil()
+  }
 })
 
 const firca = new window.HV.Firca(tuval, {
@@ -306,6 +323,9 @@ function gosterimiTazele () {
 
   yuklenenGorsel.gosterim = sonuc === kaynak ? null : sonuc
   tuval.ciz()
+
+  // Sayfadaki vesikalik karesi artik eski.
+  sayfaKaresiniGecersizKil()
 }
 
 // --- Rotus -------------------------------------------------------------------
@@ -524,6 +544,10 @@ function olculeriUygula () {
   olcuDurumu = { genislikMm: genislik, yukseklikMm: yukseklik }
   kirpma.oranAta(olcuMotoru.oran(genislik, yukseklik))
   ciktiBilgisiniGuncelle()
+
+  // Vesikalik olcusu degisince sayfaya sigan adet de degisir.
+  sayfaKaresiniGecersizKil()
+  adediEnFazlayaAyarla()
 }
 
 function onayariUygula (kod) {
@@ -844,6 +868,171 @@ async function fotografiIndir () {
   }
 }
 
+// --- Sayfaya dizme -----------------------------------------------------------
+
+// Sayfada kullanilan tek vesikalik karesi. Fotograf ya da ayarlar degistiginde
+// gecersiz kilinir; sayfa cizilirken gerekirse yeniden uretilir.
+let sayfaKaresi = null
+
+// Onizleme icin 150 DPI yeterli; sayfa zaten kucultulerek gosteriliyor.
+const SAYFA_ONIZLEME_DPI = 150
+
+function sayfaKaresiniGecersizKil () {
+  sayfaKaresi = null
+  if (el.gorunumSayfa.checked) sayfayiCiz()
+}
+
+function sayfaKaresiniAl () {
+  if (sayfaKaresi) return sayfaKaresi
+  if (!yuklenenGorsel || !kirpma.cerceve) return null
+
+  const { tuval: kare } = window.HV.disaAktar.tuvalUret({
+    gorsel: yuklenenGorsel,
+    cerceve: kirpma.cerceve,
+    maske: ciktiMaskesi(),
+    rotusAyarlari,
+    lekeler,
+    olcuMm: olcuDurumu,
+    dpi: SAYFA_ONIZLEME_DPI
+  })
+
+  sayfaKaresi = kare
+  return kare
+}
+
+function kagitOlcusu () {
+  const genislik = Number.parseFloat(el.kagitGenislik.value)
+  const yukseklik = Number.parseFloat(el.kagitYukseklik.value)
+
+  const gecerli = window.HV.sayfa.kagitGecerliMi(genislik) &&
+    window.HV.sayfa.kagitGecerliMi(yukseklik)
+
+  el.kagitHatasi.classList.toggle('d-none', gecerli)
+  el.kagitGenislik.classList.toggle('is-invalid', !gecerli)
+  el.kagitYukseklik.classList.toggle('is-invalid', !gecerli)
+
+  return gecerli ? { genislik, yukseklik } : null
+}
+
+function yerlesimiHesapla () {
+  const kagitMm = kagitOlcusu()
+  if (!kagitMm) return null
+
+  const istenenAdet = Number.parseInt(el.dizmeAdet.value, 10)
+
+  return window.HV.sayfa.enIyiYerlesim({
+    kagitMm,
+    fotoMm: { genislik: olcuDurumu.genislikMm, yukseklik: olcuDurumu.yukseklikMm },
+    kenarMm: Number.parseFloat(el.dizmeKenar.value) || 0,
+    aralikMm: Number.parseFloat(el.dizmeAralik.value) || 0,
+    enFazlaAdet: Number.isFinite(istenenAdet) && istenenAdet > 0 ? istenenAdet : Infinity
+  })
+}
+
+function sayfayiCiz () {
+  const kagitMm = kagitOlcusu()
+  const yerlesim = yerlesimiHesapla()
+
+  if (!kagitMm || !yerlesim) {
+    el.dizmeDurumu.textContent = 'Kağıt ölçüsü geçersiz.'
+    el.dizmeDurumu.classList.add('text-danger')
+    return
+  }
+  el.dizmeDurumu.classList.remove('text-danger')
+
+  // Tuvalin arkaplan cozunurlugu ekran yogunluguna gore ayarlanir.
+  const oran = window.devicePixelRatio || 1
+  const kutu = el.sayfaTuvali.getBoundingClientRect()
+  if (kutu.width < 1 || kutu.height < 1) return
+
+  // Olcu degismediyse dokunulmaz: canvas.width atamasi tuvali temizliyor ve
+  // ResizeObserver ile birlikte gereksiz bir donguye yol aciyor.
+  const genislik = Math.max(1, Math.round(kutu.width * oran))
+  const yukseklik = Math.max(1, Math.round(kutu.height * oran))
+  if (el.sayfaTuvali.width !== genislik || el.sayfaTuvali.height !== yukseklik) {
+    el.sayfaTuvali.width = genislik
+    el.sayfaTuvali.height = yukseklik
+  }
+
+  window.HV.sayfa.sayfayiCiz(el.sayfaTuvali, {
+    kagitMm,
+    yerlesim,
+    fotoTuvali: sayfaKaresiniAl(),
+    kesimKilavuzu: el.kesimKilavuzu.checked
+  })
+
+  el.dizmeAdetSiniri.textContent = yerlesim.sigmiyor ? '' : `en fazla ${yerlesim.sigacakAdet}`
+  el.dizmeAdet.max = String(Math.max(1, yerlesim.sigacakAdet ?? 1))
+
+  if (yerlesim.sigmiyor) {
+    el.dizmeDurumu.classList.add('text-danger')
+    el.dizmeDurumu.textContent =
+      `${olcuDurumu.genislikMm}×${olcuDurumu.yukseklikMm} mm vesikalık bu kağıda sığmıyor. ` +
+      'Daha büyük bir kağıt seçin veya kenar boşluğunu azaltın.'
+    return
+  }
+
+  const parcalar = [
+    `${kagitMm.genislik}×${kagitMm.yukseklik} mm kağıda ` +
+    `${yerlesim.sutun}×${yerlesim.satir} düzeninde ${yerlesim.sigacakAdet} adet sığıyor`
+  ]
+  if (yerlesim.adet < yerlesim.sigacakAdet) parcalar.push(`${yerlesim.adet} adet diziliyor`)
+  if (yerlesim.dondurulmus) parcalar.push('fotoğraflar yatay yerleştirildi')
+
+  el.dizmeDurumu.textContent = `${parcalar.join(' · ')}.`
+}
+
+function gorunumuUygula () {
+  const sayfaGorunumu = el.gorunumSayfa.checked
+
+  el.tuval.classList.toggle('d-none', sayfaGorunumu)
+  el.sayfaTuvali.classList.toggle('d-none', !sayfaGorunumu)
+  // Fotograf araclari sayfa gorunumunde anlamsiz.
+  el.birakmaKatmani.classList.toggle('d-none', sayfaGorunumu || yuklenenGorsel !== null)
+
+  if (sayfaGorunumu) sayfayiCiz()
+  else tuval.ciz()
+}
+
+function kagitOnayarlariniDoldur () {
+  for (const onayar of window.HV.sayfa.KAGIT_ONAYARLARI) {
+    const secenek = document.createElement('option')
+    secenek.value = onayar.kod
+    secenek.textContent = onayar.ad
+    el.kagitOnayari.append(secenek)
+  }
+
+  const ozel = document.createElement('option')
+  ozel.value = 'ozel'
+  ozel.textContent = 'Özel ölçü'
+  el.kagitOnayari.append(ozel)
+}
+
+function kagitOnayariniUygula (kod) {
+  const onayar = window.HV.sayfa.KAGIT_ONAYARLARI.find((k) => k.kod === kod)
+  if (!onayar) return
+
+  el.kagitGenislik.value = String(onayar.genislik)
+  el.kagitYukseklik.value = String(onayar.yukseklik)
+  adediEnFazlayaAyarla()
+}
+
+// Kagit ya da olcu degisince adet, sigan en buyuk degere cekilir.
+function adediEnFazlayaAyarla () {
+  const kagitMm = kagitOlcusu()
+  if (!kagitMm) return
+
+  const tam = window.HV.sayfa.enIyiYerlesim({
+    kagitMm,
+    fotoMm: { genislik: olcuDurumu.genislikMm, yukseklik: olcuDurumu.yukseklikMm },
+    kenarMm: Number.parseFloat(el.dizmeKenar.value) || 0,
+    aralikMm: Number.parseFloat(el.dizmeAralik.value) || 0
+  })
+
+  el.dizmeAdet.value = String(Math.max(1, tam.adet))
+  if (el.gorunumSayfa.checked) sayfayiCiz()
+}
+
 // --- Once / sonra ------------------------------------------------------------
 
 // Dugme basili tutuldugu surece ozgun fotograf gosterilir.
@@ -857,6 +1046,48 @@ el.onceSonra.addEventListener('pointerdown', () => oncesiniGoster(true))
 for (const olay of ['pointerup', 'pointerleave', 'pointercancel']) {
   el.onceSonra.addEventListener(olay, () => oncesiniGoster(false))
 }
+
+// --- Dizme denetimleri -------------------------------------------------------
+
+for (const secim of [el.gorunumFoto, el.gorunumSayfa]) {
+  secim.addEventListener('change', () => gorunumuUygula())
+}
+
+el.kagitOnayari.addEventListener('change', () => {
+  if (el.kagitOnayari.value !== 'ozel') kagitOnayariniUygula(el.kagitOnayari.value)
+})
+
+for (const giris of [el.kagitGenislik, el.kagitYukseklik]) {
+  giris.addEventListener('input', () => {
+    el.kagitOnayari.value = 'ozel'
+    adediEnFazlayaAyarla()
+  })
+}
+
+el.kagitCevir.addEventListener('click', () => {
+  const genislik = el.kagitGenislik.value
+  el.kagitGenislik.value = el.kagitYukseklik.value
+  el.kagitYukseklik.value = genislik
+  el.kagitOnayari.value = 'ozel'
+  adediEnFazlayaAyarla()
+})
+
+for (const giris of [el.dizmeKenar, el.dizmeAralik]) {
+  giris.addEventListener('input', () => adediEnFazlayaAyarla())
+}
+
+el.dizmeAdet.addEventListener('input', () => {
+  if (el.gorunumSayfa.checked) sayfayiCiz()
+})
+
+el.kesimKilavuzu.addEventListener('change', () => {
+  if (el.gorunumSayfa.checked) sayfayiCiz()
+})
+
+// Pencere yeniden boyutlandiginda sayfa onizlemesi de yeniden cizilir.
+new ResizeObserver(() => {
+  if (el.gorunumSayfa.checked) sayfayiCiz()
+}).observe(el.sayfaTuvali)
 
 // --- Indirme denetimleri -----------------------------------------------------
 
@@ -891,7 +1122,9 @@ window.addEventListener('keydown', (olay) => {
 
 onayarlariDoldur()
 dpiSecenekleriniDoldur()
+kagitOnayarlariniDoldur()
 onayariUygula(olcuMotoru.FOTOGRAF_ONAYARLARI[0].kod)
+kagitOnayariniUygula(window.HV.sayfa.KAGIT_ONAYARLARI[0].kod)
 firca.yaricap = Number.parseInt(el.fircaBoyu.value, 10) / 2
 lekeFircasi.yaricap = Number.parseInt(el.lekeBoyu.value, 10) / 2
 rotusuYaz(rotusAyarlari)

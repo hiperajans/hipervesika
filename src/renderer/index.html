@@ -53,6 +53,14 @@
 
                 <div class="vr d-none d-sm-block"></div>
 
+                <div class="btn-group btn-group-sm" role="group" aria-label="Görünüm">
+                  <input type="radio" class="btn-check" name="gorunum" id="gorunum-foto" checked />
+                  <label class="btn btn-outline-secondary" for="gorunum-foto">Fotoğraf</label>
+
+                  <input type="radio" class="btn-check" name="gorunum" id="gorunum-sayfa" />
+                  <label class="btn btn-outline-secondary" for="gorunum-sayfa">Sayfa</label>
+                </div>
+
                 <div class="btn-group btn-group-sm" role="group" aria-label="Araç">
                   <input type="radio" class="btn-check" name="arac" id="arac-kirpma" checked />
                   <label class="btn btn-outline-secondary" for="arac-kirpma">Kırpma</label>
@@ -95,6 +103,10 @@
 
               <div id="tuval-sarmal" class="card-body p-0 position-relative overflow-hidden">
                 <canvas id="tuval" class="tuval d-block w-100 h-100"></canvas>
+                <!-- d-block sart: d-none kalkinca canvas satir ici ogeye
+                     donuyor, height:100% cozumlenmiyor ve tuval kendi ic
+                     boyutunu kaba dayatarak her cizimde buyuyor. -->
+                <canvas id="sayfa-tuvali" class="tuval sayfa-tuvali d-none d-block w-100 h-100"></canvas>
 
                 <div
                   id="birakma-katmani"
@@ -327,6 +339,70 @@
             </div>
 
             <div class="card">
+              <div class="card-header fw-semibold">Kağıda dizme</div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <label for="kagit-onayari" class="form-label">Baskı kağıdı</label>
+                  <select id="kagit-onayari" class="form-select form-select-sm"></select>
+                </div>
+
+                <div class="row g-2 mb-2">
+                  <div class="col-6">
+                    <label for="kagit-genislik" class="form-label">Genişlik (mm)</label>
+                    <input id="kagit-genislik" type="number" class="form-control form-control-sm"
+                      min="50" max="1000" step="1" />
+                  </div>
+                  <div class="col-6">
+                    <label for="kagit-yukseklik" class="form-label">Yükseklik (mm)</label>
+                    <input id="kagit-yukseklik" type="number" class="form-control form-control-sm"
+                      min="50" max="1000" step="1" />
+                  </div>
+                  <div class="col-12">
+                    <div id="kagit-hatasi" class="form-text text-danger d-none">
+                      Kağıt ölçüleri 50 ile 1000 mm arasında olmalıdır.
+                    </div>
+                  </div>
+                </div>
+
+                <button id="btn-kagit-cevir" type="button"
+                  class="btn btn-outline-secondary btn-sm w-100 mb-3">
+                  Yatay / dikey çevir
+                </button>
+
+                <div class="row g-2 mb-2">
+                  <div class="col-6">
+                    <label for="dizme-kenar" class="form-label">Kenar boşluğu (mm)</label>
+                    <input id="dizme-kenar" type="number" class="form-control form-control-sm"
+                      min="0" max="50" step="1" value="0" />
+                  </div>
+                  <div class="col-6">
+                    <label for="dizme-aralik" class="form-label">Aralık (mm)</label>
+                    <input id="dizme-aralik" type="number" class="form-control form-control-sm"
+                      min="0" max="50" step="1" value="0" />
+                  </div>
+                </div>
+
+                <div class="mb-2">
+                  <label for="dizme-adet" class="form-label d-flex justify-content-between mb-1">
+                    <span>Adet</span>
+                    <span id="dizme-adet-siniri" class="font-monospace text-body-secondary"></span>
+                  </label>
+                  <input id="dizme-adet" type="number" class="form-control form-control-sm"
+                    min="1" step="1" value="4" />
+                </div>
+
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="kesim-kilavuzu" checked />
+                  <label class="form-check-label" for="kesim-kilavuzu">Kesim kılavuzu</label>
+                </div>
+
+                <p id="dizme-durumu" class="small text-body-secondary mb-0">
+                  Sayfayı görmek için üstteki <em>Sayfa</em> görünümüne geçin.
+                </p>
+              </div>
+            </div>
+
+            <div class="card">
               <div class="card-header fw-semibold">İndir</div>
               <div class="card-body">
                 <div class="btn-group btn-group-sm w-100 mb-3" role="group" aria-label="Biçim">
@@ -379,6 +455,7 @@
     <script src="js/firca.js"></script>
     <script src="js/metaveri.js"></script>
     <script src="js/disa-aktar.js"></script>
+    <script src="js/sayfa.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>

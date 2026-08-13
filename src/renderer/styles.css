@@ -37,6 +37,13 @@
   cursor: grabbing;
 }
 
+/* Sayfa onizlemesinde kagidin beyazi belli olsun diye zemin biraz daha koyu
+   ve imlec surukleme gostermez. */
+.sayfa-tuvali {
+  background-color: var(--bs-tertiary-bg);
+  cursor: default;
+}
+
 /* Fotograf birakma katmani; tuvalin uzerinde durur, gorsel yuklenince gizlenir. */
 .drop-overlay {
   background-color: var(--bs-body-bg);
