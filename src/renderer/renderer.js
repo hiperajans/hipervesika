@@ -75,12 +75,6 @@ const el = {
   dizmeAdetSiniri: document.getElementById('dizme-adet-siniri'),
   kesimKilavuzu: document.getElementById('kesim-kilavuzu'),
   dizmeDurumu: document.getElementById('dizme-durumu'),
-  yaziciSecimi: document.getElementById('yazici-secimi'),
-  kopyaSayisi: document.getElementById('kopya-sayisi'),
-  baskiDpi: document.getElementById('baski-dpi'),
-  baskiRenkli: document.getElementById('baski-renkli'),
-  baskiKaliteNotu: document.getElementById('baski-kalite-notu'),
-  yaziciPenceresi: document.getElementById('yazici-penceresi'),
   sayfayiBas: document.getElementById('btn-sayfayi-bas'),
   sayfayiPdf: document.getElementById('btn-sayfayi-pdf'),
   sayfayiKaydet: document.getElementById('btn-sayfayi-kaydet'),
@@ -1068,8 +1062,6 @@ for (const giris of [el.genislikMm, el.yukseklikMm]) {
 el.dpiSecimi.addEventListener('change', () => {
   dpi = Number.parseInt(el.dpiSecimi.value, 10)
   ciktiBilgisiniGuncelle()
-  // Sayfa cozunurlugu baski kalitesi notunun icinde geciyor.
-  baskiKalitesiniGuncelle()
   ayarlariKaydet()
 })
 
@@ -1656,38 +1648,21 @@ async function sayfayiBas () {
   const sayfa = baskiSayfasiUret()
   if (!sayfa) return
 
-  const yaziciAdi = el.yaziciSecimi.value
-  if (!yaziciAdi && !el.yaziciPenceresi.checked) {
-    baskiDurumu(
-      'Yazıcı bulunamadı. Sistem ayarlarından bir yazıcı ekleyin veya sayfayı ' +
-      'PDF olarak kaydedip başka bir bilgisayarda bastırın.',
-      'hata'
-    )
-    return
-  }
-
   baskiDugmeleri(false)
-  baskiDurumu('Baskıya gönderiliyor…')
+  baskiDurumu('Yazdırma paneli açılıyor…')
 
   try {
     const baytlar = await sayfaBaytlari(sayfa.tuval, 'png')
 
+    // Yazici, kopya ve kalite panelde secilir; buradan gonderilmez.
     const sonuc = await window.hiperVesika.sayfayiBas({
       baytlar,
-      kagitMm: sayfa.kagitMm,
-      yaziciAdi,
-      kopya: Number.parseInt(el.kopyaSayisi.value, 10) || 1,
-      baskiDpi: Number.parseInt(el.baskiDpi.value, 10),
-      renkli: el.baskiRenkli.checked,
-      pencereGoster: el.yaziciPenceresi.checked
+      kagitMm: sayfa.kagitMm
     })
 
     if (sonuc.basildi) {
-      const kopya = Number.parseInt(el.kopyaSayisi.value, 10) || 1
       baskiDurumu(
-        `Baskıya gönderildi: ${kopya} kopya, ` +
-        `${sayfa.kagitMm.genislik}×${sayfa.kagitMm.yukseklik} mm, ` +
-        `${el.baskiDpi.value} DPI${el.baskiRenkli.checked ? '' : ', gri'}.`,
+        `Baskıya gönderildi: ${sayfa.kagitMm.genislik}×${sayfa.kagitMm.yukseklik} mm sayfa.`,
         'basari'
       )
     } else if (sonuc.iptal) {
@@ -1702,70 +1677,14 @@ async function sayfayiBas () {
   }
 }
 
-// Baski kalitesi iki ayri seyden olusur ve ikincisini uygulama ayarlayamaz:
-//
-//   1. Rasterlestirme cozunurlugu — buradaki ayar. Sayfa bu cozunurlukte
-//      noktaya cevrilip surucuye verilir.
-//   2. Kagit turu ve surucunun kalite kipi (fotograf kagidi / en iyi) — bunlar
-//      surucuye ait, Electron'un baski arayuzunde karsiligi yok. Isletim
-//      sisteminin yazici varsayilanlarindan ya da yazici penceresinden secilir.
-//
-// Bunu yazmak, "en yuksek kalite" secildi diye sorunun tamaminin cozuldugunu
-// sanmaktan iyidir.
-function baskiKalitesiniGuncelle () {
-  const nokta = Number.parseInt(el.baskiDpi.value, 10)
-  const parcalar = []
-
-  // En keskin sonuc ikisi esitken cikar: sayfa goruntusunun her pikseli bir
-  // baski noktasina birebir duser, arada yeniden orneklem olmaz.
-  if (nokta === dpi) {
-    parcalar.push(
-      `Sayfa ${dpi} DPI üretiliyor ve ${nokta} DPI basılıyor: her piksel bir ` +
-      'noktaya birebir düşüyor, en keskin sonuç budur.'
-    )
-  } else if (nokta < dpi) {
-    parcalar.push(
-      `Baskı ${nokta} DPI ama sayfa ${dpi} DPI üretiliyor: ayrıntı basılırken ` +
-      'küçültülüyor. İkisini eşitlemek daha iyi sonuç verir.'
-    )
-  } else {
-    parcalar.push(
-      `Baskı ${nokta} DPI ama sayfa ${dpi} DPI üretiliyor: fazlası büyütmedir, ` +
-      'yeni ayrıntı katmaz. Gerçek çözüm Kadraj adımındaki çözünürlüğü yükseltmek.'
-    )
-  }
-
-  parcalar.push(
-    'Kağıt türü ve sürücünün kalite kipi (fotoğraf kağıdı / en iyi) buradan ' +
-    'ayarlanamaz — yazıcının işletim sistemi ayarlarından ya da yazıcı ' +
-    'penceresinden seçilir. Noritsu, Fujifilm gibi laboratuvar makinelerine ' +
-    'sürücüden basmak yerine PDF ya da görüntü dosyasını vermek daha doğrudur.'
-  )
-
-  el.baskiKaliteNotu.textContent = parcalar.join(' ')
-}
-
-async function yazicilariDoldur () {
+// Yazici yoksa kullanici bunu yazdirma panelini acmadan once bilsin.
+async function yazicilariDenetle () {
   const { yazicilar, hata } = await window.hiperVesika.yaziciListesi()
-
-  el.yaziciSecimi.replaceChildren()
-
   if (hata || !yazicilar.length) {
-    const secenek = document.createElement('option')
-    secenek.value = ''
-    secenek.textContent = 'Yazıcı bulunamadı'
-    el.yaziciSecimi.append(secenek)
-    el.yaziciSecimi.disabled = true
-    return
-  }
-
-  el.yaziciSecimi.disabled = false
-  for (const yazici of yazicilar) {
-    const secenek = document.createElement('option')
-    secenek.value = yazici.ad
-    secenek.textContent = yazici.gorunenAd
-    if (yazici.varsayilan) secenek.selected = true
-    el.yaziciSecimi.append(secenek)
+    baskiDurumu(
+      'Tanımlı yazıcı yok. Sistem ayarlarından bir yazıcı ekleyin veya sayfayı ' +
+      'PDF olarak kaydedip başka bir bilgisayarda bastırın.'
+    )
   }
 }
 
@@ -1937,14 +1856,7 @@ function sonKullanilaniTopla () {
     kagitYukseklik: Number.parseFloat(el.kagitYukseklik.value),
     kenarMm: Number.parseFloat(el.dizmeKenar.value) || 0,
     aralikMm: Number.parseFloat(el.dizmeAralik.value) || 0,
-    kesimKilavuzu: el.kesimKilavuzu.checked,
-    yazici: el.yaziciSecimi.value,
-    kopya: Number.parseInt(el.kopyaSayisi.value, 10) || 1,
-    // Baski kalitesi yaziciya degil kullaniciya bagli tutulur: fotografci ayni
-    // ayari her yazicida ister, ayrica her baskida yeniden secmek zorunda kalmaz.
-    baskiDpi: Number.parseInt(el.baskiDpi.value, 10),
-    baskiRenkli: el.baskiRenkli.checked,
-    yaziciPenceresi: el.yaziciPenceresi.checked
+    kesimKilavuzu: el.kesimKilavuzu.checked
   }
 }
 
@@ -2022,21 +1934,8 @@ function sonKullanilaniUygula (son) {
     el.jpgKalitesiDegeri.textContent = `%${son.kalite}`
   }
 
-  if (Number.isFinite(son.kopya)) {
-    el.kopyaSayisi.value = String(Math.min(99, Math.max(1, Math.trunc(son.kopya))))
-  }
-  if (typeof son.yaziciPenceresi === 'boolean') {
-    el.yaziciPenceresi.checked = son.yaziciPenceresi
-  }
-  if ([...el.baskiDpi.options].some((o) => Number(o.value) === son.baskiDpi)) {
-    el.baskiDpi.value = String(son.baskiDpi)
-  }
-  if (typeof son.baskiRenkli === 'boolean') el.baskiRenkli.checked = son.baskiRenkli
-  baskiKalitesiniGuncelle()
-  // Yazici listeden kaldirilmis olabilir; yoksa varsayilan secili kalir.
-  if (son.yazici && [...el.yaziciSecimi.options].some((o) => o.value === son.yazici)) {
-    el.yaziciSecimi.value = son.yazici
-  }
+  // Yazici, kopya ve baski kalitesi artik uygulamada tutulmuyor; eski ayar
+  // dosyalarindaki bu alanlar sessizce yok sayilir.
 
   adediEnFazlayaAyarla()
   silDugmeleriniGuncelle()
@@ -2368,15 +2267,6 @@ el.yinele.addEventListener('click', () => durumuUygula(gecmis.yinele()))
 
 // --- Baski denetimleri -------------------------------------------------------
 
-el.yaziciSecimi.addEventListener('change', () => ayarlariKaydet())
-el.kopyaSayisi.addEventListener('input', () => ayarlariKaydet())
-el.yaziciPenceresi.addEventListener('change', () => ayarlariKaydet())
-el.baskiRenkli.addEventListener('change', () => ayarlariKaydet())
-el.baskiDpi.addEventListener('change', () => {
-  baskiKalitesiniGuncelle()
-  ayarlariKaydet()
-})
-
 el.sayfayiBas.addEventListener('click', () => sayfayiBas())
 el.sayfayiPdf.addEventListener('click', () => sayfayiPdfKaydet())
 el.sayfayiKaydet.addEventListener('click', () => sayfayiGoruntuKaydet())
@@ -2425,14 +2315,13 @@ kagitOnayariniUygula(window.HV.sayfa.KAGIT_ONAYARLARI[0].kod)
 firca.yaricap = Number.parseInt(el.fircaBoyu.value, 10) / 2
 lekeFircasi.yaricap = Number.parseInt(el.lekeBoyu.value, 10) / 2
 rotusuYaz(rotusAyarlari)
-baskiKalitesiniGuncelle()
 aracSec()
 araclariEtkinlestir(false)
 gecmisDugmeleriniGuncelle()
 kisayollariYaz()
 
-// Yazicilar once doldurulur: kayitli yazici ancak listedeyse secilebilir.
-yazicilariDoldur().then(ayarlariYukle)
+ayarlariYukle()
+yazicilariDenetle()
 
 el.surumBilgisi.textContent =
   `Electron ${versions.electron} · Chromium ${versions.chrome} · Node ${versions.node}`

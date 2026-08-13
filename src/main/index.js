@@ -172,21 +172,20 @@ function baskiyiKur () {
       return await baskiSayfasindaCalis(istek, (pencere, kagitMm) => new Promise((cozumle) => {
         pencere.webContents.print(
           {
-            // Sessiz baskida yazici penceresi acilmaz; boylece kimse
-            // "kagida sigdir" secenegini acik birakip olcuyu bozamaz.
-            silent: !istek.pencereGoster,
-            deviceName: istek.yaziciAdi || undefined,
-            copies: baski.kopyaSayisi(istek.kopya),
+            // Baski her zaman sistemin yazdirma panelinden gecer: yazici,
+            // kopya, kagit ve kalite oranin sahibi surucudur. Uygulama sessiz
+            // baski yapmaz; boylece "bizim yazdirdigimiz" bir cikti olmaz.
+            silent: false,
             printBackground: true,
             margins: { marginType: 'none' },
             scaleFactor: 100,
-            // Rasterlestirme cozunurlugu. Verilmezse aygitin varsayilanina
-            // duser ve fotograf kagidinda yumusak bir baski cikar.
+            // Rasterlestirme cozunurlugu panelde secilemez (Chromium tarafidir),
+            // bu yuzden burada verilir. Verilmezse aygitin varsayilanina duser
+            // ve fotograf kagidinda gozle gorulur bicimde yumusak cikar.
             dpi: (() => {
-              const nokta = baski.baskiCozunurlugu(istek.baskiDpi)
+              const nokta = baski.baskiCozunurlugu(istek?.baskiDpi)
               return { horizontal: nokta, vertical: nokta }
             })(),
-            color: istek.renkli !== false,
             pageSize: {
               width: baski.mikron(kagitMm.genislik),
               height: baski.mikron(kagitMm.yukseklik)

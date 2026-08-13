@@ -78,8 +78,6 @@ test('diger tercihler dosyaya yazilir', async () => {
   await sayfa.click('label[for="tur-png"]')
   await sayfa.fill('#dizme-kenar', '4')
   await sayfa.uncheck('#kesim-kilavuzu')
-  await sayfa.fill('#kopya-sayisi', '3')
-  await sayfa.check('#yazici-penceresi')
   await sayfa.waitForTimeout(1200)
 
   assert.equal(fs.existsSync(AYAR_DOSYASI), true)
@@ -92,10 +90,9 @@ test('diger tercihler dosyaya yazilir', async () => {
       dpi: yazilan.sonKullanilan.dpi,
       tur: yazilan.sonKullanilan.tur,
       kenarMm: yazilan.sonKullanilan.kenarMm,
-      kesimKilavuzu: yazilan.sonKullanilan.kesimKilavuzu,
-      kopya: yazilan.sonKullanilan.kopya
+      kesimKilavuzu: yazilan.sonKullanilan.kesimKilavuzu
     },
-    { dpi: 600, tur: 'png', kenarMm: 4, kesimKilavuzu: false, kopya: 3 }
+    { dpi: 600, tur: 'png', kenarMm: 4, kesimKilavuzu: false }
   )
 
   await uygulama.close()
@@ -117,8 +114,6 @@ test('ikinci acilista her sey geri gelir', async () => {
     kagitSecimi: document.getElementById('kagit-onayari').value,
     kenar: document.getElementById('dizme-kenar').value,
     kilavuz: document.getElementById('kesim-kilavuzu').checked,
-    kopya: document.getElementById('kopya-sayisi').value,
-    yaziciPenceresi: document.getElementById('yazici-penceresi').checked,
     ciktiPiksel: document.getElementById('cikti-piksel').textContent.trim()
   }))
 
@@ -136,8 +131,6 @@ test('ikinci acilista her sey geri gelir', async () => {
   assert.ok(durum.kagitSecimi.startsWith('kullanici-'))
   assert.equal(durum.kenar, '4')
   assert.equal(durum.kilavuz, false)
-  assert.equal(durum.kopya, '3')
-  assert.equal(durum.yaziciPenceresi, true)
 })
 
 test('ayni adla kaydetmek cogaltmaz, uzerine yazar', async () => {

@@ -78,12 +78,13 @@ fotoğraf sürükle-bırak → otomatik hizalama → arka plan beyazlatma → r�
 - Kaç adet sığdığı, kenar boşlukları ve aradaki boşluklar kağıt ile fotoğraf ölçüsünden
   otomatik hesaplanır; adet ve boşluklar elle değiştirilebilir, sığmayan durumda uyarılır.
 - Gerçek oranlı canlı sayfa önizlemesi ve açılıp kapatılabilen kesim kılavuzu.
-- Doğrudan baskı (yazıcı ve kopya sayısı seçilebilir), PDF olarak kaydetme ya da sayfayı
-  JPG/PNG olarak kaydetme.
+- Baskı, sistemin yazdırma panelinden geçer: yazıcı, kopya, kağıt ve kalite orada seçilir.
+  Sayfa ayrıca PDF ya da JPG/PNG olarak kaydedilebilir.
 - **Ölçü doğruluğu:** sayfa, kağıdın tam piksel karşılığında üretilir ve ölçüsü sabitlenmiş
-  bir sayfaya yerleştirilir; yazıcı ölçeklemesi kapatılır. Üretilen PDF üzerinden ölçüldüğünde
-  50 mm'lik bir vesikalığın kenarındaki sapma 0,04 mm'nin altındadır (ayrıntı ve kalan
-  doğrulama adımları: [`docs/FAZLAR.md`](./docs/FAZLAR.md), Faz 8).
+  bir sayfaya yerleştirilir. Üretilen PDF üzerinden ölçüldüğünde 50 mm'lik bir vesikalığın
+  kenarındaki sapma 0,04 mm'nin altındadır. Yazdırma panelinde ölçeklemenin
+  *%100 / gerçek boyut* kalması gerekir; *kağıda sığdır* seçilirse ölçü bozulur (ayrıntı ve
+  kalan doğrulama adımları: [`docs/FAZLAR.md`](./docs/FAZLAR.md), Faz 8).
 
 **Kullanım kolaylıkları**
 
@@ -147,7 +148,7 @@ src/main/          Ana süreç: pencere, app:// protokolü, kaydetme, baskı, PD
 src/preload/       contextBridge köprüsü (window.hiperVesika) — renderer'ın tek geçidi
 src/renderer/      Arayüz; js/ altında DOM'dan bağımsız hesap modülleri
 scripts/vendor.js  Bootstrap, bootstrap-icons ve Human modellerini vendor/'a kopyalar
-test/              node:test birim testleri
+test/              node:test birim testleri; uctan-uca/ gerçek uygulamayı açan testler
 docs/              FAZLAR.md (yol haritası), ARAYUZ.md (tasarım katmanı)
 ```
 

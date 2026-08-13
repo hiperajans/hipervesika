@@ -185,9 +185,8 @@ yerleştirilir. Baskı ile PDF aynı sayfadan çıkar, böylece iki ayrı ölç�
 Sayfa görüntüsü diske değil, `app://hv/gecici/...` altında belleğe konur ve iş bitince
 silinir.
 
-Baskı varsayılan olarak `silent: true` ve `scaleFactor: 100` ile yapılır: yazıcı penceresi
-açılmazsa kimse "kağıda sığdır" seçeneğini açık bırakamaz. Kullanıcı isterse pencereyi
-açtırabilir.
+Baskı `scaleFactor: 100` ile yapılır. **Baskı her zaman sistemin yazdırma panelinden geçer**
+(`silent: false`); uygulama sessiz baskı yapmaz — aşağıya bakınız.
 
 Ölçü doğruluğu, üretilen PDF'in içindeki çizim dönüşümü okunarak ölçüldü
 (`baski.pdfMediaBox` ve içerik akışındaki `cm` matrisi):
@@ -405,26 +404,33 @@ birim testleri ubuntu'da, uçtan uca testler **ubuntu + macOS + Windows** üçl�
 Kural 4 kodun çapraz platform olmasını istiyordu ama bu hiç sınanmamıştı; ilk koşuda üç
 platform da geçti (uçtan uca adımı sırasıyla 80, 99 ve 81 saniye).
 
-### Baskı kalitesi
+### Baskı sorumluluğu sürücüye bırakıldı
 
-`webContents.print` çağrısında **`dpi` hiç verilmiyordu**; Chromium sayfayı aygıtın
-varsayılan çözünürlüğünde noktaya çeviriyordu ve fotoğraf kağıdında gözle görülür biçimde
-yumuşak bir baskı çıkıyordu. Artık `Baskı kalitesi` seçimi (300 / 600 / 1200 DPI)
-`dpi: { horizontal, vertical }` olarak geçiriliyor; `color` de eklendi. Ayar kullanıcıya
-bağlıdır (`sonKullanilan.baskiDpi`), yazıcıya değil — fotoğrafçı aynı ayarı her makinede
-ister ve her baskıda yeniden seçmek zorunda kalmaz.
+Önce sessiz baskı denendi: yazıcı, kopya ve kalite uygulamada seçiliyor, `silent: true` ile
+doğrudan gönderiliyordu. Gerekçe "kimse *kağıda sığdır* seçeneğini açık bırakamasın" idi.
 
-**En keskin sonuç, baskı DPI'sı sayfa DPI'sına eşitken çıkar:** sayfa görüntüsünün her
-pikseli bir baskı noktasına birebir düşer, arada yeniden örneklem olmaz. Düşüğü ayrıntıyı
-küçültür, yükseği yalnızca büyütmedir. Arayüzdeki not üç durumu da ayırt edip söyler.
+Bu yaklaşım tersine çevrildi. Sebep, kalitenin uygulamanın erişemediği yerde belirlenmesi:
+ölçüldü (Canon iX6800, macOS/CUPS) sürücü varsayılanı `CNIJMediaType=0` (**Plain Paper**)
+ve `CNIJPrintQuality=10` (**Normal**) idi — fotoğraf kağıdına düz kağıt kipinde basmak,
+uygulama ne yaparsa yapsın soluk ve yumuşak bir sonuç verir. Kağıt türü ve sürücü kalite
+kipinin Electron'un baskı arayüzünde karşılığı yoktur. Uygulama bu ayarları seçemeyip
+sonucun sahibi gibi görünürse, çıkan her kötü baskı uygulamanın sorunu sayılır.
 
-**Uygulamanın ayarlayamadığı kısım.** Kağıt türü ve sürücünün kalite kipi Electron'un baskı
-arayüzünde yoktur. Ölçüldü (Canon iX6800, macOS/CUPS): sürücü varsayılanı
-`CNIJMediaType=0` (**Plain Paper**) ve `CNIJPrintQuality=10` (**Normal**) idi — fotoğraf
-kağıdına düz kağıt kipinde basmak, DPI ne olursa olsun soluk ve yumuşak bir sonuç verir.
-Bunlar işletim sisteminin yazıcı ayarlarından ya da `Yazıcı penceresi` açılarak seçilir;
-arayüzdeki not bunu yazar. Noritsu, Fujifilm gibi laboratuvar makinelerine sürücüden basmak
-yerine PDF ya da görüntü dosyasını vermek daha doğrudur.
+Artık **`Sayfayı yazdır…` doğrudan sistemin yazdırma panelini açar** (`silent: false`).
+Yazıcı, kopya, kağıt ve kalite orada seçilir; uygulama bunları kendi tarafında tutmaz.
+Kaldırılan denetimler: yazıcı seçimi, kopya sayısı, baskı kalitesi, renkli anahtarı ve
+`Yazıcı penceresi` anahtarı. Eski `ayarlar.json` dosyalarındaki `yazici`, `kopya`,
+`yaziciPenceresi`, `baskiDpi` alanları sessizce yok sayılır.
+
+**Uygulamada kalan tek baskı ayarı rasterleştirme çözünürlüğü.** Bu Chromium tarafıdır,
+yazdırma panelinde karşılığı yoktur ve verilmezse aygıtın varsayılanına düşüp gözle görülür
+biçimde yumuşak bir baskı verir. `baski.baskiCozunurlugu` ile 600 DPI sabit geçilir; aralık
+dışı değer varsayılana düşer, kırpılmaz (0 gelseydi 72 DPI'ya inip sessizce berbat bir
+baskı çıkardı).
+
+**Ölçü doğruluğu artık kullanıcıya bağlı:** panelde ölçekleme `%100 / gerçek boyut`
+kalmalıdır. Sabitlenmiş ölçü isteyen Noritsu, Fujifilm gibi laboratuvar makineleri için
+doğru yol zaten sürücüden basmak değil, PDF ya da görüntü dosyasını vermektir.
 
 ## Riskler
 

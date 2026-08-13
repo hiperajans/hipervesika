@@ -15,16 +15,12 @@ const metaveri = require(path.join(ortam.DEPO, 'src/renderer/js/metaveri.js'))
 
 const calisma = new ortam.Calisma('baski')
 let uygulama, sayfa, kapat
-let yaziciSayisi = 0
 
 test.before(async () => {
   ;({ uygulama, sayfa, kapat } = await ortam.hazirla(calisma, { fotograf: calisma.fotograf(0) }))
   await ortam.adima(sayfa, 'cikti')
   await sayfa.click('label[for="gorunum-sayfa"]')
   await sayfa.waitForTimeout(800)
-
-  const liste = await sayfa.evaluate(() => window.hiperVesika.yaziciListesi())
-  yaziciSayisi = liste.yazicilar.length
 })
 
 test.after(async () => {
@@ -152,26 +148,6 @@ test('kaydetmeden vazgecmek hata sayilmaz', async () => {
   assert.match(await sayfa.textContent('#baski-durumu'), /iptal edildi/i)
 })
 
-test('olmayan yazici anlasilir hata veriyor', async () => {
-  const sonuc = await sayfa.evaluate(async () => {
-    const tuval = document.createElement('canvas')
-    tuval.width = 100
-    tuval.height = 150
-    tuval.getContext('2d').fillRect(0, 0, 100, 150)
-    const blob = await new Promise((c) => tuval.toBlob(c, 'image/png'))
-    return window.hiperVesika.sayfayiBas({
-      baytlar: new Uint8Array(await blob.arrayBuffer()),
-      kagitMm: { genislik: 100, yukseklik: 150 },
-      yaziciAdi: 'HV-Olmayan-Yazici',
-      kopya: 1,
-      pencereGoster: false
-    })
-  })
-
-  assert.equal(sonuc.basildi, false)
-  assert.equal(typeof sonuc.hata, 'string')
-})
-
 test('ana surec gecersiz kagit olcusunu reddediyor', async () => {
   const sonuc = await sayfa.evaluate(() => window.hiperVesika.sayfayiPdfKaydet({
     baytlar: new Uint8Array([1, 2, 3]),
@@ -180,19 +156,6 @@ test('ana surec gecersiz kagit olcusunu reddediyor', async () => {
 
   assert.equal(sonuc.kaydedildi, false)
   assert.match(sonuc.hata, /geçersiz/)
-})
-
-test('yazici yokken anlasilir uyari verilir', async (t) => {
-  // Denetim test govdesinde yapilmali: secenekler dizisi test tanimlanirken
-  // degerlendirilir ve o an yaziciSayisi henuz okunmamis olur. Yazici tanimli
-  // bir makinede bu test gercekten kagit basardi.
-  if (yaziciSayisi > 0) return t.skip('makinede yazıcı tanımlı; baskı denenmiyor')
-
-  await sayfa.click('#btn-sayfayi-bas')
-  await sayfa.waitForTimeout(2000)
-
-  assert.match(await sayfa.textContent('#baski-durumu'), /Yazıcı bulunamadı/)
-  assert.notEqual(await sayfa.getAttribute('#yazici-secimi', 'disabled'), null)
 })
 
 test('menudeki Kaydet sayfa gorunumunde sayfayi kaydediyor', async () => {
