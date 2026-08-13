@@ -126,6 +126,70 @@ test('kagit olcusu dogrulamasi sinirlari uygular', () => {
   assert.equal(sayfa.kagitGecerliMi(Number.NaN), false)
 })
 
+test('sigdirma olcegi kagidi tuvale sigdirir', () => {
+  const kagitMm = { genislik: 100, yukseklik: 150 }
+
+  // Dar tuval: genislik belirleyici
+  assert.equal(sayfa.sigdirmaOlcegi({ genislik: 200, yukseklik: 900 }, kagitMm), 2)
+  // Basik tuval: yukseklik belirleyici
+  assert.equal(sayfa.sigdirmaOlcegi({ genislik: 900, yukseklik: 300 }, kagitMm), 2)
+})
+
+test('sayfa varsayilan olarak tuvale ortalanir', () => {
+  const baslangic = sayfa.sayfaBaslangici(
+    { genislik: 400, yukseklik: 600 }, { genislik: 100, yukseklik: 150 }, 1, { x: 0, y: 0 }
+  )
+
+  // 100x150 kagit 400x600 tuvale tam oturur: olcek 4, bosluk yok
+  assert.equal(baslangic.olcek, 4)
+  assert.equal(baslangic.x, 0)
+  assert.equal(baslangic.y, 0)
+})
+
+test('yakinlik ve kayma baslangici tasir', () => {
+  const tuvalOlcusu = { genislik: 400, yukseklik: 600 }
+  const kagitMm = { genislik: 100, yukseklik: 150 }
+
+  const iki = sayfa.sayfaBaslangici(tuvalOlcusu, kagitMm, 2, { x: 0, y: 0 })
+  assert.equal(iki.olcek, 8)
+  // Iki kat buyuyunce sayfa tuvali asar ve merkezde kalir
+  assert.equal(iki.x, -200)
+  assert.equal(iki.y, -300)
+
+  const kaymali = sayfa.sayfaBaslangici(tuvalOlcusu, kagitMm, 1, { x: 30, y: -20 })
+  assert.equal(kaymali.x, 30)
+  assert.equal(kaymali.y, -20)
+})
+
+test('yakinlastirmada imlecin altindaki nokta yerinde kalir', () => {
+  const tuvalOlcusu = { genislik: 400, yukseklik: 600 }
+  const kagitMm = { genislik: 100, yukseklik: 150 }
+  const merkez = { x: 120, y: 420 }
+
+  // Imlecin gosterdigi kagit noktasi (mm)
+  const kagitNoktasi = (yakinlik, kayma) => {
+    const b = sayfa.sayfaBaslangici(tuvalOlcusu, kagitMm, yakinlik, kayma)
+    return { x: (merkez.x - b.x) / b.olcek, y: (merkez.y - b.y) / b.olcek }
+  }
+
+  let yakinlik = 1
+  let kayma = { x: 0, y: 0 }
+  const once = kagitNoktasi(yakinlik, kayma)
+
+  // Art arda birkac yakinlastirma
+  for (const carpan of [1.25, 1.25, 0.8, 3]) {
+    const yeniYakinlik = yakinlik * carpan
+    kayma = sayfa.yakinlastirmaKaymasi({
+      tuvalOlcusu, kagitMm, yakinlik, yeniYakinlik, kayma, merkez
+    })
+    yakinlik = yeniYakinlik
+
+    const sonra = kagitNoktasi(yakinlik, kayma)
+    assert.ok(Math.abs(sonra.x - once.x) < 1e-9, `x kaydi: ${sonra.x} != ${once.x}`)
+    assert.ok(Math.abs(sonra.y - once.y) < 1e-9, `y kaydi: ${sonra.y} != ${once.y}`)
+  }
+})
+
 test('sayfa dosya adi olcuyu ve adedi tasir', () => {
   assert.equal(
     sayfa.sayfaDosyaAdi({ genislik: 100, yukseklik: 150 }, 4, 300, 'jpg'),

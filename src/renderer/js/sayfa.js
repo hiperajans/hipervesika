@@ -89,6 +89,41 @@
       : { ...dik, dondurulmus: false }
   }
 
+  // --- Goruntuleme -----------------------------------------------------------
+
+  // Kagidin tuvale tam oturdugu olcek (tuval pikseli / mm).
+  function sigdirmaOlcegi (tuvalOlcusu, kagitMm) {
+    return Math.min(
+      tuvalOlcusu.genislik / kagitMm.genislik,
+      tuvalOlcusu.yukseklik / kagitMm.yukseklik
+    )
+  }
+
+  // Kagidin sol ust kosesinin tuvaldeki yeri. Kagit ortalanir, kayma bunun
+  // uzerine eklenir. Kayma tuval pikseli cinsindendir.
+  function sayfaBaslangici (tuvalOlcusu, kagitMm, yakinlik, kayma) {
+    const olcek = sigdirmaOlcegi(tuvalOlcusu, kagitMm) * yakinlik
+    return {
+      olcek,
+      x: (tuvalOlcusu.genislik - kagitMm.genislik * olcek) / 2 + kayma.x,
+      y: (tuvalOlcusu.yukseklik - kagitMm.yukseklik * olcek) / 2 + kayma.y
+    }
+  }
+
+  // Yakinlastirma sonrasi kayma: imlecin altindaki kagit noktasi yerinde kalir.
+  function yakinlastirmaKaymasi ({
+    tuvalOlcusu, kagitMm, yakinlik, yeniYakinlik, kayma, merkez
+  }) {
+    const eski = sayfaBaslangici(tuvalOlcusu, kagitMm, yakinlik, kayma)
+    const yeni = sayfaBaslangici(tuvalOlcusu, kagitMm, yeniYakinlik, { x: 0, y: 0 })
+    const oran = yeni.olcek / eski.olcek
+
+    return {
+      x: merkez.x - (merkez.x - eski.x) * oran - yeni.x,
+      y: merkez.y - (merkez.y - eski.y) * oran - yeni.y
+    }
+  }
+
   // --- Cizim -----------------------------------------------------------------
 
   // Sayfayi verilen tuvale, kagidin gercek oranini koruyarak cizer.
@@ -96,16 +131,26 @@
   //
   // kagitKenari yalnizca ekran onizlemesi icindir: baskiya giden tuvalde kagit
   // kenarina cizgi cekilirse kagidin kenarinda gercek bir cerceve basilir.
+  //
+  // yakinlik ve kayma yalnizca ekranda kullanilir; varsayilan degerleri kagidi
+  // tuvale ortalayip sigdirir, boylece baski yolu ekrandaki yakinliktan
+  // etkilenmez.
   function sayfayiCiz (
-    tuval, { kagitMm, yerlesim, fotoTuvali, kesimKilavuzu = true, kagitKenari = true }
+    tuval,
+    {
+      kagitMm, yerlesim, fotoTuvali, kesimKilavuzu = true, kagitKenari = true,
+      yakinlik = 1, kayma = { x: 0, y: 0 }
+    }
   ) {
     const ctx = tuval.getContext('2d')
-    const olcek = Math.min(tuval.width / kagitMm.genislik, tuval.height / kagitMm.yukseklik)
+    const tuvalOlcusu = { genislik: tuval.width, yukseklik: tuval.height }
+    const baslangic = sayfaBaslangici(tuvalOlcusu, kagitMm, yakinlik, kayma)
 
+    const olcek = baslangic.olcek
     const sayfaGenisligi = kagitMm.genislik * olcek
     const sayfaYuksekligi = kagitMm.yukseklik * olcek
-    const kaymaX = (tuval.width - sayfaGenisligi) / 2
-    const kaymaY = (tuval.height - sayfaYuksekligi) / 2
+    const kaymaX = baslangic.x
+    const kaymaY = baslangic.y
 
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.clearRect(0, 0, tuval.width, tuval.height)
@@ -186,6 +231,9 @@
     kagitGecerliMi,
     yerlesimHesapla,
     enIyiYerlesim,
+    sigdirmaOlcegi,
+    sayfaBaslangici,
+    yakinlastirmaKaymasi,
     sayfayiCiz,
     sayfaDosyaAdi
   }

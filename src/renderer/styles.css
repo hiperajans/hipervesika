@@ -339,9 +339,7 @@
   cursor: grabbing;
 }
 
-.sayfa-tuvali {
-  cursor: default;
-}
+/* Sayfa da kaydirilabilir; imlec fotograf tuvalindekiyle ayni. */
 
 /* --- Fotograf birakma katmani --------------------------------------------- */
 

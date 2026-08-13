@@ -105,6 +105,9 @@ const ROTUS_KAYDIRACLARI = [
 
 const tuval = new window.HV.Tuval(el.tuval, {
   degisimde: (t) => {
+    // Sayfa gorunumundeyken oran sayfaya aittir. Gizlenen tuvalin
+    // ResizeObserver'i da ciz() cagirdigi icin bu denetim sart.
+    if (el.gorunumSayfa.checked) return
     el.yakinlikOrani.textContent = t.gorsel ? `%${Math.round(t.olcek * 100)}` : ''
   }
 })
@@ -771,9 +774,25 @@ window.addEventListener('paste', (olay) => {
 
 // --- Yakinlik denetimleri ----------------------------------------------------
 
-el.yakinlas.addEventListener('click', () => tuval.yakinlastir(1.25))
-el.uzaklas.addEventListener('click', () => tuval.yakinlastir(0.8))
-el.sigdir.addEventListener('click', () => tuval.sigdir())
+// Yakinlik denetimleri hangi gorunum acikse ona uygulanir.
+el.yakinlas.addEventListener('click', () => {
+  if (el.gorunumSayfa.checked) sayfayiYakinlastir(1.25)
+  else tuval.yakinlastir(1.25)
+})
+
+el.uzaklas.addEventListener('click', () => {
+  if (el.gorunumSayfa.checked) sayfayiYakinlastir(0.8)
+  else tuval.yakinlastir(0.8)
+})
+
+el.sigdir.addEventListener('click', () => {
+  if (el.gorunumSayfa.checked) {
+    sayfaGorunumunuSifirla()
+    sayfayiCiz()
+  } else {
+    tuval.sigdir()
+  }
+})
 
 // --- Olcu denetimleri --------------------------------------------------------
 
@@ -961,6 +980,56 @@ let sayfaKaresi = null
 // Onizleme icin 150 DPI yeterli; sayfa zaten kucultulerek gosteriliyor.
 const SAYFA_ONIZLEME_DPI = 150
 
+// Sayfa gorunumunun kendi yakinligi vardir: fotograf tuvalindeki olcek kaynak
+// pikseline gore, buradaki ise "sigdir" haline gore olculur (%100 = tam sigmis).
+const SAYFA_EN_KUCUK_YAKINLIK = 0.2
+const SAYFA_EN_BUYUK_YAKINLIK = 8
+
+let sayfaYakinligi = 1
+let sayfaKaymasi = { x: 0, y: 0 }
+// Kagit olcusu degisince gorunum sifirlanir; eski kayma yeni kagitta anlamsiz.
+let sonCizilenKagit = null
+
+function sayfaTuvalOlcusu () {
+  return { genislik: el.sayfaTuvali.width, yukseklik: el.sayfaTuvali.height }
+}
+
+// Kayma ve yakinlik hesabi tuval pikselinde yapilir; imlec konumu da oyle.
+function sayfaImlecKonumu (olay) {
+  const oran = window.devicePixelRatio || 1
+  const kutu = el.sayfaTuvali.getBoundingClientRect()
+  return { x: (olay.clientX - kutu.left) * oran, y: (olay.clientY - kutu.top) * oran }
+}
+
+function sayfaGorunumunuSifirla () {
+  sayfaYakinligi = 1
+  sayfaKaymasi = { x: 0, y: 0 }
+}
+
+function sayfayiYakinlastir (carpan, merkez) {
+  const kagitMm = kagitOlcusu()
+  if (!kagitMm) return
+
+  const yeniYakinlik = Math.min(
+    Math.max(sayfaYakinligi * carpan, SAYFA_EN_KUCUK_YAKINLIK),
+    SAYFA_EN_BUYUK_YAKINLIK
+  )
+  if (yeniYakinlik === sayfaYakinligi) return
+
+  const tuvalOlcusu = sayfaTuvalOlcusu()
+  sayfaKaymasi = window.HV.sayfa.yakinlastirmaKaymasi({
+    tuvalOlcusu,
+    kagitMm,
+    yakinlik: sayfaYakinligi,
+    yeniYakinlik,
+    kayma: sayfaKaymasi,
+    // Merkez verilmezse tuvalin ortasi esas alinir.
+    merkez: merkez ?? { x: tuvalOlcusu.genislik / 2, y: tuvalOlcusu.yukseklik / 2 }
+  })
+  sayfaYakinligi = yeniYakinlik
+  sayfayiCiz()
+}
+
 function sayfaKaresiniGecersizKil () {
   sayfaKaresi = null
   if (el.gorunumSayfa.checked) sayfayiCiz()
@@ -1024,6 +1093,13 @@ function sayfayiCiz () {
   }
   el.dizmeDurumu.classList.remove('text-danger')
 
+  // Kagit degistiginde onceki yakinlik ve kayma yeni sayfaya uymuyor.
+  const kagitAnahtari = `${kagitMm.genislik}x${kagitMm.yukseklik}`
+  if (sonCizilenKagit !== kagitAnahtari) {
+    sonCizilenKagit = kagitAnahtari
+    sayfaGorunumunuSifirla()
+  }
+
   // Tuvalin arkaplan cozunurlugu ekran yogunluguna gore ayarlanir.
   const oran = window.devicePixelRatio || 1
   const kutu = el.sayfaTuvali.getBoundingClientRect()
@@ -1042,8 +1118,13 @@ function sayfayiCiz () {
     kagitMm,
     yerlesim,
     fotoTuvali: sayfaKaresiniAl(),
-    kesimKilavuzu: el.kesimKilavuzu.checked
+    kesimKilavuzu: el.kesimKilavuzu.checked,
+    yakinlik: sayfaYakinligi,
+    kayma: sayfaKaymasi
   })
+
+  // Sayfada %100, kagidin tam sigdigi hali demektir.
+  el.yakinlikOrani.textContent = `%${Math.round(sayfaYakinligi * 100)}`
 
   // Etiketin yaninda dar bir alanda duruyor; yalnizca ust sinir yazilir.
   el.dizmeAdetSiniri.textContent = yerlesim.sigmiyor ? '' : `≤ ${yerlesim.sigacakAdet}`
@@ -1685,6 +1766,50 @@ el.kesimKilavuzu.addEventListener('change', () => {
   if (el.gorunumSayfa.checked) sayfayiCiz()
   ayarlariKaydet()
 })
+
+// Sayfa tuvalinde tekerlekle yakinlasma ve surukleyerek kaydirma. Fotograf
+// tuvalindeki Tuval sinifi kaynak goruntu uzerine kurulu oldugu icin sayfa
+// kendi basit denetimini kullanir.
+el.sayfaTuvali.addEventListener('wheel', (olay) => {
+  olay.preventDefault()
+  sayfayiYakinlastir(Math.exp(-olay.deltaY * 0.0015), sayfaImlecKonumu(olay))
+}, { passive: false })
+
+let sayfaSuruklemesi = null
+
+el.sayfaTuvali.addEventListener('pointerdown', (olay) => {
+  sayfaSuruklemesi = sayfaImlecKonumu(olay)
+  el.sayfaTuvali.classList.add('tasiniyor')
+  try {
+    el.sayfaTuvali.setPointerCapture(olay.pointerId)
+  } catch {
+    /* yakalama zorunlu degil */
+  }
+})
+
+el.sayfaTuvali.addEventListener('pointermove', (olay) => {
+  if (!sayfaSuruklemesi) return
+
+  const nokta = sayfaImlecKonumu(olay)
+  sayfaKaymasi = {
+    x: sayfaKaymasi.x + nokta.x - sayfaSuruklemesi.x,
+    y: sayfaKaymasi.y + nokta.y - sayfaSuruklemesi.y
+  }
+  sayfaSuruklemesi = nokta
+  sayfayiCiz()
+})
+
+const sayfaSuruklemesiniBitir = (olay) => {
+  if (!sayfaSuruklemesi) return
+  sayfaSuruklemesi = null
+  el.sayfaTuvali.classList.remove('tasiniyor')
+  if (el.sayfaTuvali.hasPointerCapture(olay.pointerId)) {
+    el.sayfaTuvali.releasePointerCapture(olay.pointerId)
+  }
+}
+
+el.sayfaTuvali.addEventListener('pointerup', sayfaSuruklemesiniBitir)
+el.sayfaTuvali.addEventListener('pointercancel', sayfaSuruklemesiniBitir)
 
 // Pencere yeniden boyutlandiginda sayfa onizlemesi de yeniden cizilir.
 new ResizeObserver(() => {
