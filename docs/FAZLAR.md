@@ -284,6 +284,37 @@ her zaman tüm kareye uygulanır); maske yoksa ikisi eskisi gibi tek geçişte b
 maske, rötuş adımlarıyla aynı çerçevede olması için önce döndürme + kırpma dönüşümünden
 geçirilir.
 
+### Rötuş sırası: önce rötuş, sonra beyazlatma
+
+Yukarıdaki maskeli sıcaklık, zemini **tam olarak** korumaya yetmedi. Rötuş beyazlatmadan
+_sonra_ uygulandığı sürece, beyaza boyanmış zeminin kendisi de rötuşun girdisi oluyordu:
+
+| Ayar | Zeminin eski hâli (591×709 çıktıda 180 256 zemin pikseli) |
+| --- | --- |
+| Parlaklık `−50` | **Tümü** `rgb(127, 127, 127)` — zemin griye düşüyor |
+| Kontrast `−50` | **Tümü** `rgb(191, 191, 191)` |
+| Cilt yumuşatma `100` | 4 075 piksel bulanık kenardan kirleniyor |
+| Sıcaklık `−50` | Maskenin yumuşak kenar bandında 1 449 piksel maviye kaçıyor (en kötü `rgb(194, 209, 215)`) |
+
+Sıcaklık maskesi yalnızca ilk üçünü hiç görmüyordu; sonuncuyu ise kısmen kaçırıyordu, çünkü
+kenar bandında maske alfası 0 ile 1 arasındadır ve o bantta zemin beyazı ile kişi zaten
+karışmıştır — o karışımı sıcaklıkla boyamak beyazı da boyamak demektir.
+
+Doğru çözüm sırayı değiştirmek: **önce rötuş, sonra beyazlatma.** Zemin en sonda düz beyaza
+çevrildiği için hiçbir rötuş adımı ona ulaşamaz. Kenar bandı da doğru çıkar; sonuç
+`a·rötuş(kişi) + (1−a)·beyaz` olur, yani kişinin kendi kenarı rötuşlanır, beyaz olduğu gibi
+kalır. Beyazlatma açıkken sıcaklık maskesine artık gerek yoktur (`rotus.rotusMaskesi`);
+kapalıyken kural değişmez ve sıcaklık yine kişiyle sınırlanır.
+
+Ölçüldü (iki fotoğraf, 300 DPI çıktı): parlaklık, kontrast, doygunluk, sıcaklık, keskinlik ve
+cilt yumuşatmanın uçlarında zemin pikselleri **istisnasız `rgb(255, 255, 255)`** kalıyor.
+Sıcaklık `−50`'de beyazdan sapan açık mavi piksel sayısı 1 449 → 10'a düştü ve kalan 10'un
+tamamı kişinin kendi silueti üzerinde, zeminde değil. Kişi hâlâ etkileniyor: yüz ortalaması
+R 174,8 → 139,4 · B 77,5 → 88,4.
+
+Önizleme ile çıktı aynı sırayı izler; ikisi ayrışırsa ekranda gördüğü ile kaydettiği farklı
+olurdu.
+
 ### Renk düzeni (sRGB / gri tonlama / CMYK)
 
 **Sınır:** `canvas.toBlob` yalnızca RGB üretir, CMYK JPEG yazamaz. Bu yüzden:

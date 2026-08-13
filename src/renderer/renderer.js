@@ -354,8 +354,8 @@ function arkaplanDurumu (mesaj, tur = 'bilgi') {
 }
 
 // Ekranda gosterilecek onizlemeyi kaynaktan yeniden uretir. Sira onemli:
-// once arka plan beyazlatma, sonra rotus, en son lekeler. Ayni islem disa
-// aktarmada tam cozunurlukte tekrarlanir.
+// once rotus, sonra arka plan beyazlatma, en son gozler ve lekeler. Ayni islem
+// disa aktarmada tam cozunurlukte tekrarlanir.
 function gosterimiTazele () {
   if (!yuklenenGorsel) return
 
@@ -371,15 +371,21 @@ function gosterimiTazele () {
     const maskeGerek = el.arkaplanBeyazlat.checked ||
       window.HV.rotus.sicaklikMaskesi(rotusAyarlari, hamMaske) !== null
     const maske = maskeGerek ? ayarliMaske() : null
+    const beyazlatiliyor = Boolean(maske) && el.arkaplanBeyazlat.checked
 
-    if (maske && el.arkaplanBeyazlat.checked) {
-      sonuc = window.HV.arkaplan.beyazZemineBirlestir(sonuc, maske, kaynak.width, kaynak.height)
-    }
-
+    // Sira: rotus ONCE, beyazlatma SONRA. Tersi olsa sicaklik ve kontrast beyaz
+    // zeminin kendisine islerdi; maskenin yumusak kenar bandinda zemin
+    // renklenirdi. Disa aktarmadaki sira ile ayni olmak zorunda.
     const olcek = kaynak.width / yuklenenGorsel.asil.width
     sonuc = window.HV.rotus.uygula(sonuc, rotusAyarlari, {
-      olcek, kaynakYukseklik: yuklenenGorsel.asil.height, maske
+      olcek,
+      kaynakYukseklik: yuklenenGorsel.asil.height,
+      maske: window.HV.rotus.rotusMaskesi(rotusAyarlari, maske, beyazlatiliyor)
     })
+
+    if (beyazlatiliyor) {
+      sonuc = window.HV.arkaplan.beyazZemineBirlestir(sonuc, maske, kaynak.width, kaynak.height)
+    }
 
     if (rotusAyarlari.gozCanliligi > 0 && yuklenenGorsel.gozler) {
       const { sol, sag } = yuklenenGorsel.gozler
@@ -445,6 +451,14 @@ function rotusuYaz (ayarlar) {
 // Sicaklik yalnizca kisiye uygulanabilmesi icin kisi maskesi gerekir; maske
 // yoksa ayar goruntuyu degistirmez, bunu kullaniciya soyleriz.
 function sicaklikDurumunuGuncelle () {
+  // Zemin beyazlatiliyorsa rotus beyazlatmadan once uygulanir; zemin her
+  // durumda notr kalir, anahtarin bir etkisi olmaz.
+  if (el.arkaplanBeyazlat.checked && hamMaske) {
+    el.sicaklikDurumu.textContent =
+      'Zemin beyazlatıldığı için sıcaklık zemine işlemez; ayar yalnızca kişiyi etkiler.'
+    return
+  }
+
   if (!el.sicaklikKisi.checked) {
     el.sicaklikDurumu.textContent =
       'Sıcaklık fotoğrafın tamamına uygulanır; beyaz zemin de renklenir.'
@@ -933,6 +947,7 @@ el.arkaplanBeyazlat.addEventListener('change', () => {
     el.arkaplanAyarlari.classList.add('d-none')
     el.aracKirpma.checked = true
     aracSec()
+    sicaklikDurumunuGuncelle()
     gosterimiTazele()
     // Beyazlatmayi kapatmak da geri alinabilir bir adimdir.
     durumuKaydet()
@@ -944,6 +959,7 @@ el.arkaplanBeyazlat.addEventListener('change', () => {
   // hesaplanmaz.
   if (hamMaske) {
     el.arkaplanAyarlari.classList.remove('d-none')
+    sicaklikDurumunuGuncelle()
     gosterimiTazele()
     arkaplanBasariniBildir()
     // Maske hizalama sirasinda uretilmis olabilir; gecmiste henuz yoktur.

@@ -4,8 +4,8 @@
 //
 // Onizleme kucultulmus kopya uzerinde calisir; burada ayni islemler kaynak
 // goruntunun tam cozunurluklu haline tek seferde uygulanir. Sira onizlemedeki
-// ile ayni olmak zorunda: dondurme + kirpma, arka plan beyazlatma, rotus,
-// lekeler.
+// ile ayni olmak zorunda: dondurme + kirpma, rotus, arka plan beyazlatma,
+// gozler, lekeler.
 
 window.HV = window.HV || {}
 
@@ -40,14 +40,16 @@ window.HV.disaAktar = (() => {
     return hedef
   }
 
-  // Kirpilmis, dondurulmus ve istenirse beyaz zeminli temel goruntu.
-  function temelUret (gorsel, cerceve, olcek, cikti, maske) {
-    const kisi = katmanCiz(
+  // Kirpilmis ve dondurulmus temel goruntu; arka plana henuz dokunulmamistir.
+  function temelUret (gorsel, cerceve, olcek, cikti) {
+    return katmanCiz(
       tuvalOlustur(cikti.genislik, cikti.yukseklik), gorsel, cerceve, olcek, gorsel.asil
     )
-    if (!maske) return kisi
+  }
 
-    // Maske disi silinir, kalan kisi beyaz zemine yerlestirilir.
+  // Maske disini siler ve kalan kisiyi beyaz zemine oturtur. Verilen tuvali
+  // degistirir; cagiran her zaman kendi urettigi tuvali verir.
+  function beyazaOturt (kisi, gorsel, cerceve, olcek, cikti, maske) {
     const ctx = kisi.getContext('2d')
     ctx.save()
     ctx.globalCompositeOperation = 'destination-in'
@@ -127,12 +129,14 @@ window.HV.disaAktar = (() => {
 
     // Maske tasima ek bir tam cozunurluklu tuval demek; yalnizca sicaklik
     // gercekten maskeye ihtiyac duyuyorsa yapilir.
-    const sicaklikMaskesi = window.HV.rotus.sicaklikMaskesi(rotusAyarlari, kisiMaskesi)
+    const sicaklikMaskesi = window.HV.rotus.rotusMaskesi(rotusAyarlari, kisiMaskesi, Boolean(maske))
 
+    // Sira: rotus ONCE, beyazlatma SONRA. Tersi olsa sicaklik ve kontrast beyaz
+    // zeminin kendisine islerdi (sicaklik -50'de zemin maviye kaciyordu).
     // temelUret her zaman yeni bir tuval uretir ve rotus.uygula ya onu ya da
-    // yine yeni bir tuvali dondurur; ikisi de bize ait oldugu icin lekeler
-    // dogrudan uzerine cizilebilir.
-    let sonuc = temelUret(gorsel, cerceve, olcek, cikti, maske)
+    // yine yeni bir tuvali dondurur; ikisi de bize ait oldugu icin uzerlerine
+    // dogrudan yazilabilir.
+    let sonuc = temelUret(gorsel, cerceve, olcek, cikti)
     sonuc = window.HV.rotus.uygula(sonuc, rotusAyarlari, {
       olcek,
       kaynakYukseklik: gorsel.asil.height,
@@ -140,6 +144,8 @@ window.HV.disaAktar = (() => {
         ? maskeyiTasi(gorsel, cerceve, olcek, cikti, sicaklikMaskesi)
         : null
     })
+
+    if (maske) sonuc = beyazaOturt(sonuc, gorsel, cerceve, olcek, cikti, maske)
 
     if (rotusAyarlari.gozCanliligi > 0 && gorsel.gozler) {
       sonuc = gozleriCiz(sonuc, gorsel, cerceve, olcek, rotusAyarlari.gozCanliligi) ?? sonuc

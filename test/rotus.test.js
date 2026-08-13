@@ -57,6 +57,22 @@ test('sicaklik maskesi yalnizca gerektiginde kullanilir', () => {
   assert.equal(rotus.sicaklikMaskesi({ ...varsayilan, sicaklik: 0.4 }, null), null)
 })
 
+test('zemin beyazlatilirken rotus maskesiz calisir', () => {
+  const maske = { genislik: 10 }
+  const ayarlar = { ...rotus.varsayilanAyarlar(), sicaklik: 0.4 }
+
+  // Beyazlatma acikken rotus beyazlatmadan once uygulanir; maskeyi orada da
+  // kullanmak yumusak kenar bandinda beyaz zemini renklendirirdi.
+  assert.equal(rotus.rotusMaskesi(ayarlar, maske, true), null)
+
+  // Beyazlatma kapaliyken kural degismez: sicaklik yine kisiyle sinirlanir.
+  assert.equal(rotus.rotusMaskesi(ayarlar, maske, false), maske)
+  assert.equal(
+    rotus.rotusMaskesi({ ...ayarlar, sicaklikKisiye: false }, maske, false),
+    null
+  )
+})
+
 test('keskinlik cekirdeginin toplami her zaman 1', () => {
   // Toplam 1 olmazsa keskinlestirme goruntuyu genel olarak koyultur ya da acardi.
   for (const miktar of [0, 0.2, 0.5, 1]) {

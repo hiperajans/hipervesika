@@ -13,7 +13,8 @@
 //
 // Sicaklik varsayilan olarak yalnizca kisiye uygulanir; kisi maskesi verilirse
 // sicak/soguk kopya maskeye gore asil goruntunun uzerine karistirilir, boylece
-// beyazlatilmis zemin notr kalir.
+// zemin notr kalir. Zemin beyazlatiliyorsa maskeye gerek kalmaz: cagiran rotusu
+// beyazlatmadan once uygular (bkz. rotusMaskesi).
 
 ;(function (kok) {
   const VARSAYILAN = Object.freeze({
@@ -71,6 +72,14 @@
   function sicaklikMaskesi (ayarlar, maske) {
     if (!maske || !ayarlar.sicaklikKisiye || ayarlar.sicaklik === 0) return null
     return maske
+  }
+
+  // Rotus'a verilecek maske. Zemin beyazlatiliyorsa maske gerekmez: rotus
+  // beyazlatmadan ONCE uygulanir, zemin sonradan zaten duz beyaza cevrilir.
+  // Maskeyi orada da kullanmak yumusak kenar bandinda zemini kirletirdi
+  // (olculdu: sicaklik -50'de bant beyazdan rgb(194,209,215)'e kaciyordu).
+  function rotusMaskesi (ayarlar, kisiMaskesi, beyazlatiliyor) {
+    return beyazlatiliyor ? null : sicaklikMaskesi(ayarlar, kisiMaskesi)
   }
 
   // Pozitif deger sicak (kirmizi artar, mavi azalir), negatif deger soguk.
@@ -397,6 +406,7 @@
     cssFiltresi,
     sicaklikMatrisi,
     sicaklikMaskesi,
+    rotusMaskesi,
     sicaklikBoya,
     keskinlikCekirdegi,
     ortalamaRenk,
