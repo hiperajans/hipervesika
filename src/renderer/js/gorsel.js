@@ -62,7 +62,11 @@ window.HV.gorsel = (() => {
       asil,
       onizleme: await onizlemeUret(asil),
       dosyaAdi: dosya.name,
-      bayt: dosya.size
+      bayt: dosya.size,
+      // Hizalama donmesi (radyan) ve donme sonrasi kullanilabilir alan.
+      // Kaynak goruntu degismez; donme bir goruntuleme parametresidir.
+      aci: 0,
+      calisma: { genislik: asil.width, yukseklik: asil.height }
     }
   }
 

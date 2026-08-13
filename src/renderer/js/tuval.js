@@ -51,14 +51,16 @@ window.HV.Tuval = class Tuval {
   sigdir () {
     if (!this.gorsel) return
 
-    const { width, height } = this.gorsel.asil
+    // Sigdirma calisma alanina gore yapilir; dondurme sonrasi kullanilabilir
+    // alan kaynak goruntuden kucuk olabilir.
+    const { genislik, yukseklik } = this.gorsel.calisma
     const alan = this.#alanOlculeri()
 
     // Kenarlarda biraz bosluk birakilir ki gorsel kutuya yapisik durmasin.
-    this.olcek = Math.min(alan.genislik / width, alan.yukseklik / height) * 0.95
+    this.olcek = Math.min(alan.genislik / genislik, alan.yukseklik / yukseklik) * 0.95
     this.kaydirma = {
-      x: (alan.genislik - width * this.olcek) / 2,
-      y: (alan.yukseklik - height * this.olcek) / 2
+      x: (alan.genislik - genislik * this.olcek) / 2,
+      y: (alan.yukseklik - yukseklik * this.olcek) / 2
     }
     this.ciz()
   }
@@ -91,12 +93,19 @@ window.HV.Tuval = class Tuval {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     if (!this.gorsel) return
 
-    const { asil } = this.gorsel
+    const { asil, calisma, aci } = this.gorsel
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.translate(this.kaydirma.x, this.kaydirma.y)
     ctx.scale(this.olcek, this.olcek)
     ctx.imageSmoothingQuality = 'high'
-    ctx.drawImage(this.#kaynakSec(), 0, 0, asil.width, asil.height)
+
+    // Goruntu, calisma alaninin merkezi etrafinda dondurulerek cizilir; kaynak
+    // pikselleri degismez, dondurme yalnizca goruntuleme donusumudur.
+    ctx.save()
+    ctx.translate(calisma.genislik / 2, calisma.yukseklik / 2)
+    if (aci) ctx.rotate(-aci)
+    ctx.drawImage(this.#kaynakSec(), -asil.width / 2, -asil.height / 2, asil.width, asil.height)
+    ctx.restore()
 
     // Ust katman goruntu koordinat uzayinda cizer; ekranda sabit kalinligi olan
     // cizgiler icin olcegi kullanir.

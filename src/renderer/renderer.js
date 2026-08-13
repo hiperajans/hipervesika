@@ -5,6 +5,7 @@
 
 const { versions } = window.hiperVesika
 const olcuMotoru = window.HV.olcu
+const hizalamaMotoru = window.HV.hizalama
 
 const el = {
   tuval: document.getElementById('tuval'),
@@ -27,7 +28,12 @@ const el = {
   ciktiPiksel: document.getElementById('cikti-piksel'),
   efektifDpi: document.getElementById('efektif-dpi'),
   cozunurlukUyarisi: document.getElementById('cozunurluk-uyarisi'),
-  kirpmayiSifirla: document.getElementById('btn-kirpmayi-sifirla')
+  kirpmayiSifirla: document.getElementById('btn-kirpmayi-sifirla'),
+  otomatikHizala: document.getElementById('btn-otomatik-hizala'),
+  hizalamaDurumu: document.getElementById('hizalama-durumu'),
+  donmeAcisi: document.getElementById('donme-acisi'),
+  donmeDegeri: document.getElementById('donme-degeri'),
+  donmeyiSifirla: document.getElementById('btn-donmeyi-sifirla')
 }
 
 const tuval = new window.HV.Tuval(el.tuval, {
@@ -71,9 +77,109 @@ function uyariGizle () {
 }
 
 function araclariEtkinlestir (etkin) {
-  for (const dugme of [el.yakinlas, el.uzaklas, el.sigdir, el.kirpmayiSifirla]) {
-    dugme.disabled = !etkin
+  const ogeler = [
+    el.yakinlas, el.uzaklas, el.sigdir, el.kirpmayiSifirla,
+    el.otomatikHizala, el.donmeAcisi, el.donmeyiSifirla
+  ]
+  for (const oge of ogeler) oge.disabled = !etkin
+}
+
+// --- Hizalama ----------------------------------------------------------------
+
+// Donme bir goruntuleme parametresidir: kaynak pikseller degismez, yalnizca
+// calisma alani ve cizim donusumu guncellenir.
+function aciAta (aci) {
+  if (!yuklenenGorsel) return
+
+  const { width, height } = yuklenenGorsel.asil
+  yuklenenGorsel.aci = aci
+  yuklenenGorsel.calisma = aci === 0
+    ? { genislik: width, yukseklik: height }
+    : hizalamaMotoru.enBuyukIcKutu(width, height, aci)
+
+  kirpma.calismaAta(yuklenenGorsel.calisma)
+  tuval.sigdir()
+
+  const derece = hizalamaMotoru.dereceye(aci)
+  el.donmeAcisi.value = String(derece)
+  el.donmeDegeri.textContent = `${derece.toLocaleString('tr-TR', {
+    minimumFractionDigits: 1, maximumFractionDigits: 1
+  })}°`
+}
+
+function hizalamaDurumu (mesaj, tur = 'bilgi') {
+  el.hizalamaDurumu.textContent = mesaj
+  el.hizalamaDurumu.classList.toggle('text-danger', tur === 'hata')
+  el.hizalamaDurumu.classList.toggle('text-body-secondary', tur !== 'hata')
+}
+
+async function otomatikHizala () {
+  if (!yuklenenGorsel) return
+
+  el.otomatikHizala.disabled = true
+  hizalamaDurumu(
+    window.HV.yuz.hazirMi ? 'Yüz aranıyor…' : 'Modeller yükleniyor, ilk çalıştırma biraz sürebilir…'
+  )
+
+  try {
+    const bulgu = await window.HV.yuz.algila(yuklenenGorsel.asil)
+
+    if (!bulgu.yuz) {
+      hizalamaDurumu(
+        'Yüz bulunamadı. Kadrajı elle ayarlayabilir veya daha net bir fotoğraf deneyebilirsiniz.',
+        'hata'
+      )
+      return
+    }
+
+    // Egiklik goz hattindan hesaplanir; omuz sapmasi yalnizca bilgi olarak
+    // gosterilir (bkz. docs/FAZLAR.md, Faz 3).
+    const aci = hizalamaMotoru.egiklikAcisi(bulgu.yuz.solGoz, bulgu.yuz.sagGoz)
+    aciAta(aci)
+
+    const gorselOlcusu = {
+      genislik: yuklenenGorsel.asil.width,
+      yukseklik: yuklenenGorsel.asil.height
+    }
+    const calisma = yuklenenGorsel.calisma
+    const calismaya = (nokta) =>
+      hizalamaMotoru.calismayaTasi(nokta, gorselOlcusu, calisma, aci)
+
+    const cene = calismaya(bulgu.yuz.cene)
+    const alin = calismaya(bulgu.yuz.alin)
+    const solGoz = calismaya(bulgu.yuz.solGoz)
+    const sagGoz = calismaya(bulgu.yuz.sagGoz)
+
+    kirpma.cerceveAta(hizalamaMotoru.otomatikCerceve({
+      cene,
+      tepe: hizalamaMotoru.tepeNoktasi(cene, alin),
+      gozMerkezi: { x: (solGoz.x + sagGoz.x) / 2, y: (solGoz.y + sagGoz.y) / 2 },
+      calisma,
+      oran: olcuMotoru.oran(olcuDurumu.genislikMm, olcuDurumu.yukseklikMm)
+    }))
+
+    const parcalar = [`Eğiklik ${bicimliDerece(aci)} düzeltildi`]
+    if (bulgu.yuzSayisi > 1) {
+      parcalar.unshift(`${bulgu.yuzSayisi} yüz bulundu, en büyüğü kullanıldı`)
+    }
+    if (bulgu.omuz) {
+      const sapma = hizalamaMotoru.omuzSapmasi(bulgu.omuz.sol, bulgu.omuz.sag)
+      parcalar.push(`omuz farkı ${bicimliDerece(sapma)}`)
+    } else {
+      parcalar.push('omuzlar görünmüyor')
+    }
+
+    hizalamaDurumu(`${parcalar.join(' · ')}. Kadrajı elle değiştirebilirsiniz.`)
+  } catch (hata) {
+    hizalamaDurumu(`Hizalama yapılamadı: ${hata.message}`, 'hata')
+  } finally {
+    el.otomatikHizala.disabled = false
   }
+}
+
+function bicimliDerece (radyan) {
+  const derece = Math.abs(hizalamaMotoru.dereceye(radyan))
+  return `${derece.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}°`
 }
 
 // --- Olcu paneli -------------------------------------------------------------
@@ -182,7 +288,12 @@ async function gorselYukle (dosya) {
     const gorsel = await window.HV.gorsel.dosyadanYukle(dosya)
     yuklenenGorsel = gorsel
     tuval.gorselAta(gorsel)
-    kirpma.gorselAta(gorsel.asil)
+    kirpma.calismaAta(gorsel.calisma)
+
+    // Yeni fotografta onceki hizalama gecerli degil.
+    el.donmeAcisi.value = '0'
+    el.donmeDegeri.textContent = '0,0°'
+    hizalamaDurumu('Yüz ve omuz konumuna göre eğikliği düzeltir, biyometrik kadrajı kurar.')
 
     const { width, height } = gorsel.asil
     el.gorselBilgisi.textContent =
@@ -277,6 +388,16 @@ el.dpiSecimi.addEventListener('change', () => {
 })
 
 el.kirpmayiSifirla.addEventListener('click', () => kirpma.sifirla())
+
+// --- Hizalama denetimleri ----------------------------------------------------
+
+el.otomatikHizala.addEventListener('click', () => otomatikHizala())
+
+el.donmeAcisi.addEventListener('input', () => {
+  aciAta(hizalamaMotoru.radyana(Number.parseFloat(el.donmeAcisi.value)))
+})
+
+el.donmeyiSifirla.addEventListener('click', () => aciAta(0))
 
 // --- Baslangic ---------------------------------------------------------------
 

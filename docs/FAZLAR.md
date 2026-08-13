@@ -29,6 +29,11 @@ Bu kararlar tüm fazları bağlar:
 - **Human modelleri depoda yerel tutulur.** Human varsayılan olarak modelleri CDN'den çeker;
   bu, offline çalışma kuralıyla çelişir. Modeller `assets/models/` altına indirilir ve
   `modelBasePath` yerel klasöre ayarlanır.
+- **Arayüz `app://` protokolü ile sunulur, `file://` ile değil.** Human'ın model
+  dosyaları `fetch()` ile yükleniyor ve `fetch`, `file://` adreslerinde çalışmıyor. Ana
+  süreçte ayrıcalıklı bir `app` şeması tanımlanır ve istekler `src/renderer` klasörüyle
+  sınırlanır (yol aşımı denetimiyle). Bu aynı zamanda sayfaya düzgün bir origin kazandırır,
+  böylece CSP beklendiği gibi uygulanır.
 - **Kaynak görüntü hiç bozulmadan saklanır.** Tüm düzenlemeler (hizalama, rötuş, kırpma)
   parametre olarak tutulur ve dışa aktarmada orijinal çözünürlüklü görüntüye tek seferde
   uygulanır. Ekranda gösterilen, hız için küçültülmüş bir önizlemedir. Aksi halde her işlem
@@ -100,6 +105,9 @@ Bu kararlar tüm fazları bağlar:
 **Amaç:** Vesikalığın beyaz zemin şartını sağlamak.
 
 - Human'ın segmentasyon modeli ile kişi maskesi çıkarılır, maske dışı beyaza boyanır.
+- **Not:** segmentasyon modelleri (`selfie`, `meet`, `rvm`) `@vladmandic/human` paketinin
+  içinde gelmiyor; Faz 3'te kullanılan yüz ve gövde modelleri geliyor. Bu modeller ayrıca
+  temin edilip `assets`/vendor akışına eklenmeli.
 - Maske kenarı yumuşatılır (feather) ki kesik kenar oluşmasın.
 - **Saç kenarları bu işin en zor kısmıdır.** Segmentasyon maskesi saç telleri arasında kaba
   kalır; kenar yumuşatma yetmezse kenar temizleme fırçası veya alpha matting adımı gerekir.

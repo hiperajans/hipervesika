@@ -78,8 +78,45 @@
           </section>
 
           <!-- Ayar paneli: dar ekranda altta, geniş ekranda sağda -->
-          <aside class="col-12 col-lg-4 col-xxl-3">
-            <div class="card h-100">
+          <aside class="col-12 col-lg-4 col-xxl-3 d-flex flex-column gap-3">
+            <div class="card">
+              <div class="card-header fw-semibold">Hizalama</div>
+              <div class="card-body">
+                <button
+                  id="btn-otomatik-hizala"
+                  type="button"
+                  class="btn btn-primary btn-sm w-100 mb-2"
+                >
+                  Otomatik hizala
+                </button>
+                <p id="hizalama-durumu" class="small text-body-secondary mb-3">
+                  Yüz ve omuz konumuna göre eğikliği düzeltir, biyometrik kadrajı kurar.
+                </p>
+
+                <label for="donme-acisi" class="form-label d-flex justify-content-between mb-1">
+                  <span>Eğiklik</span>
+                  <span id="donme-degeri" class="font-monospace">0,0°</span>
+                </label>
+                <input
+                  type="range"
+                  class="form-range"
+                  id="donme-acisi"
+                  min="-25"
+                  max="25"
+                  step="0.1"
+                  value="0"
+                />
+                <button
+                  id="btn-donmeyi-sifirla"
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm w-100"
+                >
+                  Döndürmeyi sıfırla
+                </button>
+              </div>
+            </div>
+
+            <div class="card">
               <div class="card-header fw-semibold">Vesikalık ölçüsü</div>
               <div class="card-body">
                 <div class="mb-3">
@@ -160,9 +197,11 @@
 
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="js/olcu.js"></script>
+    <script src="js/hizalama.js"></script>
     <script src="js/gorsel.js"></script>
     <script src="js/tuval.js"></script>
     <script src="js/kirpma.js"></script>
+    <script src="js/yuz.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>

@@ -30,9 +30,32 @@ window.HV.KirpmaAraci = class KirpmaAraci {
     return this.cerceve !== null
   }
 
-  gorselAta (bitmap) {
-    this.gorselOlcusu = { genislik: bitmap.width, yukseklik: bitmap.height }
-    this.sifirla()
+  // Calisma alani: dondurme sonrasi kullanilabilir dikdortgen. Cerceve bunun
+  // disina cikamaz, boylece dondurmeden dogan bos koseler kadraja giremez.
+  calismaAta (calisma) {
+    const ilkKez = this.gorselOlcusu === null
+    this.gorselOlcusu = { genislik: calisma.genislik, yukseklik: calisma.yukseklik }
+
+    if (ilkKez || !this.cerceve) {
+      this.sifirla()
+      return
+    }
+
+    // Alan degistiginde mevcut cerceve yeni sinirlara cekilir.
+    this.cerceve = window.HV.olcu.sinirlaraTasi(
+      this.cerceve, calisma.genislik, calisma.yukseklik
+    )
+    this.tuval.ciz()
+    this.degisimde(this)
+  }
+
+  cerceveAta (cerceve) {
+    if (!this.gorselOlcusu) return
+    this.cerceve = window.HV.olcu.sinirlaraTasi(
+      cerceve, this.gorselOlcusu.genislik, this.gorselOlcusu.yukseklik
+    )
+    this.tuval.ciz()
+    this.degisimde(this)
   }
 
   temizle () {
