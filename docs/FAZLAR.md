@@ -248,6 +248,41 @@ Aynı adla kaydetmek eskisinin üzerine yazar, listeye ikinci bir satır eklemez
 
 ---
 
+## Faz sonrası eklenenler
+
+### Cilt yumuşatma ve göz canlandırma
+
+`rotus.js` içine iki işlem daha girdi. **Cilt yumuşatma** yüzey bulanıklığıdır: bulanık bir
+kopyayla karıştırılır ama yalnızca ayrıntının az olduğu yerlerde (parlaklık farkı
+`YUMUSATMA_ESIGI`'nin altındaysa). Böylece ten dokusu yumuşar, göz-kaş-saç-kenar keskin
+kalır. Bulanıklık yarıçapı kaynak görüntünün yüksekliğine oranlıdır, dolayısıyla 2 MP ile
+24 MP fotoğrafta aynı güçte görünür ve önizleme ile çıktı ayrışmaz.
+
+**Göz canlandırma** iki gözün çevresini yumuşak geçişle açar. Göz konumu ancak otomatik
+hizalama çalıştığında bilindiği için kaydırgaç o zamana kadar kapalıdır. Yarıçap gözler
+arası mesafeye oranlıdır. Koyu tonlar açık tonlardan daha çok açılır; göz akı yanmaz.
+
+Sıra önemli: yumuşatma keskinleştirmeden **önce** gelir, aksi hâlde keskinleştirilen dokuyu
+hemen geri bulanıklaştırırdık.
+
+### Renk düzeni (sRGB / gri tonlama / CMYK)
+
+**Sınır:** `canvas.toBlob` yalnızca RGB üretir, CMYK JPEG yazamaz. Bu yüzden:
+
+| Çıktı | sRGB | Gri tonlama | CMYK |
+| --- | --- | --- | --- |
+| JPG / PNG | ✓ | ✓ | sRGB kalır |
+| PDF | ✓ | ✓ | ✓ gerçek `DeviceCMYK` |
+| Doğrudan baskı | ✓ | ✓ | sRGB kalır (sürücü kendi ayrımını yapar) |
+
+CMYK PDF için `printToPDF` kullanılamaz (o da RGB üretir); `src/main/pdf.js` sayfayı
+kendisi yazar: katalog, tek sayfa, `FlateDecode` ile sıkıştırılmış `DeviceCMYK` görüntü ve
+görüntüyü kağıda oturtan içerik akışı. 100×150 mm @ 300 DPI sayfa yaklaşık 2,6 MB.
+
+Çevrim **ICC profili kullanmaz**, aygıt çevrimidir (`K = 255 - max(R,G,B)`). Matbaa kendi
+profiliyle ayırmak isterse sRGB vermek daha doğrudur; arayüzde bu yazıyor ve varsayılan
+sRGB'dir. Çevrimin tersi alındığında özgün RGB'ye 1 birim içinde dönüldüğü test edilir.
+
 ## Riskler
 
 | Risk | Faz | Etki |

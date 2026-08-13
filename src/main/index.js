@@ -7,6 +7,7 @@ const { app, BrowserWindow, Menu, shell, protocol, net, ipcMain, dialog } = requ
 
 const baski = require('./baski.js')
 const ayarlar = require('./ayarlar.js')
+const pdf = require('./pdf.js')
 
 app.setName('Hiper Vesika')
 
@@ -201,7 +202,26 @@ function baskiyiKur () {
     const pencere = BrowserWindow.fromWebContents(olay.sender)
 
     try {
-      const pdf = await baskiSayfasindaCalis(istek, (baskiPenceresi, kagitMm) =>
+      // CMYK istendiginde sayfa Chromium'dan gecmez: printToPDF her zaman RGB
+      // uretir, bu yuzden PDF'i dogrudan CMYK orneklerinden yaziyoruz.
+      if (istek?.cmyk) {
+        const kagitMm = baski.sayfaOlcusu(istek.kagitMm)
+        const belge = pdf.cmykSayfaPdf({
+          baytlar: istek.cmyk.baytlar,
+          genislik: istek.cmyk.genislik,
+          yukseklik: istek.cmyk.yukseklik,
+          kagitMm
+        })
+
+        return await kaydetmeyiSor(pencere, {
+          baytlar: belge,
+          varsayilanAd: istek?.varsayilanAd,
+          tur: 'pdf',
+          baslik: 'Sayfayı PDF olarak kaydet'
+        })
+      }
+
+      const belge = await baskiSayfasindaCalis(istek, (baskiPenceresi, kagitMm) =>
         baskiPenceresi.webContents.printToPDF({
           printBackground: true,
           // Sayfa olcusu CSS'teki @page'ten alinir; ikisi ayni degeri yazar.
@@ -215,7 +235,7 @@ function baskiyiKur () {
       )
 
       return await kaydetmeyiSor(pencere, {
-        baytlar: pdf,
+        baytlar: belge,
         varsayilanAd: istek?.varsayilanAd,
         tur: 'pdf',
         baslik: 'Sayfayı PDF olarak kaydet'

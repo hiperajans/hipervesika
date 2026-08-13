@@ -91,7 +91,10 @@ const el = {
   onayarModalBasligi: document.getElementById('onayar-modal-basligi'),
   onayarModalBilgisi: document.getElementById('onayar-modal-bilgisi'),
   onayarAdi: document.getElementById('onayar-adi'),
-  onayarKaydet: document.getElementById('btn-onayar-kaydet')
+  onayarKaydet: document.getElementById('btn-onayar-kaydet'),
+  gozDurumu: document.getElementById('goz-durumu'),
+  renkDuzeni: document.getElementById('renk-duzeni'),
+  renkDuzeniAciklamasi: document.getElementById('renk-duzeni-aciklamasi')
 }
 
 // Rotus kaydiraclari -50..+50 arasinda; motorun bekledigi carpanlara cevrilir.
@@ -100,7 +103,9 @@ const ROTUS_KAYDIRACLARI = [
   { anahtar: 'kontrast', giris: 'rotus-kontrast', deger: 'rotus-kontrast-degeri', tur: 'carpan' },
   { anahtar: 'doygunluk', giris: 'rotus-doygunluk', deger: 'rotus-doygunluk-degeri', tur: 'carpan' },
   { anahtar: 'sicaklik', giris: 'rotus-sicaklik', deger: 'rotus-sicaklik-degeri', tur: 'birim' },
-  { anahtar: 'keskinlik', giris: 'rotus-keskinlik', deger: 'rotus-keskinlik-degeri', tur: 'birim' }
+  { anahtar: 'keskinlik', giris: 'rotus-keskinlik', deger: 'rotus-keskinlik-degeri', tur: 'birim' },
+  { anahtar: 'yumusatma', giris: 'rotus-yumusatma', deger: 'rotus-yumusatma-degeri', tur: 'oran' },
+  { anahtar: 'gozCanliligi', giris: 'rotus-goz', deger: 'rotus-goz-degeri', tur: 'oran' }
 ]
 
 const tuval = new window.HV.Tuval(el.tuval, {
@@ -200,6 +205,9 @@ function araclariEtkinlestir (etkin) {
     ...ROTUS_KAYDIRACLARI.map((k) => document.getElementById(k.giris))
   ]
   for (const oge of ogeler) oge.disabled = !etkin
+
+  // Goz kaydiraci ayrica goz konumuna bagli; son karari o verir.
+  gozDurumunuGuncelle()
 }
 
 // --- Hizalama ----------------------------------------------------------------
@@ -288,6 +296,10 @@ async function otomatikHizala () {
     const calismaya = (nokta) =>
       hizalamaMotoru.calismayaTasi(nokta, gorselOlcusu, calisma, aci)
 
+    // Goz canlandirma icin goz konumlari kaynak koordinatinda saklanir.
+    yuklenenGorsel.gozler = { sol: bulgu.yuz.solGoz, sag: bulgu.yuz.sagGoz }
+    gozDurumunuGuncelle()
+
     const cene = calismaya(bulgu.yuz.cene)
     const alin = calismaya(bulgu.yuz.alin)
     const solGoz = calismaya(bulgu.yuz.solGoz)
@@ -351,8 +363,21 @@ function gosterimiTazele () {
       sonuc = window.HV.arkaplan.beyazZemineBirlestir(sonuc, maske, kaynak.width, kaynak.height)
     }
 
-    sonuc = window.HV.rotus.uygula(sonuc, rotusAyarlari)
-    sonuc = window.HV.rotus.lekeleriUygula(sonuc, lekeler, kaynak.width / yuklenenGorsel.asil.width)
+    const olcek = kaynak.width / yuklenenGorsel.asil.width
+    sonuc = window.HV.rotus.uygula(sonuc, rotusAyarlari, {
+      olcek, kaynakYukseklik: yuklenenGorsel.asil.height
+    })
+
+    if (rotusAyarlari.gozCanliligi > 0 && yuklenenGorsel.gozler) {
+      const { sol, sag } = yuklenenGorsel.gozler
+      const yaricap = window.HV.rotus.gozYaricapi(sol, sag) * olcek
+      sonuc = window.HV.rotus.gozleriCanlandir(sonuc, [
+        { x: sol.x * olcek, y: sol.y * olcek, yaricap },
+        { x: sag.x * olcek, y: sag.y * olcek, yaricap }
+      ], rotusAyarlari.gozCanliligi)
+    }
+
+    sonuc = window.HV.rotus.lekeleriUygula(sonuc, lekeler, olcek)
   }
 
   yuklenenGorsel.gosterim = sonuc === kaynak ? null : sonuc
@@ -367,7 +392,10 @@ function gosterimiTazele () {
 // Kaydirac degerini motorun bekledigi bicime cevirir: carpan tipi 1 etrafinda
 // (0.5-1.5), birim tipi -1..+1 (keskinlikte 0..1) araliginda calisir.
 function kaydiracDegeri (tur, ham) {
-  return tur === 'carpan' ? 1 + ham / 100 : ham / 50
+  if (tur === 'carpan') return 1 + ham / 100
+  // Oran tipi 0..100 arasini dogrudan 0..1'e cevirir.
+  if (tur === 'oran') return ham / 100
+  return ham / 50
 }
 
 function rotusEtiketiYaz (kaydirac, ham) {
@@ -388,10 +416,43 @@ function rotusuOku () {
 function rotusuYaz (ayarlar) {
   for (const kaydirac of ROTUS_KAYDIRACLARI) {
     const deger = ayarlar[kaydirac.anahtar]
-    const ham = Math.round(kaydirac.tur === 'carpan' ? (deger - 1) * 100 : deger * 50)
+    const ham = Math.round(
+      kaydirac.tur === 'carpan'
+        ? (deger - 1) * 100
+        : deger * (kaydirac.tur === 'oran' ? 100 : 50)
+    )
     document.getElementById(kaydirac.giris).value = String(ham)
     rotusEtiketiYaz(kaydirac, ham)
   }
+}
+
+// Goz canlandirma yalnizca goz konumu bilindiginde anlamli.
+function gozDurumunuGuncelle () {
+  const gozVar = Boolean(yuklenenGorsel?.gozler)
+  const kaydirac = document.getElementById('rotus-goz')
+
+  kaydirac.disabled = !gozVar || !yuklenenGorsel
+  el.gozDurumu.textContent = gozVar
+    ? 'Göz konumu bulundu; canlandırma iki gözün çevresine uygulanır.'
+    : 'Göz canlandırma, göz konumu bilindiğinde çalışır: önce Otomatik hizala\'yı çalıştırın.'
+}
+
+function renkDuzeniniDoldur () {
+  for (const duzen of window.HV.renk.RENK_DUZENLERI) {
+    const secenek = document.createElement('option')
+    secenek.value = duzen.kod
+    secenek.textContent = duzen.ad
+    el.renkDuzeni.append(secenek)
+  }
+}
+
+function renkDuzeniniOku () {
+  const kod = el.renkDuzeni.value
+  return window.HV.renk.duzenGecerliMi(kod) ? kod : 'srgb'
+}
+
+function renkAciklamasiniGuncelle () {
+  el.renkDuzeniAciklamasi.textContent = window.HV.renk.duzenBul(renkDuzeniniOku()).aciklama
 }
 
 function lekeDurumunuGuncelle () {
@@ -699,6 +760,7 @@ async function gorselYukle (dosya) {
     oncesiGosteriliyor = false
     rotusuYaz(rotusAyarlari)
     lekeDurumunuGuncelle()
+    gozDurumunuGuncelle()
     aracSec()
 
     gecmis.temizle()
@@ -944,6 +1006,7 @@ async function fotografiIndir () {
       olcuMm: olcuDurumu,
       dpi,
       tur,
+      renkDuzeni: renkDuzeniniOku(),
       kalite: Number.parseInt(el.jpgKalitesi.value, 10) / 100
     })
 
@@ -1046,7 +1109,8 @@ function sayfaKaresiniAl () {
     rotusAyarlari,
     lekeler,
     olcuMm: olcuDurumu,
-    dpi: SAYFA_ONIZLEME_DPI
+    dpi: SAYFA_ONIZLEME_DPI,
+    renkDuzeni: renkDuzeniniOku()
   })
 
   sayfaKaresi = kare
@@ -1254,7 +1318,10 @@ function baskiSayfasiUret () {
     rotusAyarlari,
     lekeler,
     olcuMm: olcuDurumu,
-    dpi
+    dpi,
+    // CMYK tuvalde temsil edilemez; sayfa RGB uretilir, cevrim PDF'e yazarken
+    // yapilir. Gri tonlama ise her ciktida gecerlidir.
+    renkDuzeni: renkDuzeniniOku() === 'gri' ? 'gri' : 'srgb'
   })
 
   const sayfaTuvali = document.createElement('canvas')
@@ -1315,7 +1382,8 @@ async function sayfayiGoruntuKaydet () {
     else if (sonuc.kaydedildi) {
       baskiDurumu(
         `Kaydedildi: ${sayfa.kagitMm.genislik}×${sayfa.kagitMm.yukseklik} mm sayfa, ` +
-        `${sayfa.yerlesim.adet} adet, ${dpi} DPI.`,
+        `${sayfa.yerlesim.adet} adet, ${dpi} DPI.` +
+        (renkDuzeniniOku() === 'cmyk' ? ' Görüntü sRGB kaydedildi; CMYK yalnızca PDF içindir.' : ''),
         'basari'
       )
     } else baskiDurumu('Kaydetme iptal edildi.')
@@ -1334,21 +1402,33 @@ async function sayfayiPdfKaydet () {
   baskiDurumu('PDF hazırlanıyor…')
 
   try {
-    // PDF'e her zaman kayipsiz PNG gomulur; olcu tasiyicisi PDF'in kendisidir.
-    const baytlar = await sayfaBaytlari(sayfa.tuval, 'png')
-
-    const sonuc = await window.hiperVesika.sayfayiPdfKaydet({
-      baytlar,
+    const duzen = renkDuzeniniOku()
+    const istek = {
       kagitMm: sayfa.kagitMm,
       varsayilanAd: window.HV.sayfa.sayfaDosyaAdi(
         sayfa.kagitMm, sayfa.yerlesim.adet, dpi, 'pdf'
       )
-    })
+    }
+
+    if (duzen === 'cmyk') {
+      // Sayfa piksel piksel CMYK'ye cevrilir; PDF'i ana surec yazar.
+      istek.cmyk = {
+        baytlar: window.HV.renk.cmykBaytlari(sayfa.tuval),
+        genislik: sayfa.tuval.width,
+        yukseklik: sayfa.tuval.height
+      }
+    } else {
+      // PDF'e kayipsiz PNG gomulur; olcu tasiyicisi PDF'in kendisidir.
+      istek.baytlar = await sayfaBaytlari(sayfa.tuval, 'png')
+    }
+
+    const sonuc = await window.hiperVesika.sayfayiPdfKaydet(istek)
 
     if (sonuc.hata) baskiDurumu(`PDF kaydedilemedi: ${sonuc.hata}`, 'hata')
     else if (sonuc.kaydedildi) {
       baskiDurumu(
-        `PDF kaydedildi: ${sayfa.kagitMm.genislik}×${sayfa.kagitMm.yukseklik} mm sayfa. ` +
+        `PDF kaydedildi: ${sayfa.kagitMm.genislik}×${sayfa.kagitMm.yukseklik} mm sayfa, ` +
+        `${window.HV.renk.duzenBul(duzen).ad}. ` +
         'Yazdırırken ölçekleme "gerçek boyut / %100" seçilmelidir.',
         'basari'
       )
@@ -1592,6 +1672,7 @@ function sonKullanilaniTopla () {
     yukseklikMm: olcuDurumu.yukseklikMm,
     dpi,
     tur: el.turPng.checked ? 'png' : 'jpg',
+    renkDuzeni: renkDuzeniniOku(),
     kalite: Number.parseInt(el.jpgKalitesi.value, 10),
     kagitOnayar: el.kagitOnayari.value,
     kagitGenislik: Number.parseFloat(el.kagitGenislik.value),
@@ -1669,6 +1750,10 @@ function sonKullanilaniUygula (son) {
     el.turPng.checked = son.tur === 'png'
     el.turJpg.checked = son.tur === 'jpg'
     el.kaliteAlani.classList.toggle('d-none', el.turPng.checked)
+  }
+  if (window.HV.renk.duzenGecerliMi(son.renkDuzeni)) {
+    el.renkDuzeni.value = son.renkDuzeni
+    renkAciklamasiniGuncelle()
   }
   if (Number.isFinite(son.kalite) && son.kalite >= 60 && son.kalite <= 100) {
     el.jpgKalitesi.value = String(son.kalite)
@@ -1978,6 +2063,13 @@ for (const secim of [el.turJpg, el.turPng]) {
   })
 }
 
+el.renkDuzeni.addEventListener('change', () => {
+  renkAciklamasiniGuncelle()
+  // Onizlemedeki sayfa karesi renk duzenine gore uretiliyor.
+  sayfaKaresiniGecersizKil()
+  ayarlariKaydet()
+})
+
 el.jpgKalitesi.addEventListener('input', () => {
   el.jpgKalitesiDegeri.textContent = `%${el.jpgKalitesi.value}`
   ayarlariKaydet()
@@ -2036,6 +2128,8 @@ window.hiperVesika.menuKomutu((komut) => {
 
 onayarlariDoldur()
 dpiSecenekleriniDoldur()
+renkDuzeniniDoldur()
+renkAciklamasiniGuncelle()
 kagitOnayarlariniDoldur()
 onayariUygula(olcuMotoru.FOTOGRAF_ONAYARLARI[0].kod)
 kagitOnayariniUygula(window.HV.sayfa.KAGIT_ONAYARLARI[0].kod)

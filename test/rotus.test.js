@@ -109,3 +109,73 @@ test('basa donmek ilk duruma gider', () => {
   assert.equal(gecmis.basaDon(), 'a')
   assert.equal(gecmis.yinelenebilir, true)
 })
+
+// --- Cilt yumusatma ve goz canlandirma ---------------------------------------
+
+test('yumusatma agirligi ayrinti arttikca duser', () => {
+  // Duz alan: tam yumusatilir
+  assert.equal(rotus.yumusatmaAgirligi(0, 20), 1)
+  // Esikte ve otesinde: dokunulmaz
+  assert.equal(rotus.yumusatmaAgirligi(20, 20), 0)
+  assert.equal(rotus.yumusatmaAgirligi(60, 20), 0)
+  // Arada dogrusal ve isarettén bagimsiz
+  assert.equal(rotus.yumusatmaAgirligi(10, 20), 0.5)
+  assert.equal(rotus.yumusatmaAgirligi(-10, 20), 0.5)
+})
+
+test('yumusatma yaricapi cozunurlukle olceklenir', () => {
+  // Ayni kaynak, iki kat buyuk hedef tuval -> iki kat yaricap
+  const kucuk = rotus.yumusatmaYaricapi(3000, 0.2)
+  const buyuk = rotus.yumusatmaYaricapi(3000, 0.4)
+  assert.ok(Math.abs(buyuk - kucuk * 2) < 1e-9)
+
+  // Iki kat cozunurluklu kaynak, ayni hedef olcegi -> iki kat yaricap
+  assert.ok(Math.abs(rotus.yumusatmaYaricapi(6000, 0.2) - kucuk * 2) < 1e-9)
+
+  // Cok kucuk gorsellerde bile sifira dusmez
+  assert.ok(rotus.yumusatmaYaricapi(10, 0.01) >= 0.6)
+})
+
+test('goz parlakligi koyu tonlari daha cok acar', () => {
+  // Miktar sifirken deger degismez
+  assert.equal(rotus.gozParlakligi(100, 0), 100)
+  // Beyaz zaten acik, yanmaz
+  assert.equal(rotus.gozParlakligi(255, 1), 255)
+
+  const koyuKazanc = rotus.gozParlakligi(40, 1) - 40
+  const acikKazanc = rotus.gozParlakligi(200, 1) - 200
+  assert.ok(koyuKazanc > acikKazanc, `${koyuKazanc} <= ${acikKazanc}`)
+
+  // Sinirlarin disina cikmaz
+  for (let deger = 0; deger <= 255; deger += 5) {
+    const sonuc = rotus.gozParlakligi(deger, 1)
+    assert.ok(sonuc >= deger && sonuc <= 255, `${deger} -> ${sonuc}`)
+  }
+})
+
+test('goz agirligi merkezden kenara yumusak duser', () => {
+  assert.equal(rotus.gozAgirligi(0, 10), 1)
+  assert.equal(rotus.gozAgirligi(10, 10), 0)
+  assert.equal(rotus.gozAgirligi(20, 10), 0)
+  // Yarida, dogrusaldan daha yumusak (kare)
+  assert.equal(rotus.gozAgirligi(5, 10), 0.25)
+})
+
+test('goz yaricapi gozler arasi mesafeye baglidir', () => {
+  const yakin = rotus.gozYaricapi({ x: 0, y: 0 }, { x: 100, y: 0 })
+  const uzak = rotus.gozYaricapi({ x: 0, y: 0 }, { x: 200, y: 0 })
+
+  assert.ok(Math.abs(uzak - yakin * 2) < 1e-9)
+  // Egik yuzde de mesafe dogru olculur
+  assert.ok(Math.abs(rotus.gozYaricapi({ x: 0, y: 0 }, { x: 60, y: 80 }) - yakin) < 1e-9)
+})
+
+test('yeni ayarlar varsayilanda kapalidir', () => {
+  const varsayilan = rotus.varsayilanAyarlar()
+
+  assert.equal(varsayilan.yumusatma, 0)
+  assert.equal(varsayilan.gozCanliligi, 0)
+  assert.equal(rotus.varsayilanMi(varsayilan), true)
+  assert.equal(rotus.varsayilanMi({ ...varsayilan, yumusatma: 0.4 }), false)
+  assert.equal(rotus.varsayilanMi({ ...varsayilan, gozCanliligi: 0.4 }), false)
+})

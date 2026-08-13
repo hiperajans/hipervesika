@@ -396,6 +396,35 @@
 
             <section class="hv-bolum">
               <h2 class="hv-bolum-basligi">
+                <i class="bi bi-person-hearts" aria-hidden="true"></i> Cilt ve gözler
+              </h2>
+
+              <div class="hv-alan">
+                <label for="rotus-yumusatma" class="hv-etiket">
+                  <span>Cilt yumuşatma</span>
+                  <span id="rotus-yumusatma-degeri" class="hv-deger">0</span>
+                </label>
+                <input type="range" class="form-range" id="rotus-yumusatma"
+                  min="0" max="100" step="1" value="0" />
+              </div>
+
+              <div class="hv-alan">
+                <label for="rotus-goz" class="hv-etiket">
+                  <span>Göz canlandırma</span>
+                  <span id="rotus-goz-degeri" class="hv-deger">0</span>
+                </label>
+                <input type="range" class="form-range" id="rotus-goz"
+                  min="0" max="100" step="1" value="0" />
+              </div>
+
+              <p id="goz-durumu" class="hv-ipucu">
+                Göz canlandırma, göz konumu bilindiğinde çalışır: önce
+                <em>Otomatik hizala</em>'yı çalıştırın.
+              </p>
+            </section>
+
+            <section class="hv-bolum">
+              <h2 class="hv-bolum-basligi">
                 <i class="bi bi-bandaid" aria-hidden="true"></i> Leke temizleme
               </h2>
 
@@ -426,6 +455,12 @@
               <h2 class="hv-bolum-basligi">
                 <i class="bi bi-download" aria-hidden="true"></i> Tek fotoğraf
               </h2>
+
+              <div class="hv-alan">
+                <label for="renk-duzeni" class="hv-etiket"><span>Renk düzeni</span></label>
+                <select id="renk-duzeni" class="form-select form-select-sm"></select>
+                <p id="renk-duzeni-aciklamasi" class="hv-ipucu"></p>
+              </div>
 
               <div class="hv-alan">
                 <span class="hv-etiket"><span>Biçim</span></span>
@@ -658,6 +693,7 @@
     <script src="js/firca.js"></script>
     <script src="js/metaveri.js"></script>
     <script src="js/disa-aktar.js"></script>
+    <script src="js/renk.js"></script>
     <script src="js/sayfa.js"></script>
     <script src="js/tanitim.js"></script>
     <script src="renderer.js"></script>

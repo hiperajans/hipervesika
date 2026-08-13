@@ -86,7 +86,33 @@ window.HV.disaAktar = (() => {
     }
   }
 
-  function tuvalUret ({ gorsel, cerceve, maske, rotusAyarlari, lekeler, olcuMm, dpi }) {
+  // Gozler de lekeler gibi kaynak koordinatinda saklanir.
+  function gozleriCiz (tuval, gorsel, cerceve, olcek, miktar) {
+    const gozler = gorsel.gozler
+    if (!gozler) return
+
+    const gorselOlcusu = { genislik: gorsel.asil.width, yukseklik: gorsel.asil.height }
+    const cevir = (nokta) => {
+      const calismaNoktasi = gorsel.aci
+        ? window.HV.hizalama.calismayaTasi(nokta, gorselOlcusu, gorsel.calisma, gorsel.aci)
+        : nokta
+      return {
+        x: (calismaNoktasi.x - cerceve.x) * olcek,
+        y: (calismaNoktasi.y - cerceve.y) * olcek
+      }
+    }
+
+    const yaricap = window.HV.rotus.gozYaricapi(gozler.sol, gozler.sag) * olcek
+    return window.HV.rotus.gozleriCanlandir(
+      tuval,
+      [{ ...cevir(gozler.sol), yaricap }, { ...cevir(gozler.sag), yaricap }],
+      miktar
+    )
+  }
+
+  function tuvalUret ({
+    gorsel, cerceve, maske, rotusAyarlari, lekeler, olcuMm, dpi, renkDuzeni = 'srgb'
+  }) {
     const cikti = window.HV.olcu.ciktiBoyutu(olcuMm, dpi)
     const olcek = cikti.genislik / cerceve.genislik
 
@@ -94,8 +120,17 @@ window.HV.disaAktar = (() => {
     // yine yeni bir tuvali dondurur; ikisi de bize ait oldugu icin lekeler
     // dogrudan uzerine cizilebilir.
     let sonuc = temelUret(gorsel, cerceve, olcek, cikti, maske)
-    sonuc = window.HV.rotus.uygula(sonuc, rotusAyarlari)
+    sonuc = window.HV.rotus.uygula(sonuc, rotusAyarlari, {
+      olcek, kaynakYukseklik: gorsel.asil.height
+    })
+
+    if (rotusAyarlari.gozCanliligi > 0 && gorsel.gozler) {
+      sonuc = gozleriCiz(sonuc, gorsel, cerceve, olcek, rotusAyarlari.gozCanliligi) ?? sonuc
+    }
     if (lekeler.length) lekeleriCiz(sonuc, gorsel, cerceve, olcek, lekeler)
+
+    // Renk duzeni en son uygulanir: onceki adimlarin hepsi RGB uzerinde calisir.
+    window.HV.renk.duzeniUygula(sonuc, renkDuzeni)
 
     return { tuval: sonuc, cikti }
   }
