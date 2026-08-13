@@ -333,6 +333,30 @@ görüntüyü kağıda oturtan içerik akışı. 100×150 mm @ 300 DPI sayfa yak
 profiliyle ayırmak isterse sRGB vermek daha doğrudur; arayüzde bu yazıyor ve varsayılan
 sRGB'dir. Çevrimin tersi alındığında özgün RGB'ye 1 birim içinde dönüldüğü test edilir.
 
+### Birden fazla fotoğraf bırakıldığında seçim
+
+Fotoğrafçı çekimden çıkan 4-5 kareyi bir kerede sürükleyip bırakır. Eskiden bunların
+**ilki sessizce alınır**, gerisi hiç haber verilmeden atılırdı — kullanıcı yanlış kareyle
+çalıştığını ancak sonradan fark ederdi.
+
+Artık birden fazla fotoğraf gelirse küçük resimlerini gösteren bir pencere açılır ve
+hangisiyle çalışılacağı sorulur. **Uygulama tek fotoğrafla çalışmaya devam eder:** seçilen
+dosya normal yükleme yoluna girer, diğerleri hiçbir yerde tutulmaz. Yığın işleme yoktur.
+
+- Tek fotoğrafta pencere açılmaz; akış eskisi gibidir.
+- Sürükle-bırak, `Fotoğraf Seç` (artık `multiple`) ve panodan yapıştırma aynı yolu kullanır
+  (`dosyalariAl`). Yapıştırma sessizdir: her metin yapıştırmasında uyarı çıkmaz.
+- Küçük resimler **sırayla** üretilir; hepsini birden çözmek 24 MP'lik beş fotoğrafta
+  belleği gereksiz şişirirdi. Her bitmap çizildikten sonra `close()` ile bırakılır.
+- Okunamayan ya da desteklenmeyen dosya (bozuk JPG, HEIC) kutusu **kapalı** gelir ve sebebi
+  kutunun altında yazar. Eskiden hata ancak seçimden sonra görünürdü.
+- Vazgeçilirse açık fotoğraf değişmez.
+- Ok tuşlarıyla gezinilir (`secim.sonrakiSira`), Enter seçer, Esc vazgeçer.
+
+Saf hesaplar `src/renderer/js/secim.js` içinde ve test edilir: seçim gerekli mi, sütun
+sayısı, dosya adı kısaltma (uzantı korunur), küçük resim ölçüsü (büyütme yapılmaz),
+klavye gezinmesi.
+
 ## Riskler
 
 | Risk | Faz | Etki |

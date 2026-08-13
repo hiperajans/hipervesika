@@ -23,12 +23,12 @@ window.HV.gorsel = (() => {
 
     if (HEIC.includes(uz)) {
       throw new Error(
-        'HEIC fotograflar su an desteklenmiyor. Fotografi JPG olarak disa aktarip tekrar deneyin.'
+        'HEIC fotoğraflar şu an desteklenmiyor. Fotoğrafı JPG olarak dışa aktarıp tekrar deneyin.'
       )
     }
 
     if (!DESTEKLENEN.includes(uz) && !dosya.type.startsWith('image/')) {
-      throw new Error('Desteklenmeyen dosya turu. JPG, PNG veya WEBP kullanin.')
+      throw new Error('Desteklenmeyen dosya türü. JPG, PNG veya WEBP kullanın.')
     }
   }
 
@@ -55,7 +55,7 @@ window.HV.gorsel = (() => {
       // bu olmadan telefon fotograflarinin cogu yan gorunur.
       asil = await createImageBitmap(dosya, { imageOrientation: 'from-image' })
     } catch (hata) {
-      throw new Error('Fotograf okunamadi. Dosya bozuk olabilir.')
+      throw new Error('Fotoğraf okunamadı. Dosya bozuk olabilir.')
     }
 
     return {
@@ -70,13 +70,57 @@ window.HV.gorsel = (() => {
     }
   }
 
-  // Surukle-birak ve panodan gelen veriden ilk gorsel dosyayi secer.
-  function veriDenGorselDosya (dataTransfer) {
-    return Array.from(dataTransfer?.files ?? []).find((dosya) => {
-      const uz = uzanti(dosya.name)
-      return dosya.type.startsWith('image/') || DESTEKLENEN.includes(uz) || HEIC.includes(uz)
-    })
+  function gorselMi (dosya) {
+    const uz = uzanti(dosya.name)
+    return dosya.type.startsWith('image/') || DESTEKLENEN.includes(uz) || HEIC.includes(uz)
   }
 
-  return { dosyadanYukle, veriDenGorselDosya, DESTEKLENEN }
+  // Surukle-birak ve panodan gelen verideki tum gorsel dosyalar. Birden fazlasi
+  // birakildiginda secim penceresi bu listeyi gosterir.
+  function veriDenGorselDosyalari (dataTransfer) {
+    return Array.from(dataTransfer?.files ?? []).filter(gorselMi)
+  }
+
+  // Tek dosya bekleyen yollar (panodan yapistirma) icin ilki.
+  function veriDenGorselDosya (dataTransfer) {
+    return veriDenGorselDosyalari(dataTransfer)[0]
+  }
+
+  // Secim penceresindeki kucuk resim. Okunamayan ya da desteklenmeyen dosyada
+  // dosyadanYukle ile ayni hatayi firlatir; kullanici sebebi kutunun uzerinde
+  // gorur, secmeye calisip hata almaz.
+  async function kucukResim (dosya, kutu) {
+    bicimDenetle(dosya)
+
+    let bitmap
+    try {
+      bitmap = await createImageBitmap(dosya, { imageOrientation: 'from-image' })
+    } catch (hata) {
+      throw new Error('Fotoğraf okunamadı. Dosya bozuk olabilir.')
+    }
+
+    const { width, height } = bitmap
+    const olcu = window.HV.secim.kucukResimOlcusu(width, height, kutu)
+
+    const tuval = document.createElement('canvas')
+    tuval.width = olcu.genislik
+    tuval.height = olcu.yukseklik
+    const ctx = tuval.getContext('2d')
+    ctx.imageSmoothingQuality = 'high'
+    ctx.drawImage(bitmap, 0, 0, olcu.genislik, olcu.yukseklik)
+
+    // Tam cozunurluklu bitmap 24 MP fotografta ~96 MB tutar; kucuk resim
+    // cizildikten sonra beklemesi icin bir sebep yok.
+    bitmap.close()
+
+    return { tuval, genislik: width, yukseklik: height }
+  }
+
+  return {
+    dosyadanYukle,
+    veriDenGorselDosya,
+    veriDenGorselDosyalari,
+    kucukResim,
+    DESTEKLENEN
+  }
 })()

@@ -87,6 +87,9 @@ const el = {
   olcuSil: document.getElementById('btn-olcu-sil'),
   kagitKaydet: document.getElementById('btn-kagit-kaydet'),
   kagitSil: document.getElementById('btn-kagit-sil'),
+  secimModali: document.getElementById('secim-modali'),
+  secimIzgarasi: document.getElementById('secim-izgarasi'),
+  secimBilgisi: document.getElementById('secim-bilgisi'),
   onayarModali: document.getElementById('onayar-modali'),
   onayarModalBasligi: document.getElementById('onayar-modal-basligi'),
   onayarModalBilgisi: document.getElementById('onayar-modal-bilgisi'),
@@ -827,12 +830,149 @@ async function gorselYukle (dosya) {
   }
 }
 
+// --- Fotograf secim penceresi ------------------------------------------------
+
+// Birden fazla fotograf birakildiginda hangisiyle calisilacagi sorulur.
+// Uygulama tek fotografla calisir; secilen dosya normal yukleme yoluna girer,
+// digerleri hicbir yerde tutulmaz.
+let secimPenceresi = null
+
+function secimKutusuKur (dosya, sira) {
+  const kutu = document.createElement('button')
+  kutu.type = 'button'
+  kutu.className = 'hv-secim-kutusu'
+  kutu.setAttribute('role', 'option')
+  kutu.dataset.sira = String(sira)
+
+  const cerceve = document.createElement('div')
+  cerceve.className = 'hv-secim-resim'
+
+  const ad = document.createElement('span')
+  ad.className = 'hv-secim-ad'
+  ad.textContent = window.HV.secim.kisaAd(dosya.name)
+  ad.title = dosya.name
+
+  const alt = document.createElement('span')
+  alt.className = 'hv-secim-alt'
+  alt.textContent = baytBicimle(dosya.size)
+
+  kutu.append(cerceve, ad, alt)
+  return { kutu, cerceve, alt }
+}
+
+// Kucuk resimler sirayla uretilir: hepsini birden cozmek 24 MP'lik bes
+// fotografta belleği gereksiz sisirirdi. Kutular hazir olduklarinca dolar.
+async function secimKutulariniDoldur (dosyalar, kutular) {
+  for (const [sira, dosya] of dosyalar.entries()) {
+    const { cerceve, alt, kutu } = kutular[sira]
+    try {
+      const { tuval: kucuk, genislik, yukseklik } = await window.HV.gorsel.kucukResim(
+        dosya, window.HV.secim.KUCUK_RESIM
+      )
+      cerceve.replaceChildren(kucuk)
+      alt.textContent = `${genislik}×${yukseklik} · ${baytBicimle(dosya.size)}`
+    } catch (hata) {
+      // Okunamayan dosya secilemez; sebebi kutunun uzerinde yazar.
+      kutu.disabled = true
+      cerceve.replaceChildren(Object.assign(document.createElement('i'), {
+        className: 'bi bi-exclamation-triangle'
+      }))
+      alt.textContent = hata.message
+    }
+  }
+}
+
+function fotografSor (dosyalar) {
+  return new Promise((cozumle) => {
+    secimPenceresi = secimPenceresi ?? new window.bootstrap.Modal(el.secimModali)
+
+    el.secimBilgisi.textContent =
+      `${dosyalar.length} fotoğraf bırakıldı. Üzerinde çalışmak istediğinizi seçin; ` +
+      'aynı anda tek fotoğraf düzenlenir.'
+    el.secimIzgarasi.style.setProperty(
+      '--hv-secim-sutun', String(window.HV.secim.sutunSayisi(dosyalar.length))
+    )
+
+    const kutular = dosyalar.map((dosya, sira) => secimKutusuKur(dosya, sira))
+    el.secimIzgarasi.replaceChildren(...kutular.map((k) => k.kutu))
+
+    // Cevap, pencerenin kapanma animasyonu beklenmeden verilir.
+    let cevaplandi = false
+
+    const bitir = (dosya) => {
+      if (cevaplandi) return
+      cevaplandi = true
+      el.secimIzgarasi.removeEventListener('click', tikla)
+      el.secimIzgarasi.removeEventListener('keydown', tusla)
+      cozumle(dosya)
+    }
+
+    function tikla (olay) {
+      const kutu = olay.target.closest('.hv-secim-kutusu')
+      if (!kutu || kutu.disabled) return
+      secimPenceresi.hide()
+      bitir(dosyalar[Number(kutu.dataset.sira)])
+    }
+
+    // Ok tuslariyla gezinme: fotografci bes fotograf arasinda hizlica gezer.
+    function tusla (olay) {
+      const adimlar = {
+        ArrowRight: 1,
+        ArrowLeft: -1,
+        ArrowDown: window.HV.secim.sutunSayisi(dosyalar.length),
+        ArrowUp: -window.HV.secim.sutunSayisi(dosyalar.length)
+      }
+      const adim = adimlar[olay.key]
+      if (adim === undefined) return
+
+      olay.preventDefault()
+      const simdiki = Number(olay.target.closest('.hv-secim-kutusu')?.dataset.sira ?? -1)
+      const sonraki = window.HV.secim.sonrakiSira(simdiki, dosyalar.length, adim)
+      kutular[sonraki]?.kutu.focus()
+    }
+
+    el.secimIzgarasi.addEventListener('click', tikla)
+    el.secimIzgarasi.addEventListener('keydown', tusla)
+    el.secimModali.addEventListener(
+      'shown.bs.modal', () => kutular[0]?.kutu.focus(), { once: true }
+    )
+    // Vazgecme, kapatma dugmesi, ESC ve disariya tiklama buraya duser.
+    el.secimModali.addEventListener('hidden.bs.modal', () => bitir(null), { once: true })
+
+    secimPenceresi.show()
+    // Kucuk resimler pencere acildiktan sonra dolar; kullanici beklemez.
+    secimKutulariniDoldur(dosyalar, kutular)
+  })
+}
+
+// Gelen dosya listesinin tek giris noktasi: secim gerekiyorsa sorar, sonra
+// her durumda tek bir dosyayi normal yukleme yoluna verir.
+// sessiz: panodan yapistirmada kullanilir; her metin yapistirmada uyari
+// cikmasin diye gorsel olmayan icerik sessizce yok sayilir.
+async function dosyalariAl (dosyalar, { sessiz = false } = {}) {
+  if (!dosyalar.length) {
+    if (sessiz) return
+    if (yuklenenGorsel) el.birakmaKatmani.classList.add('d-none')
+    uyariGoster('Bırakılan öğe bir fotoğraf değil.')
+    return
+  }
+
+  if (!window.HV.secim.secimGerekli(dosyalar)) {
+    gorselYukle(dosyalar[0])
+    return
+  }
+
+  const secilen = await fotografSor(dosyalar)
+  if (secilen) gorselYukle(secilen)
+  else if (yuklenenGorsel) el.birakmaKatmani.classList.add('d-none')
+}
+
 // --- Dosya secme -------------------------------------------------------------
 
 el.dosyaSec.addEventListener('click', () => el.dosyaGirisi.click())
 
 el.dosyaGirisi.addEventListener('change', () => {
-  gorselYukle(el.dosyaGirisi.files[0])
+  dosyalariAl(Array.from(el.dosyaGirisi.files))
   // Ayni dosya art arda secilebilsin diye giris sifirlanir.
   el.dosyaGirisi.value = ''
 })
@@ -863,20 +1003,15 @@ birakmaAlani.addEventListener('drop', (olay) => {
   olay.preventDefault()
   birakmaAlani.classList.remove('surukleniyor')
 
-  const dosya = window.HV.gorsel.veriDenGorselDosya(olay.dataTransfer)
-  if (dosya) {
-    gorselYukle(dosya)
-  } else {
-    if (yuklenenGorsel) el.birakmaKatmani.classList.add('d-none')
-    uyariGoster('Birakilan oge bir fotograf degil.')
-  }
+  dosyalariAl(window.HV.gorsel.veriDenGorselDosyalari(olay.dataTransfer))
 })
 
 // --- Panodan yapistirma ------------------------------------------------------
 
 window.addEventListener('paste', (olay) => {
-  const dosya = window.HV.gorsel.veriDenGorselDosya(olay.clipboardData)
-  if (dosya) gorselYukle(dosya)
+  // Dosya yoneticisinden birden fazla dosya kopyalanmis olabilir; birakmayla
+  // ayni yol izlenir.
+  dosyalariAl(window.HV.gorsel.veriDenGorselDosyalari(olay.clipboardData), { sessiz: true })
 })
 
 // --- Yakinlik denetimleri ----------------------------------------------------

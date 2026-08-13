@@ -61,6 +61,7 @@ hv-durum-cubugu    durum · sürüm
 | `hv-ipucu` | Açıklama ve durum satırı; renderer `text-danger/success` ekler |
 | `hv-ozet` | Ad-değer özet listesi (çıktı boyutu, kaynak çözünürlük) |
 | `hv-fotograf-araci` | Sayfa görünümünde gizlenen araçlar |
+| `hv-secim-izgarasi` + `hv-secim-kutusu` | Fotoğraf seçim penceresinin ızgarası ve kutuları |
 
 ## Tanıtım turu
 

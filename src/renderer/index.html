@@ -31,6 +31,7 @@
           type="file"
           accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
           class="d-none"
+          multiple
         />
         <button id="btn-dosya-sec" type="button" class="btn btn-primary btn-sm hv-dugme">
           <i class="bi bi-folder2-open" aria-hidden="true"></i>
@@ -692,7 +693,34 @@
       </div>
     </div>
 
+    <!--
+      Birden fazla fotoğraf bırakıldığında hangisiyle çalışılacağını sorar.
+      Uygulama tek fotoğrafla çalışır; burada yalnızca seçim yapılır.
+    -->
+    <div class="modal fade" id="secim-modali" tabindex="-1" aria-hidden="true"
+      aria-labelledby="secim-modal-basligi">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content hv-pencere">
+          <div class="modal-header">
+            <h6 class="modal-title" id="secim-modal-basligi">Hangi fotoğrafla çalışalım?</h6>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"
+              aria-label="Kapat"></button>
+          </div>
+          <div class="modal-body">
+            <p id="secim-bilgisi" class="hv-ipucu mt-0"></p>
+            <div id="secim-izgarasi" class="hv-secim-izgarasi" role="listbox"
+              aria-labelledby="secim-modal-basligi"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn hv-dugme hv-dugme-sade"
+              data-bs-dismiss="modal">Vazgeç</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="js/secim.js"></script>
     <script src="js/olcu.js"></script>
     <script src="js/hizalama.js"></script>
     <script src="js/rotus.js"></script>

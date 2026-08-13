@@ -1013,3 +1013,78 @@
   justify-content: flex-end;
   gap: 0.5rem;
 }
+
+/* --- Fotograf secim penceresi ---------------------------------------------
+   Birden fazla fotograf birakildiginda acilir. Sutun sayisi fotograf sayisina
+   gore JS'ten yazilir; burada yalnizca kutunun gorunumu tanimlanir. */
+
+.hv-secim-izgarasi {
+  display: grid;
+  grid-template-columns: repeat(var(--hv-secim-sutun, 3), minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.hv-secim-kutusu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--hv-kenar);
+  border-radius: var(--hv-yaricap);
+  background-color: var(--hv-yuzey);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+}
+
+.hv-secim-kutusu:hover:not(:disabled),
+.hv-secim-kutusu:focus-visible {
+  border-color: var(--hv-vurgu);
+  background-color: var(--hv-vurgu-soluk);
+  box-shadow: var(--hv-golge);
+  outline: none;
+}
+
+.hv-secim-kutusu:disabled {
+  cursor: not-allowed;
+  background-color: var(--hv-yuzey-ikincil);
+}
+
+/* Esit yukseklikli cerceve: dikey ve yatay fotograflar yan yana durunca izgara
+   satirlari kaymasin. Yukseklik pencereyle olceklenir, sabit piksel degil. */
+.hv-secim-resim {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: clamp(110px, 20vh, 210px);
+  border-radius: var(--hv-yaricap-kucuk);
+  background-color: var(--hv-yuzey-ikincil);
+  overflow: hidden;
+}
+
+.hv-secim-resim canvas {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 3px;
+}
+
+.hv-secim-kutusu:disabled .hv-secim-resim {
+  color: var(--hv-metin-soluk);
+  font-size: 1.5rem;
+}
+
+.hv-secim-ad {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--hv-metin);
+  overflow-wrap: anywhere;
+}
+
+.hv-secim-alt {
+  font-size: 0.75rem;
+  color: var(--hv-metin-ikincil);
+}
+
+.hv-secim-kutusu:disabled .hv-secim-alt {
+  color: var(--hv-tehlike);
+}
