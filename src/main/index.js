@@ -297,7 +297,14 @@ function menuyuKur () {
         { role: 'toggleDevTools', label: 'Geliştirici araçları' }
       ]
     },
-    { role: 'windowMenu', label: 'Pencere' }
+    { role: 'windowMenu', label: 'Pencere' },
+    {
+      label: 'Yardım',
+      role: 'help',
+      submenu: [
+        { label: 'Tanıtım turu', accelerator: 'F1', click: komut('tanitim') }
+      ]
+    }
   ]
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(sablon))

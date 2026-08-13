@@ -593,6 +593,31 @@
       <span id="surum-bilgisi"></span>
     </footer>
 
+    <!-- Tanıtım turu: ilk açılışta çıkar, Yardım menüsünden tekrar başlatılır. -->
+    <div id="tanitim-katmani" class="tanitim-katmani d-none" role="dialog" aria-modal="true"
+      aria-labelledby="tanitim-baslik">
+      <div id="tanitim-isik" class="tanitim-isik"></div>
+
+      <div id="tanitim-karti" class="tanitim-karti">
+        <div class="tanitim-ust">
+          <span id="tanitim-sayac" class="tanitim-sayac"></span>
+          <button id="btn-tanitim-atla" type="button" class="tanitim-kapat" title="Turu kapat">
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+          </button>
+        </div>
+        <h2 id="tanitim-baslik" class="tanitim-baslik"></h2>
+        <p id="tanitim-metin" class="tanitim-metin"></p>
+        <div class="tanitim-alt">
+          <button id="btn-tanitim-geri" type="button" class="btn hv-dugme hv-dugme-sade">
+            Geri
+          </button>
+          <button id="btn-tanitim-ileri" type="button" class="btn btn-primary btn-sm hv-dugme">
+            İleri
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Ön ayar adı sorulan pencere. Electron'da window.prompt çalışmaz. -->
     <div class="modal fade" id="onayar-modali" tabindex="-1" aria-hidden="true"
       aria-labelledby="onayar-modal-basligi">
@@ -634,6 +659,7 @@
     <script src="js/metaveri.js"></script>
     <script src="js/disa-aktar.js"></script>
     <script src="js/sayfa.js"></script>
+    <script src="js/tanitim.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>

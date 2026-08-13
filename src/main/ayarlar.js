@@ -28,7 +28,9 @@ function varsayilanAyarlar () {
     surum: SURUM,
     fotografOnayarlari: [],
     kagitOnayarlari: [],
-    sonKullanilan: {}
+    sonKullanilan: {},
+    // Tanitim turu bir kez gosterilir; kullanici Yardim menusunden tekrarlar.
+    tanitimGoruldu: false
   }
 }
 
@@ -108,6 +110,7 @@ function ayarlariDogrula (ham) {
   ayarlar.fotografOnayarlari = listeTemizle(ham.fotografOnayarlari, fotografOnayariTemizle)
   ayarlar.kagitOnayarlari = listeTemizle(ham.kagitOnayarlari, kagitOnayariTemizle)
   ayarlar.sonKullanilan = sonKullanilanTemizle(ham.sonKullanilan)
+  ayarlar.tanitimGoruldu = ham.tanitimGoruldu === true
   return ayarlar
 }
 

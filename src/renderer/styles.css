@@ -928,3 +928,88 @@
     display: none;
   }
 }
+
+/* --- Tanitim turu --------------------------------------------------------- */
+
+/* Katman tum pencereyi kaplar ve tur boyunca tiklamalari tutar. */
+.tanitim-katmani {
+  position: fixed;
+  inset: 0;
+  z-index: 1080;
+}
+
+/* Karartma, isik kutusunun cevresine dev bir golgeyle verilir; boylece ayri
+   bir maske ogesine gerek kalmaz. */
+.tanitim-isik {
+  position: absolute;
+  border-radius: var(--hv-yaricap);
+  box-shadow: 0 0 0 9999px rgba(15, 21, 34, 0.55);
+  outline: 2px solid var(--hv-vurgu);
+  outline-offset: 0;
+  transition: all 0.18s ease-out;
+  pointer-events: none;
+}
+
+.tanitim-karti {
+  position: absolute;
+  width: 310px;
+  padding: 0.875rem;
+  border-radius: var(--hv-yaricap);
+  background-color: var(--hv-yuzey);
+  box-shadow: 0 12px 32px rgba(15, 21, 34, 0.28);
+  transition: left 0.18s ease-out, top 0.18s ease-out;
+}
+
+.tanitim-ust {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.375rem;
+}
+
+.tanitim-sayac {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--hv-vurgu);
+  font-variant-numeric: tabular-nums;
+}
+
+.tanitim-kapat {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--hv-yaricap-kucuk);
+  background-color: transparent;
+  color: var(--hv-metin-soluk);
+  font-size: 0.75rem;
+}
+
+.tanitim-kapat:hover {
+  background-color: var(--hv-yuzey-ikincil);
+  color: var(--hv-metin);
+}
+
+.tanitim-baslik {
+  margin: 0 0 0.375rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--hv-metin);
+}
+
+.tanitim-metin {
+  margin: 0 0 0.875rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--hv-metin-ikincil);
+}
+
+.tanitim-alt {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

@@ -1612,6 +1612,10 @@ function diskeYaz () {
   return window.hiperVesika.ayarlariYaz(kullaniciAyarlari)
 }
 
+// Tur ilk acilisin bir parcasi; baslangicta kullanilan bos ayar nesnesinde de
+// bulunmali ki tur bittiginde yazilan dosyada kaybolmasin.
+kullaniciAyarlari.tanitimGoruldu = false
+
 // Kaydirac ve sayi girisleri her tusta yazmasin diye gecikmeli toplanir.
 // On ayar kaydetme/silme gibi tek seferlik islerde beklenmez: kullanici hemen
 // ardindan pencereyi kapatirsa kaydi kaybetmemeli.
@@ -1692,7 +1696,8 @@ async function ayarlariYukle () {
     kullaniciAyarlari = {
       fotografOnayarlari: okunan?.fotografOnayarlari ?? [],
       kagitOnayarlari: okunan?.kagitOnayarlari ?? [],
-      sonKullanilan: okunan?.sonKullanilan ?? {}
+      sonKullanilan: okunan?.sonKullanilan ?? {},
+      tanitimGoruldu: okunan?.tanitimGoruldu === true
     }
   } catch {
     // Ayarlar okunamazsa uygulama varsayilanlarla acilir.
@@ -1704,7 +1709,154 @@ async function ayarlariYukle () {
 
   // Bu noktadan sonra yapilan her degisiklik diske yazilir.
   ayarlarHazir = true
+
+  // Ilk acilista tanitim turu kendiliginden baslar.
+  if (!kullaniciAyarlari.tanitimGoruldu) turuBaslat()
 }
+
+// --- Tanitim turu ------------------------------------------------------------
+
+// Tur, uygulamanin gercek arayuzunu isiklandirarak anlatir. Ilk acilista
+// kendiliginden baslar, sonra Yardim menusunden (F1) tekrar acilir.
+const tanitimMotoru = window.HV.tanitim
+
+let turAdimlari = []
+let turSirasi = 0
+let turAcik = false
+// Tur sekmeleri kendisi degistirdigi icin baslangictaki sekme geri alinir:
+// ilk acilista Kadraj'a, F1 ile acildiginda kullanicinin kaldigi yere doner.
+let turOncekiSekme = null
+
+const turOgeleri = {
+  katman: document.getElementById('tanitim-katmani'),
+  isik: document.getElementById('tanitim-isik'),
+  kart: document.getElementById('tanitim-karti'),
+  sayac: document.getElementById('tanitim-sayac'),
+  baslik: document.getElementById('tanitim-baslik'),
+  metin: document.getElementById('tanitim-metin'),
+  geri: document.getElementById('btn-tanitim-geri'),
+  ileri: document.getElementById('btn-tanitim-ileri'),
+  atla: document.getElementById('btn-tanitim-atla')
+}
+
+function adimSekmesiniAc (panel) {
+  if (!panel) return
+  const dugme = document.getElementById(`adim-${panel}-dugmesi`)
+  if (dugme && !dugme.classList.contains('active')) dugme.click()
+}
+
+function turAdiminiGoster () {
+  const adim = turAdimlari[turSirasi]
+  if (!adim) return turuBitir()
+
+  adimSekmesiniAc(adim.panel)
+
+  const hedef = document.querySelector(adim.hedef)
+  if (!hedef) {
+    // Hedef arada kaybolduysa adim atlanir; tur kirilmaz.
+    turAdimlari.splice(turSirasi, 1)
+    return turAdimlari.length ? turAdiminiGoster() : turuBitir()
+  }
+
+  turOgeleri.sayac.textContent = `${turSirasi + 1} / ${turAdimlari.length}`
+  turOgeleri.baslik.textContent = adim.baslik
+  turOgeleri.metin.textContent = adim.metin
+  turOgeleri.geri.disabled = turSirasi === 0
+  turOgeleri.ileri.textContent = turSirasi === turAdimlari.length - 1 ? 'Bitir' : 'İleri'
+
+  // Sekme gecisi ve metin degisimi yerlesimi etkiler; olcumler sonrasinda alinir.
+  requestAnimationFrame(() => {
+    const kutu = hedef.getBoundingClientRect()
+    const isik = tanitimMotoru.isikAlani({
+      x: kutu.left, y: kutu.top, genislik: kutu.width, yukseklik: kutu.height
+    })
+
+    turOgeleri.isik.style.left = `${isik.x}px`
+    turOgeleri.isik.style.top = `${isik.y}px`
+    turOgeleri.isik.style.width = `${isik.genislik}px`
+    turOgeleri.isik.style.height = `${isik.yukseklik}px`
+
+    const kartKutusu = turOgeleri.kart.getBoundingClientRect()
+    const konum = tanitimMotoru.kartKonumu({
+      isik,
+      kart: { genislik: kartKutusu.width, yukseklik: kartKutusu.height },
+      pencere: { genislik: window.innerWidth, yukseklik: window.innerHeight },
+      tercih: adim.tercih
+    })
+
+    turOgeleri.kart.style.left = `${konum.x}px`
+    turOgeleri.kart.style.top = `${konum.y}px`
+  })
+}
+
+function turuBaslat () {
+  turAdimlari = tanitimMotoru.gecerliAdimlar(
+    tanitimMotoru.ADIMLAR, (secici) => document.querySelector(secici) !== null
+  )
+  if (!turAdimlari.length) return
+
+  turSirasi = 0
+  turAcik = true
+  turOncekiSekme = document.querySelector('.hv-adim.active')?.id ?? null
+  turOgeleri.katman.classList.remove('d-none')
+  turAdiminiGoster()
+  turOgeleri.ileri.focus()
+}
+
+function turuBitir () {
+  if (!turAcik) return
+
+  turAcik = false
+  turOgeleri.katman.classList.add('d-none')
+
+  const oncekiSekme = turOncekiSekme && document.getElementById(turOncekiSekme)
+  if (oncekiSekme && !oncekiSekme.classList.contains('active')) oncekiSekme.click()
+  turOncekiSekme = null
+
+  // Tur bir kez gosterilir; kullanici Yardim menusunden tekrar acabilir.
+  if (!kullaniciAyarlari.tanitimGoruldu) {
+    kullaniciAyarlari.tanitimGoruldu = true
+    ayarlariKaydet({ hemen: true })
+  }
+}
+
+function turAdimiDegistir (yon) {
+  const yeni = turSirasi + yon
+  if (yeni < 0) return
+  if (yeni >= turAdimlari.length) return turuBitir()
+
+  turSirasi = yeni
+  turAdiminiGoster()
+}
+
+turOgeleri.ileri.addEventListener('click', () => turAdimiDegistir(1))
+turOgeleri.geri.addEventListener('click', () => turAdimiDegistir(-1))
+turOgeleri.atla.addEventListener('click', () => turuBitir())
+
+// Katmanin bosluguna tiklamak turu kapatir.
+turOgeleri.katman.addEventListener('pointerdown', (olay) => {
+  if (olay.target === turOgeleri.katman) turuBitir()
+})
+
+window.addEventListener('keydown', (olay) => {
+  if (!turAcik) return
+
+  if (olay.key === 'Escape') {
+    olay.preventDefault()
+    turuBitir()
+  } else if (olay.key === 'ArrowRight' || olay.key === 'Enter') {
+    olay.preventDefault()
+    turAdimiDegistir(1)
+  } else if (olay.key === 'ArrowLeft') {
+    olay.preventDefault()
+    turAdimiDegistir(-1)
+  }
+})
+
+// Pencere boyutu degisince isik ve kart hedefin uzerinde kalmali.
+window.addEventListener('resize', () => {
+  if (turAcik) turAdiminiGoster()
+})
 
 // --- Once / sonra ------------------------------------------------------------
 
@@ -1873,6 +2025,9 @@ window.hiperVesika.menuKomutu((komut) => {
       break
     case 'yinele':
       durumuUygula(gecmis.yinele())
+      break
+    case 'tanitim':
+      turuBaslat()
       break
   }
 })

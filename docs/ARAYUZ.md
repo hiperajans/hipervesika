@@ -62,6 +62,25 @@ hv-durum-cubugu    durum · sürüm
 | `hv-ozet` | Ad-değer özet listesi (çıktı boyutu, kaynak çözünürlük) |
 | `hv-fotograf-araci` | Sayfa görünümünde gizlenen araçlar |
 
+## Tanıtım turu
+
+`src/renderer/js/tanitim.js` uygulamanın gerçek arayüzünü ışıklandırarak yedi adımda
+anlatır. İlk açılışta kendiliğinden başlar, sonra **Yardım → Tanıtım turu** (F1) ile
+tekrar açılır; görülüp görülmediği `ayarlar.json` içindeki `tanitimGoruldu` alanında durur.
+
+- Adım listesi (`ADIMLAR`) hedefi CSS seçiciyle verir. **Hedefi bulunamayan adım sessizce
+  düşürülür** — arayüz değişirse tur kırılmaz, kısalır.
+- Adım bir panel sekmesine aitse (`panel: 'kadraj' | 'rotus' | 'cikti'`) tur sekmeyi
+  kendisi açar; tur bitince başlangıçtaki sekmeye geri döner.
+- Kart yerleştirme hesabı (`kartKonumu`) saftır ve test edilir: tercih edilen yön sığmazsa
+  diğer yönler denenir, hiçbiri sığmazsa kart pencerenin içine çekilir.
+- Karartma ayrı bir maske öğesiyle değil, ışık kutusunun çevresine verilen dev bir gölgeyle
+  (`box-shadow: 0 0 0 9999px`) yapılır.
+- Esc turu kapatır, ← → adımlar arasında gezer.
+
+Yeni bir özellik eklendiğinde tura adım eklemek gerekiyorsa `ADIMLAR` dizisine bir kayıt
+yazmak yeterlidir; yürütme kodu değişmez.
+
 ## Kurallar
 
 1. **Kimlikler mantığa aittir.** `renderer.js` öğeleri `id` ile bulur; tasarım değişikliği
