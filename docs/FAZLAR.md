@@ -376,6 +376,35 @@ Saf hesaplar `src/renderer/js/secim.js` içinde ve test edilir: seçim gerekli m
 sayısı, dosya adı kısaltma (uzantı korunur), küçük resim ölçüsü (büyütme yapılmaz),
 klavye gezinmesi.
 
+### Test altyapısı ve CI
+
+Depoda yalnızca saf modüllerin birim testleri vardı; arayüz, IPC, baskı ve model yolları
+hiçbir yerde kayıtlı değildi. `test/uctan-uca/` altında Playwright'ın `_electron`
+sürücüsüyle gerçek uygulamayı açan **63 test** eklendi.
+
+**Kişisel veri sorunu ve çözümü.** Gerçek vesikalık fotoğraflar depoya giremez (kural 5),
+ama uçtan uca testler bir fotoğrafa muhtaç. `gorsel-uret.js` bağımlılıksız bir PNG
+kodlayıcıyla 1200 × 1800'lük kaba bir portre üretiyor; testlerin çoğu onunla çalışıyor.
+Yüz/omuz bulma ve arka plan ayırma **gerçek bir yüz** istediği için o 12 test
+`HV_FOTOGRAFLAR` ayarlı değilse sebebiyle birlikte atlanıyor:
+
+| Koşum | Sonuç |
+| --- | --- |
+| `npm run test:uctan-uca` | 51 geçti, 12 atlandı (~90 sn) |
+| `HV_FOTOGRAFLAR=… npm run test:uctan-uca` | 63 geçti |
+
+`npm test` artık testleri çalıştırıyor; eskiden `electron .` idi, yani uygulamayı açıyordu
+ve bir CI makinesinde takılıp kalırdı.
+
+**Biçim denetimi.** `eslint` + `neostandard`. Kaynak kod hiç değişiklik gerektirmeden temiz
+geçti — 30 uyarının tamamı yeni test dosyalarındaydı. `promise/param-names` kapatıldı:
+sözlerde Türkçe ad kullanılıyor (`cozumle`/`reddet`).
+
+**CI.** `.github/workflows/testler.yml`; depo public olduğu için Actions ücretsiz. Biçim ve
+birim testleri ubuntu'da, uçtan uca testler **ubuntu + macOS + Windows** üçlüsünde koşuyor.
+Kural 4 kodun çapraz platform olmasını istiyordu ama bu hiç sınanmamıştı; ilk koşuda üç
+platform da geçti (uçtan uca adımı sırasıyla 80, 99 ve 81 saniye).
+
 ## Riskler
 
 | Risk | Faz | Etki |

@@ -1,5 +1,7 @@
 # Hiper Vesika
 
+[![Testler](https://github.com/hiperajans/hipervesika/actions/workflows/testler.yml/badge.svg)](https://github.com/hiperajans/hipervesika/actions/workflows/testler.yml)
+
 Vesikalık fotoğraf hazırlama ve baskı kağıdına dizme uygulaması. Bir portre fotoğrafını
 biyometrik ölçülere göre hizalar, arka planını beyazlatır, rötuşlar ve istenen fiziksel
 ölçüde çıktı üretir — tek fotoğraf olarak ya da bir baskı kağıdına dizilmiş halde.
