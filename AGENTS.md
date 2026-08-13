@@ -14,6 +14,9 @@ Arayüz ve alan terimleri Türkçedir.
 kullanımı, süreç ayrımı) için: **[`docs/FAZLAR.md`](./docs/FAZLAR.md)**. Bir özellik üzerinde
 çalışmadan önce ilgili fazın maddeleri okunmalıdır.
 
+Arayüzün tasarım katmanı (tasarım değişkenleri, bileşen sınıfları, yerleşim) için:
+**[`docs/ARAYUZ.md`](./docs/ARAYUZ.md)**. Görünüme dokunmadan önce okunmalıdır.
+
 ## Bağlayıcı Kurallar
 
 ### 1. Her işlem commit'lenir
@@ -103,5 +106,23 @@ veya bileşen kütüphanesi eklenmez.
 
 ## Yapı
 
-Depo henüz kod içermiyor. Uygulama iskeleti kurulduğunda (package.json, ana/renderer süreç
-ayrımı, derleme ve test komutları) bu bölüm ve `CLAUDE.md` güncellenir.
+```
+src/main/        Ana süreç: pencere, app:// protokolü, kaydetme, baskı, ayarlar, menü
+src/preload/     contextBridge köprüsü (window.hiperVesika) — tek geçit
+src/renderer/    Arayüz; js/ altında saf hesap modülleri, vendor/ gitignore'da
+scripts/vendor.js  Bootstrap, bootstrap-icons ve Human modellerini vendor/'a kopyalar
+test/            node:test birim testleri (saf modüller)
+docs/            FAZLAR.md (yol haritası), ARAYUZ.md (tasarım katmanı)
+```
+
+Komutlar:
+
+| Komut | İş |
+| --- | --- |
+| `npm start` | Uygulamayı çalıştırır |
+| `npm run test:birim` | Birim testleri (`node --test`) |
+| `npm run vendor` | vendor/ dosyalarını yeniler (`npm install` sonrası kendiliğinden çalışır) |
+
+`src/renderer/js/` altındaki modüller DOM'a ve Electron'a dokunmadan yazılır ki hem arayüzde
+hem Node'da (testte) çalışsınlar. Ölçüler milimetre tutulur; piksele yalnızca çizim, dışa
+aktarma ve baskı anında çevrilir.

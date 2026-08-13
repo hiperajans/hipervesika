@@ -1,34 +1,336 @@
-/* Yalnizca Bootstrap'in karsilamadigi stiller. Bootstrap'in kendi dosyalari
-   duzenlenmez (bkz. AGENTS.md, kural 6). */
+/* Hiper Vesika arayuz katmani.
+   Bootstrap'in kendi dosyalari duzenlenmez (bkz. AGENTS.md, kural 6); burada
+   yalnizca degiskenleri ezilir ve uygulamaya ozgu bilesenler tanimlanir.
+   Tema tek: aydinlik. */
 
-/* Dar ekranda sayfa normal sekilde kayar. */
-.ana-alan {
-  overflow-y: auto;
+:root {
+  /* Notr olcek - arayuzun govdesi bu gri tonlarindan kurulur. */
+  --hv-zemin: #eef0f4;
+  --hv-yuzey: #ffffff;
+  --hv-yuzey-ikincil: #f7f8fa;
+  --hv-kenar: #e2e5ec;
+  --hv-kenar-belirgin: #cfd4de;
+
+  --hv-metin: #182031;
+  --hv-metin-ikincil: #5b6577;
+  --hv-metin-soluk: #8b94a4;
+
+  /* Tek vurgu rengi; ikinci bir renk yalnizca uyari ve hata icin girer. */
+  --hv-vurgu: #2c5cd5;
+  --hv-vurgu-koyu: #234ab0;
+  --hv-vurgu-soluk: #eef3fe;
+
+  --hv-basari: #17795e;
+  --hv-uyari: #9a6212;
+  --hv-uyari-zemin: #fdf6e6;
+  --hv-tehlike: #c0392f;
+  --hv-tehlike-zemin: #fdeeed;
+
+  --hv-golge: 0 1px 2px rgba(24, 32, 49, 0.06), 0 1px 1px rgba(24, 32, 49, 0.04);
+  --hv-golge-panel: 0 1px 3px rgba(24, 32, 49, 0.07);
+  --hv-yaricap: 7px;
+  --hv-yaricap-kucuk: 5px;
+
+  --hv-baslik-yuksekligi: 52px;
+  --hv-durum-yuksekligi: 26px;
+  /* Panel pencereyle birlikte olceklenir ama okunur genislik araligindan
+     cikmaz; sabit piksel genislik pencere kuculunce tasariyi bozuyordu. */
+  --hv-panel-genisligi: clamp(300px, 26vw, 400px);
+
+  /* Bootstrap degiskenlerini ayni olcege cek. */
+  --bs-primary: var(--hv-vurgu);
+  --bs-primary-rgb: 44, 92, 213;
+  --bs-body-bg: var(--hv-zemin);
+  --bs-body-color: var(--hv-metin);
+  --bs-border-color: var(--hv-kenar);
+  --bs-border-radius: var(--hv-yaricap);
+  --bs-border-radius-sm: var(--hv-yaricap-kucuk);
+  --bs-secondary-bg: var(--hv-yuzey-ikincil);
+  --bs-tertiary-bg: #e6e9ef;
+  --bs-body-font-size: 0.875rem;
+  --bs-link-color-rgb: 44, 92, 213;
 }
 
-/* Genis ekranda yan panel kendi icinde kayar; tuval yerinde kalir. Ayar
-   kartlari pencere yuksekligini asinca tuvalin de yukari kaymasi arayuzu
-   kullanilmaz hale getiriyordu. */
-@media (min-width: 992px) {
-  .ana-alan {
-    overflow: hidden;
-  }
+/* --- Govde ---------------------------------------------------------------- */
 
-  .ana-alan aside {
-    max-height: 100%;
-    overflow-y: auto;
-  }
+.hv-govde {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  margin: 0;
+  background-color: var(--hv-zemin);
+  color: var(--hv-metin);
+  font-size: 0.875rem;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Calisma alani kartinin tuval govdesi esnesin diye. */
-#tuval-sarmal {
-  min-height: 20rem;
+/* --- Ust serit ------------------------------------------------------------ */
+
+.hv-baslik {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-shrink: 0;
+  height: var(--hv-baslik-yuksekligi);
+  padding: 0 0.875rem;
+  background-color: var(--hv-yuzey);
+  border-bottom: 1px solid var(--hv-kenar);
 }
 
-/* Fotografin uzerinde durdugu zemin. Vesikaligin beyaz kenarlari fark edilsin
-   diye kart zemininden biraz koyu tutuldu. */
-.tuval {
-  background-color: var(--bs-secondary-bg);
+.hv-marka {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.hv-marka-isaret {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--hv-yaricap-kucuk);
+  background: linear-gradient(140deg, var(--hv-vurgu), var(--hv-vurgu-koyu));
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.hv-marka-yazi {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.hv-marka-yazi strong {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.hv-marka-yazi small {
+  font-size: 0.6875rem;
+  color: var(--hv-metin-soluk);
+}
+
+.hv-baslik-sag {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+/* Acik dosyanin adi ve olculeri; uzun adlar kirpilir. */
+.hv-dosya-bilgisi {
+  max-width: 46ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  color: var(--hv-metin-ikincil);
+  font-variant-numeric: tabular-nums;
+}
+
+.hv-dosya-bilgisi:not(:empty) {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--hv-kenar);
+  border-radius: 999px;
+  background-color: var(--hv-yuzey-ikincil);
+}
+
+/* --- Ana yerlesim --------------------------------------------------------- */
+
+.hv-govde-alani {
+  display: flex;
+  flex: 1;
+  gap: 0.75rem;
+  min-height: 0;
+  padding: 0.75rem;
+}
+
+.hv-calisma {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  background-color: var(--hv-yuzey);
+  border: 1px solid var(--hv-kenar);
+  border-radius: var(--hv-yaricap);
+  box-shadow: var(--hv-golge-panel);
+  overflow: hidden;
+}
+
+/* --- Calisma alani arac cubugu -------------------------------------------- */
+
+.hv-arac-cubugu {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  padding: 0.4375rem 0.5rem;
+  border-bottom: 1px solid var(--hv-kenar);
+  background-color: var(--hv-yuzey);
+}
+
+.hv-arac-grubu {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--hv-yaricap);
+  background-color: var(--hv-yuzey-ikincil);
+  border: 1px solid var(--hv-kenar);
+}
+
+.hv-ayirac {
+  width: 1px;
+  height: 20px;
+  margin: 0 0.125rem;
+  background-color: var(--hv-kenar);
+}
+
+
+/* Grup icindeki secim dugmeleri (gorunum ve arac secimi). */
+.hv-secim {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.25rem 0.5625rem;
+  border: 0;
+  border-radius: var(--hv-yaricap-kucuk);
+  background-color: transparent;
+  color: var(--hv-metin-ikincil);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.hv-secim i {
+  font-size: 0.875rem;
+  opacity: 0.75;
+}
+
+.hv-secim:hover {
+  background-color: rgba(24, 32, 49, 0.05);
+  color: var(--hv-metin);
+}
+
+.btn-check:checked + .hv-secim {
+  background-color: var(--hv-yuzey);
+  color: var(--hv-vurgu);
+  box-shadow: var(--hv-golge);
+}
+
+.btn-check:checked + .hv-secim i {
+  opacity: 1;
+}
+
+.btn-check:focus-visible + .hv-secim {
+  outline: 2px solid var(--hv-vurgu);
+  outline-offset: 1px;
+}
+
+.btn-check:disabled + .hv-secim {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Simge dugmeleri. */
+.hv-simge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3125rem;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 0.4375rem;
+  border: 1px solid transparent;
+  border-radius: var(--hv-yaricap-kucuk);
+  background-color: transparent;
+  color: var(--hv-metin-ikincil);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.hv-simge i {
+  font-size: 0.9375rem;
+  line-height: 1;
+}
+
+.hv-simge-yazili {
+  padding: 0 0.5625rem;
+  border-color: var(--hv-kenar);
+  background-color: var(--hv-yuzey);
+}
+
+.hv-simge:hover:not(:disabled) {
+  background-color: rgba(24, 32, 49, 0.06);
+  color: var(--hv-metin);
+}
+
+.hv-simge:active:not(:disabled) {
+  background-color: rgba(24, 32, 49, 0.1);
+}
+
+.hv-simge:disabled {
+  opacity: 0.35;
+}
+
+/* Tuvalin sag alt kosesinde yuzen yakinlik denetimi. */
+.hv-yakinlik {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--hv-kenar);
+  border-radius: var(--hv-yaricap);
+  /* Zemin donuk: bulanik arka plan (backdrop-filter) burada gorunur bir sey
+     katmiyor, karsiliginda gereksiz bir kompozisyon katmani aciyor. */
+  background-color: var(--hv-yuzey);
+  box-shadow: 0 2px 8px rgba(24, 32, 49, 0.12);
+}
+
+.hv-yakinlik-oran {
+  min-width: 2.875rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--hv-metin-ikincil);
+}
+
+/* --- Tuval ---------------------------------------------------------------- */
+
+.hv-tuval-alani {
+  position: relative;
+  flex: 1;
+  min-height: 18rem;
+  overflow: hidden;
+  /* Fotografin arkasindaki satranc dokusu: beyaz vesikaligin kenari belli olur. */
+  background-color: #eaedf3;
+  background-image:
+    linear-gradient(45deg, #e5e8ef 25%, transparent 25%, transparent 75%, #e5e8ef 75%),
+    linear-gradient(45deg, #e5e8ef 25%, transparent 25%, transparent 75%, #e5e8ef 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+}
+
+/* Tuvaller kabin tamamini kaplar. Yuzde yukseklik yerine mutlak konum:
+   d-none kalkinca tuvalin kendi olcusunu kaba dayatmasi boylece imkansiz. */
+.hv-tuval-alani > .tuval {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
   cursor: grab;
   touch-action: none;
 }
@@ -37,23 +339,594 @@
   cursor: grabbing;
 }
 
-/* Sayfa onizlemesinde kagidin beyazi belli olsun diye zemin biraz daha koyu
-   ve imlec surukleme gostermez. */
 .sayfa-tuvali {
-  background-color: var(--bs-tertiary-bg);
   cursor: default;
 }
 
-/* Fotograf birakma katmani; tuvalin uzerinde durur, gorsel yuklenince gizlenir. */
+/* --- Fotograf birakma katmani --------------------------------------------- */
+
 .drop-overlay {
-  background-color: var(--bs-body-bg);
-  border: 2px dashed var(--bs-border-color);
-  border-radius: var(--bs-border-radius);
+  /* Konum ve olcu burada verilir; tuvalin kenarindan biraz iceride durur. */
+  inset: 0.625rem;
   pointer-events: none;
+  gap: 0.125rem;
+  background-color: rgba(255, 255, 255, 0.82);
+  border: 2px dashed var(--hv-kenar-belirgin);
+  border-radius: var(--hv-yaricap);
+  color: var(--hv-metin-ikincil);
 }
 
-/* Surukleme sirasinda birakma alani vurgulanir. */
+.hv-birakma-simgesi {
+  font-size: 2rem;
+  color: var(--hv-metin-soluk);
+  margin-bottom: 0.375rem;
+}
+
+.hv-birakma-baslik {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--hv-metin);
+}
+
+.hv-birakma-alt {
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.hv-birakma-turler {
+  margin: 0.5rem 0 0;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hv-metin-soluk);
+}
+
 .surukleniyor .drop-overlay {
-  border-color: var(--bs-primary);
-  background-color: var(--bs-primary-bg-subtle);
+  border-color: var(--hv-vurgu);
+  background-color: rgba(238, 243, 254, 0.92);
+}
+
+.surukleniyor .hv-birakma-simgesi {
+  color: var(--hv-vurgu);
+}
+
+.hv-uyari {
+  margin: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  border-radius: var(--hv-yaricap-kucuk);
+}
+
+/* --- Ayar paneli ---------------------------------------------------------- */
+
+.hv-panel {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: var(--hv-panel-genisligi);
+  min-height: 0;
+  background-color: var(--hv-yuzey);
+  border: 1px solid var(--hv-kenar);
+  border-radius: var(--hv-yaricap);
+  box-shadow: var(--hv-golge-panel);
+  overflow: hidden;
+}
+
+/* Adim seridi: yedi karti uc adima indirir. */
+.hv-adimlar {
+  display: flex;
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 0.375rem;
+  border-bottom: 1px solid var(--hv-kenar);
+  background-color: var(--hv-yuzey-ikincil);
+}
+
+.hv-adim {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  flex: 1;
+  padding: 0.375rem 0.25rem;
+  border: 0;
+  border-radius: var(--hv-yaricap-kucuk);
+  background-color: transparent;
+  color: var(--hv-metin-ikincil);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.hv-adim-no {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background-color: var(--hv-kenar-belirgin);
+  color: var(--hv-yuzey);
+  font-size: 0.625rem;
+  font-weight: 700;
+}
+
+.hv-adim:hover {
+  color: var(--hv-metin);
+  background-color: rgba(24, 32, 49, 0.04);
+}
+
+.hv-adim.active {
+  background-color: var(--hv-yuzey);
+  color: var(--hv-vurgu);
+  box-shadow: var(--hv-golge);
+}
+
+.hv-adim.active .hv-adim-no {
+  background-color: var(--hv-vurgu);
+}
+
+.hv-panel-icerik {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* --- Panel bolumleri ------------------------------------------------------ */
+
+.hv-bolum {
+  padding: 0.875rem 0.875rem 1rem;
+  border-bottom: 1px solid var(--hv-kenar);
+}
+
+.hv-bolum:last-child {
+  border-bottom: 0;
+}
+
+.hv-bolum-basligi {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0 0 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--hv-metin-soluk);
+}
+
+.hv-bolum-basligi i {
+  font-size: 0.8125rem;
+  color: var(--hv-metin-soluk);
+}
+
+/* Tek bir ayar: etiket + denetim. */
+.hv-alan {
+  margin-bottom: 0.75rem;
+}
+
+.hv-alan:last-child {
+  margin-bottom: 0;
+}
+
+.hv-etiket {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.3125rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--hv-metin-ikincil);
+}
+
+.hv-deger {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--hv-metin);
+  padding: 0.0625rem 0.375rem;
+  border-radius: var(--hv-yaricap-kucuk);
+  background-color: var(--hv-yuzey-ikincil);
+  border: 1px solid var(--hv-kenar);
+}
+
+/* Etiketin icindeki olcu birimi metne yapisir; sagdaki bilgi (ornegin adet
+   siniri) ise satirin sonunda kalir. */
+.hv-birim {
+  font-size: 0.6875rem;
+  font-weight: 400;
+  color: var(--hv-metin-soluk);
+  font-variant-numeric: tabular-nums;
+}
+
+.hv-etiket > span:first-child .hv-birim {
+  margin-left: 0.1875rem;
+}
+
+.hv-ikili {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.hv-uclu {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.hv-ikili .hv-alan,
+.hv-uclu .hv-alan {
+  margin-bottom: 0;
+}
+
+.hv-alan-anahtar {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 0.375rem;
+}
+
+/* Ipucu ve durum satirlari. */
+.hv-ipucu {
+  margin: 0.5rem 0 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--hv-metin-soluk);
+}
+
+.hv-ipucu:last-child {
+  margin-bottom: 0;
+}
+
+.hv-ipucu-arac {
+  display: flex;
+  gap: 0.375rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--hv-yaricap-kucuk);
+  background-color: var(--hv-yuzey-ikincil);
+  border: 1px solid var(--hv-kenar);
+}
+
+.hv-ipucu-arac i {
+  flex-shrink: 0;
+  margin-top: 0.0625rem;
+}
+
+/* Durum sinifları renderer tarafindan atanir. */
+.hv-ipucu.text-danger { color: var(--hv-tehlike) !important; }
+.hv-ipucu.text-success { color: var(--hv-basari) !important; }
+.hv-ipucu.text-body-secondary { color: var(--hv-metin-soluk) !important; }
+
+.hv-hata {
+  margin: -0.375rem 0 0.75rem;
+  font-size: 0.75rem;
+  color: var(--hv-tehlike);
+}
+
+.hv-kisayollar {
+  margin: 0.5rem 0 0;
+  font-size: 0.6875rem;
+  color: var(--hv-metin-soluk);
+}
+
+.hv-kisayollar kbd {
+  padding: 0.0625rem 0.3125rem;
+  border-radius: 4px;
+  background-color: var(--hv-yuzey-ikincil);
+  border: 1px solid var(--hv-kenar-belirgin);
+  border-bottom-width: 2px;
+  color: var(--hv-metin-ikincil);
+  font-size: 0.6875rem;
+}
+
+/* Ozet satirlari (cikti boyutu, kaynak cozunurluk). */
+.hv-ozet {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--hv-yaricap-kucuk);
+  background-color: var(--hv-yuzey-ikincil);
+  border: 1px solid var(--hv-kenar);
+}
+
+.hv-ozet > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.hv-ozet > div + div {
+  margin-top: 0.25rem;
+}
+
+.hv-ozet dt {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--hv-metin-soluk);
+}
+
+.hv-ozet dd {
+  margin: 0;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--hv-metin);
+}
+
+.hv-uyari-kucuk {
+  padding: 0.5rem 0.625rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  border-radius: var(--hv-yaricap-kucuk);
+}
+
+.hv-uyari-kucuk.alert-warning {
+  background-color: var(--hv-uyari-zemin);
+  border-color: #f2e2c0;
+  color: var(--hv-uyari);
+}
+
+.hv-uyari-kucuk.alert-danger {
+  background-color: var(--hv-tehlike-zemin);
+  border-color: #f4cfcc;
+  color: var(--hv-tehlike);
+}
+
+/* --- Dugmeler ------------------------------------------------------------- */
+
+.hv-dugme {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: 32px;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--hv-yaricap-kucuk);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.hv-dugme i {
+  font-size: 0.875rem;
+}
+
+.btn-primary.hv-dugme {
+  border-color: var(--hv-vurgu);
+  box-shadow: var(--hv-golge);
+}
+
+.btn-primary.hv-dugme:hover:not(:disabled) {
+  background-color: var(--hv-vurgu-koyu);
+  border-color: var(--hv-vurgu-koyu);
+}
+
+/* Soluk mavi bir dugme "biraz etkin" gibi duruyordu; kapali hali notr. */
+.btn-primary.hv-dugme:disabled {
+  opacity: 1;
+  background-color: var(--hv-kenar);
+  border-color: var(--hv-kenar);
+  color: var(--hv-metin-soluk);
+  box-shadow: none;
+}
+
+.hv-dugme-sade {
+  border: 1px solid var(--hv-kenar-belirgin);
+  background-color: var(--hv-yuzey);
+  color: var(--hv-metin-ikincil);
+}
+
+.hv-dugme-sade:hover:not(:disabled) {
+  background-color: var(--hv-yuzey-ikincil);
+  border-color: var(--hv-metin-soluk);
+  color: var(--hv-metin);
+}
+
+.hv-dugme-tehlike {
+  flex: 0 0 auto;
+  border: 1px solid var(--hv-kenar-belirgin);
+  background-color: var(--hv-yuzey);
+  color: var(--hv-tehlike);
+}
+
+.hv-dugme-tehlike:hover:not(:disabled) {
+  background-color: var(--hv-tehlike-zemin);
+  border-color: var(--hv-tehlike);
+  color: var(--hv-tehlike);
+}
+
+.hv-dugme:disabled {
+  opacity: 0.45;
+}
+
+.hv-dugme-cifti {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.hv-dugme-cifti > .hv-dugme:first-child {
+  flex: 1;
+}
+
+.hv-dugme-cifti-esit > .hv-dugme {
+  flex: 1;
+}
+
+.hv-bicim {
+  width: 100%;
+}
+
+.hv-bicim .hv-secim {
+  flex: 1;
+  justify-content: center;
+}
+
+/* --- Form denetimleri ----------------------------------------------------- */
+
+.hv-panel .form-control,
+.hv-panel .form-select,
+.hv-pencere .form-control {
+  min-height: 32px;
+  border-color: var(--hv-kenar-belirgin);
+  border-radius: var(--hv-yaricap-kucuk);
+  font-size: 0.8125rem;
+  color: var(--hv-metin);
+  background-color: var(--hv-yuzey);
+}
+
+.hv-panel .form-control:focus,
+.hv-panel .form-select:focus,
+.hv-pencere .form-control:focus {
+  border-color: var(--hv-vurgu);
+  box-shadow: 0 0 0 3px var(--hv-vurgu-soluk);
+}
+
+.hv-panel .form-control.is-invalid,
+.hv-panel .form-select.is-invalid {
+  border-color: var(--hv-tehlike);
+  background-image: none;
+}
+
+/* Kaydiraclar: ince yol, kucuk ve belirgin tutamak. */
+.form-range {
+  height: 1.25rem;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background-color: var(--hv-kenar-belirgin);
+}
+
+.form-range::-webkit-slider-thumb {
+  width: 15px;
+  height: 15px;
+  margin-top: -5.5px;
+  border: 1px solid var(--hv-vurgu-koyu);
+  background-color: var(--hv-vurgu);
+  box-shadow: 0 1px 2px rgba(24, 32, 49, 0.25);
+}
+
+.form-range::-webkit-slider-thumb:active {
+  background-color: var(--hv-vurgu-koyu);
+}
+
+.form-range:disabled::-webkit-slider-thumb {
+  background-color: var(--hv-metin-soluk);
+  border-color: var(--hv-metin-soluk);
+}
+
+.form-switch .form-check-input {
+  width: 2rem;
+  height: 1.0625rem;
+  margin-top: 0.125rem;
+  border-color: var(--hv-kenar-belirgin);
+}
+
+.form-check-input:checked {
+  background-color: var(--hv-vurgu);
+  border-color: var(--hv-vurgu);
+}
+
+.form-check-input:focus {
+  border-color: var(--hv-vurgu);
+  box-shadow: 0 0 0 3px var(--hv-vurgu-soluk);
+}
+
+.hv-anahtar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 24px;
+  margin: 0 0 0.25rem;
+  padding-left: 0;
+}
+
+.hv-anahtar .form-check-input {
+  flex-shrink: 0;
+  margin: 0;
+  float: none;
+}
+
+.hv-anahtar .form-check-label {
+  font-size: 0.8125rem;
+  color: var(--hv-metin);
+  cursor: pointer;
+}
+
+/* --- Ad soran pencere ----------------------------------------------------- */
+
+.hv-pencere {
+  border: 1px solid var(--hv-kenar);
+  border-radius: var(--hv-yaricap);
+  box-shadow: 0 12px 32px rgba(24, 32, 49, 0.18);
+}
+
+.hv-pencere .modal-header,
+.hv-pencere .modal-footer {
+  padding: 0.75rem 0.875rem;
+  border-color: var(--hv-kenar);
+}
+
+.hv-pencere .modal-body {
+  padding: 0.875rem;
+}
+
+.hv-pencere .modal-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* --- Durum cubugu --------------------------------------------------------- */
+
+.hv-durum-cubugu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-shrink: 0;
+  height: var(--hv-durum-yuksekligi);
+  padding: 0 0.875rem;
+  background-color: var(--hv-yuzey);
+  border-top: 1px solid var(--hv-kenar);
+  font-size: 0.6875rem;
+  color: var(--hv-metin-soluk);
+}
+
+#surum-bilgisi {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+/* --- Dar ekran ------------------------------------------------------------ */
+
+/* Panel altta, calisma alani ustte; sayfa bir butun olarak kayar. */
+@media (max-width: 991.98px) {
+  .hv-govde {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .hv-govde-alani {
+    flex-direction: column;
+  }
+
+  .hv-panel {
+    width: auto;
+  }
+
+  .hv-calisma {
+    min-height: 24rem;
+  }
+
+  .hv-panel-icerik {
+    overflow-y: visible;
+  }
+
+  .hv-dosya-bilgisi {
+    display: none;
+  }
 }

@@ -1045,7 +1045,9 @@ function sayfayiCiz () {
     kesimKilavuzu: el.kesimKilavuzu.checked
   })
 
-  el.dizmeAdetSiniri.textContent = yerlesim.sigmiyor ? '' : `en fazla ${yerlesim.sigacakAdet}`
+  // Etiketin yaninda dar bir alanda duruyor; yalnizca ust sinir yazilir.
+  el.dizmeAdetSiniri.textContent = yerlesim.sigmiyor ? '' : `≤ ${yerlesim.sigacakAdet}`
+  el.dizmeAdetSiniri.title = yerlesim.sigmiyor ? '' : `Kağıda en fazla ${yerlesim.sigacakAdet} adet sığıyor`
   el.dizmeAdet.max = String(Math.max(1, yerlesim.sigacakAdet ?? 1))
 
   if (yerlesim.sigmiyor) {
@@ -1071,6 +1073,10 @@ function gorunumuUygula () {
 
   el.tuval.classList.toggle('d-none', sayfaGorunumu)
   el.sayfaTuvali.classList.toggle('d-none', !sayfaGorunumu)
+  // Kirpma, leke ve firca araclari sayfa gorunumunde is gormez.
+  for (const oge of document.querySelectorAll('.hv-fotograf-araci')) {
+    oge.classList.toggle('d-none', sayfaGorunumu)
+  }
   // Fotograf araclari sayfa gorunumunde anlamsiz.
   el.birakmaKatmani.classList.toggle('d-none', sayfaGorunumu || yuklenenGorsel !== null)
 

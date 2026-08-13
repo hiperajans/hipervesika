@@ -9,524 +9,610 @@
     />
     <title>Hiper Vesika</title>
     <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="d-flex flex-column vh-100 bg-body-tertiary">
-    <nav class="navbar navbar-expand bg-body border-bottom flex-shrink-0">
-      <div class="container-fluid">
-        <span class="navbar-brand mb-0 h1">Hiper Vesika</span>
-        <span class="navbar-text small text-body-secondary d-none d-md-inline">
-          Vesikalık hazırlama ve dizdirme
+  <body class="hv-govde">
+    <!-- Üst şerit: kimlik, açık dosya ve dosya açma -->
+    <header class="hv-baslik">
+      <div class="hv-marka">
+        <span class="hv-marka-isaret" aria-hidden="true">HV</span>
+        <span class="hv-marka-yazi">
+          <strong>Hiper Vesika</strong>
+          <small>Vesikalık hazırlama ve dizdirme</small>
         </span>
       </div>
-    </nav>
 
-    <main class="ana-alan flex-grow-1">
-      <div class="container-fluid h-100 py-3">
-        <div class="row g-3 h-100">
-          <!-- Çalışma alanı: dar ekranda tam genişlik, geniş ekranda solda -->
-          <section class="col-12 col-lg-8 col-xxl-9 d-flex">
-            <div class="card w-100">
-              <div class="card-header d-flex flex-wrap align-items-center gap-2">
-                <button id="btn-dosya-sec" type="button" class="btn btn-primary btn-sm">
-                  Fotoğraf Seç
-                </button>
-                <input
-                  id="dosya-girisi"
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                  class="d-none"
-                />
+      <div class="hv-baslik-sag">
+        <span id="gorsel-bilgisi" class="hv-dosya-bilgisi"></span>
 
-                <div class="btn-group btn-group-sm" role="group" aria-label="Yakınlık">
-                  <button id="btn-uzaklas" type="button" class="btn btn-outline-secondary" title="Uzaklaş">
-                    −
-                  </button>
-                  <button id="btn-sigdir" type="button" class="btn btn-outline-secondary">
-                    Sığdır
-                  </button>
-                  <button id="btn-yakinlas" type="button" class="btn btn-outline-secondary" title="Yakınlaş">
-                    +
-                  </button>
-                </div>
-                <span id="yakinlik-orani" class="small text-body-secondary font-monospace"></span>
+        <input
+          id="dosya-girisi"
+          type="file"
+          accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+          class="d-none"
+        />
+        <button id="btn-dosya-sec" type="button" class="btn btn-primary btn-sm hv-dugme">
+          <i class="bi bi-folder2-open" aria-hidden="true"></i>
+          Fotoğraf Seç
+        </button>
+      </div>
+    </header>
 
-                <div class="vr d-none d-sm-block"></div>
+    <main class="hv-govde-alani">
+      <!-- Çalışma alanı -->
+      <section class="hv-calisma">
+        <div class="hv-arac-cubugu">
+          <div class="hv-arac-grubu" role="group" aria-label="Görünüm">
+            <input type="radio" class="btn-check" name="gorunum" id="gorunum-foto" checked />
+            <label class="btn hv-secim" for="gorunum-foto">
+              <i class="bi bi-person-bounding-box" aria-hidden="true"></i>
+              Fotoğraf
+            </label>
 
-                <div class="btn-group btn-group-sm" role="group" aria-label="Görünüm">
-                  <input type="radio" class="btn-check" name="gorunum" id="gorunum-foto" checked />
-                  <label class="btn btn-outline-secondary" for="gorunum-foto">Fotoğraf</label>
+            <input type="radio" class="btn-check" name="gorunum" id="gorunum-sayfa" />
+            <label class="btn hv-secim" for="gorunum-sayfa">
+              <i class="bi bi-grid-3x3" aria-hidden="true"></i>
+              Sayfa
+            </label>
+          </div>
 
-                  <input type="radio" class="btn-check" name="gorunum" id="gorunum-sayfa" />
-                  <label class="btn btn-outline-secondary" for="gorunum-sayfa">Sayfa</label>
-                </div>
+          <span class="hv-ayirac hv-fotograf-araci" aria-hidden="true"></span>
 
-                <div class="btn-group btn-group-sm" role="group" aria-label="Araç">
-                  <input type="radio" class="btn-check" name="arac" id="arac-kirpma" checked />
-                  <label class="btn btn-outline-secondary" for="arac-kirpma">Kırpma</label>
+          <div class="hv-arac-grubu hv-fotograf-araci" role="group" aria-label="Araç">
+            <input type="radio" class="btn-check" name="arac" id="arac-kirpma" checked />
+            <label class="btn hv-secim" for="arac-kirpma" title="Kadrajı taşı ve boyutlandır">
+              <i class="bi bi-crop" aria-hidden="true"></i>
+              Kırpma
+            </label>
 
-                  <input type="radio" class="btn-check" name="arac" id="arac-leke" />
-                  <label class="btn btn-outline-success" for="arac-leke">Leke</label>
+            <input type="radio" class="btn-check" name="arac" id="arac-leke" />
+            <label class="btn hv-secim" for="arac-leke" title="Lekenin üzerine tıklayın">
+              <i class="bi bi-bandaid" aria-hidden="true"></i>
+              Leke
+            </label>
 
-                  <input type="radio" class="btn-check" name="arac" id="arac-firca-sil" />
-                  <label class="btn btn-outline-danger" for="arac-firca-sil">Sil</label>
+            <input type="radio" class="btn-check" name="arac" id="arac-firca-sil" />
+            <label class="btn hv-secim" for="arac-firca-sil" title="Arka plandan sil">
+              <i class="bi bi-eraser" aria-hidden="true"></i>
+              Sil
+            </label>
 
-                  <input type="radio" class="btn-check" name="arac" id="arac-firca-getir" />
-                  <label class="btn btn-outline-primary" for="arac-firca-getir">Geri getir</label>
-                </div>
+            <input type="radio" class="btn-check" name="arac" id="arac-firca-getir" />
+            <label class="btn hv-secim" for="arac-firca-getir" title="Silineni geri getir">
+              <i class="bi bi-brush" aria-hidden="true"></i>
+              Geri getir
+            </label>
+          </div>
 
-                <div class="btn-group btn-group-sm" role="group" aria-label="Geçmiş">
-                  <button id="btn-geri-al" type="button" class="btn btn-outline-secondary" title="Geri al">
-                    ↶
-                  </button>
-                  <button id="btn-yinele" type="button" class="btn btn-outline-secondary" title="Yinele">
-                    ↷
-                  </button>
-                </div>
+          <span class="hv-ayirac" aria-hidden="true"></span>
 
-                <button
-                  id="btn-once-sonra"
-                  type="button"
-                  class="btn btn-outline-secondary btn-sm"
-                  title="Basılı tutunca özgün fotoğrafı gösterir"
-                >
-                  Önce / Sonra
-                </button>
+          <div class="hv-arac-grubu" role="group" aria-label="Geçmiş">
+            <button id="btn-geri-al" type="button" class="btn hv-simge" title="Geri al">
+              <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+            </button>
+            <button id="btn-yinele" type="button" class="btn hv-simge" title="Yinele">
+              <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+            </button>
+          </div>
 
-                <span
-                  id="gorsel-bilgisi"
-                  class="small text-body-secondary ms-auto text-truncate"
-                ></span>
-              </div>
+          <button
+            id="btn-once-sonra"
+            type="button"
+            class="btn hv-simge hv-simge-yazili hv-fotograf-araci"
+            title="Basılı tutunca özgün fotoğrafı gösterir"
+          >
+            <i class="bi bi-eye" aria-hidden="true"></i>
+            Önce / Sonra
+          </button>
 
-              <div id="uyari" class="alert alert-warning m-2 mb-0 py-2 d-none" role="alert"></div>
+        </div>
 
-              <div id="tuval-sarmal" class="card-body p-0 position-relative overflow-hidden">
-                <canvas id="tuval" class="tuval d-block w-100 h-100"></canvas>
-                <!-- d-block sart: d-none kalkinca canvas satir ici ogeye
-                     donuyor, height:100% cozumlenmiyor ve tuval kendi ic
-                     boyutunu kaba dayatarak her cizimde buyuyor. -->
-                <canvas id="sayfa-tuvali" class="tuval sayfa-tuvali d-none d-block w-100 h-100"></canvas>
+        <div id="uyari" class="alert alert-warning hv-uyari d-none" role="alert"></div>
 
-                <div
-                  id="birakma-katmani"
-                  class="drop-overlay position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center p-3"
-                >
-                  <p class="fs-5 mb-1">Fotoğrafı buraya sürükleyip bırakın</p>
-                  <p class="text-body-secondary mb-0">
-                    Panodan yapıştırabilir veya <em>Fotoğraf Seç</em> ile dosya açabilirsiniz.
-                    <br />
-                    JPG, PNG, WEBP
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
+        <div id="tuval-sarmal" class="hv-tuval-alani">
+          <canvas id="tuval" class="tuval d-block w-100 h-100"></canvas>
+          <!-- d-block şart: d-none kalkınca canvas satır içi öğeye dönüyor. -->
+          <canvas id="sayfa-tuvali" class="tuval sayfa-tuvali d-none d-block w-100 h-100"></canvas>
 
-          <!-- Ayar paneli: dar ekranda altta, geniş ekranda sağda -->
-          <aside class="col-12 col-lg-4 col-xxl-3 d-flex flex-column gap-3">
-            <div class="card">
-              <div class="card-header fw-semibold">Hizalama</div>
-              <div class="card-body">
-                <button
-                  id="btn-otomatik-hizala"
-                  type="button"
-                  class="btn btn-primary btn-sm w-100 mb-2"
-                >
-                  Otomatik hizala
-                </button>
-                <p id="hizalama-durumu" class="small text-body-secondary mb-3">
-                  Yüz ve omuz konumuna göre eğikliği düzeltir, biyometrik kadrajı kurar.
-                </p>
+          <div
+            id="birakma-katmani"
+            class="drop-overlay position-absolute d-flex flex-column align-items-center justify-content-center text-center p-3"
+          >
+            <i class="bi bi-cloud-arrow-up hv-birakma-simgesi" aria-hidden="true"></i>
+            <p class="hv-birakma-baslik">Fotoğrafı buraya sürükleyip bırakın</p>
+            <p class="hv-birakma-alt">
+              Panodan yapıştırabilir veya <em>Fotoğraf Seç</em> ile dosya açabilirsiniz.
+            </p>
+            <p class="hv-birakma-turler">JPG · PNG · WEBP</p>
+          </div>
 
-                <label for="donme-acisi" class="form-label d-flex justify-content-between mb-1">
+          <!-- Yakınlık denetimi tuvalin üzerinde durur; araç çubuğunu şişirmez. -->
+          <div class="hv-yakinlik" role="group" aria-label="Yakınlık">
+            <button id="btn-uzaklas" type="button" class="btn hv-simge" title="Uzaklaş">
+              <i class="bi bi-dash-lg" aria-hidden="true"></i>
+            </button>
+            <span id="yakinlik-orani" class="hv-yakinlik-oran"></span>
+            <button id="btn-yakinlas" type="button" class="btn hv-simge" title="Yakınlaş">
+              <i class="bi bi-plus-lg" aria-hidden="true"></i>
+            </button>
+            <span class="hv-ayirac" aria-hidden="true"></span>
+            <button id="btn-sigdir" type="button" class="btn hv-simge" title="Ekrana sığdır">
+              <i class="bi bi-arrows-angle-contract" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Ayar paneli: dar ekranda altta, geniş ekranda sağda -->
+      <aside class="hv-panel">
+        <nav class="hv-adimlar" role="tablist" aria-label="Çalışma adımları">
+          <button
+            class="hv-adim active"
+            id="adim-kadraj-dugmesi"
+            data-bs-toggle="tab"
+            data-bs-target="#adim-kadraj"
+            type="button"
+            role="tab"
+            aria-controls="adim-kadraj"
+            aria-selected="true"
+          >
+            <span class="hv-adim-no">1</span>
+            Kadraj
+          </button>
+          <button
+            class="hv-adim"
+            id="adim-rotus-dugmesi"
+            data-bs-toggle="tab"
+            data-bs-target="#adim-rotus"
+            type="button"
+            role="tab"
+            aria-controls="adim-rotus"
+            aria-selected="false"
+          >
+            <span class="hv-adim-no">2</span>
+            Rötuş
+          </button>
+          <button
+            class="hv-adim"
+            id="adim-cikti-dugmesi"
+            data-bs-toggle="tab"
+            data-bs-target="#adim-cikti"
+            type="button"
+            role="tab"
+            aria-controls="adim-cikti"
+            aria-selected="false"
+          >
+            <span class="hv-adim-no">3</span>
+            Çıktı
+          </button>
+        </nav>
+
+        <div class="tab-content hv-panel-icerik">
+          <!-- ADIM 1: Kadraj -->
+          <div class="tab-pane fade show active" id="adim-kadraj" role="tabpanel"
+            aria-labelledby="adim-kadraj-dugmesi" tabindex="0">
+
+            <section class="hv-bolum">
+              <h2 class="hv-bolum-basligi">
+                <i class="bi bi-magic" aria-hidden="true"></i> Hizalama
+              </h2>
+
+              <button id="btn-otomatik-hizala" type="button"
+                class="btn btn-primary btn-sm hv-dugme w-100">
+                <i class="bi bi-stars" aria-hidden="true"></i>
+                Otomatik hizala
+              </button>
+              <p id="hizalama-durumu" class="hv-ipucu">
+                Yüz ve omuz konumuna göre eğikliği düzeltir, biyometrik kadrajı kurar.
+              </p>
+
+              <div class="hv-alan">
+                <label for="donme-acisi" class="hv-etiket">
                   <span>Eğiklik</span>
-                  <span id="donme-degeri" class="font-monospace">0,0°</span>
+                  <span id="donme-degeri" class="hv-deger">0,0°</span>
                 </label>
-                <input
-                  type="range"
-                  class="form-range"
-                  id="donme-acisi"
-                  min="-25"
-                  max="25"
-                  step="0.1"
-                  value="0"
-                />
-                <button
-                  id="btn-donmeyi-sifirla"
-                  type="button"
-                  class="btn btn-outline-secondary btn-sm w-100"
-                >
-                  Döndürmeyi sıfırla
+                <input type="range" class="form-range" id="donme-acisi"
+                  min="-25" max="25" step="0.1" value="0" />
+              </div>
+
+              <button id="btn-donmeyi-sifirla" type="button" class="btn hv-dugme hv-dugme-sade w-100">
+                <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                Döndürmeyi sıfırla
+              </button>
+            </section>
+
+            <section class="hv-bolum">
+              <h2 class="hv-bolum-basligi">
+                <i class="bi bi-aspect-ratio" aria-hidden="true"></i> Vesikalık ölçüsü
+              </h2>
+
+              <div class="hv-alan">
+                <label for="onayar-secimi" class="hv-etiket"><span>Hazır ölçüler</span></label>
+                <select id="onayar-secimi" class="form-select form-select-sm"></select>
+              </div>
+
+              <div class="hv-ikili">
+                <div class="hv-alan">
+                  <label for="genislik-mm" class="hv-etiket">
+                    <span>Genişlik <span class="hv-birim">mm</span></span>
+                  </label>
+                  <input id="genislik-mm" type="number" class="form-control form-control-sm"
+                    min="10" max="300" step="0.5" />
+                </div>
+                <div class="hv-alan">
+                  <label for="yukseklik-mm" class="hv-etiket">
+                    <span>Yükseklik <span class="hv-birim">mm</span></span>
+                  </label>
+                  <input id="yukseklik-mm" type="number" class="form-control form-control-sm"
+                    min="10" max="300" step="0.5" />
+                </div>
+              </div>
+              <div id="olcu-hatasi" class="hv-hata d-none">
+                Ölçüler 10 ile 300 mm arasında olmalıdır.
+              </div>
+
+              <div class="hv-dugme-cifti">
+                <button id="btn-olcu-kaydet" type="button" class="btn hv-dugme hv-dugme-sade">
+                  <i class="bi bi-bookmark-plus" aria-hidden="true"></i>
+                  Ölçüyü kaydet
+                </button>
+                <button id="btn-olcu-sil" type="button" class="btn hv-dugme hv-dugme-tehlike"
+                  title="Seçili ön ayarı sil" disabled>
+                  <i class="bi bi-trash3" aria-hidden="true"></i>
                 </button>
               </div>
-            </div>
 
-            <div class="card">
-              <div class="card-header fw-semibold">Arka plan</div>
-              <div class="card-body">
-                <div class="form-check form-switch mb-2">
-                  <input class="form-check-input" type="checkbox" role="switch" id="arkaplan-beyazlat" />
-                  <label class="form-check-label" for="arkaplan-beyazlat">
-                    Arka planı beyazlat
-                  </label>
+              <div class="hv-alan">
+                <label for="dpi-secimi" class="hv-etiket"><span>Baskı çözünürlüğü</span></label>
+                <select id="dpi-secimi" class="form-select form-select-sm"></select>
+              </div>
+
+              <dl class="hv-ozet">
+                <div>
+                  <dt>Çıktı boyutu</dt>
+                  <dd id="cikti-piksel">—</dd>
                 </div>
-                <p id="arkaplan-durumu" class="small text-body-secondary mb-3">
-                  Kişiyi arka plandan ayırır ve zemini beyaza çevirir.
+                <div>
+                  <dt>Kaynak çözünürlük</dt>
+                  <dd id="efektif-dpi">—</dd>
+                </div>
+              </dl>
+
+              <div id="cozunurluk-uyarisi" class="alert hv-uyari-kucuk d-none" role="status"></div>
+
+              <button id="btn-kirpmayi-sifirla" type="button" class="btn hv-dugme hv-dugme-sade w-100">
+                <i class="bi bi-bounding-box" aria-hidden="true"></i>
+                Kırpmayı sıfırla
+              </button>
+            </section>
+          </div>
+
+          <!-- ADIM 2: Rötuş -->
+          <div class="tab-pane fade" id="adim-rotus" role="tabpanel"
+            aria-labelledby="adim-rotus-dugmesi" tabindex="0">
+
+            <section class="hv-bolum">
+              <h2 class="hv-bolum-basligi">
+                <i class="bi bi-layers" aria-hidden="true"></i> Arka plan
+              </h2>
+
+              <div class="form-check form-switch hv-anahtar">
+                <input class="form-check-input" type="checkbox" role="switch" id="arkaplan-beyazlat" />
+                <label class="form-check-label" for="arkaplan-beyazlat">Arka planı beyazlat</label>
+              </div>
+              <p id="arkaplan-durumu" class="hv-ipucu">
+                Kişiyi arka plandan ayırır ve zemini beyaza çevirir.
+              </p>
+
+              <div id="arkaplan-ayarlari" class="d-none">
+                <div class="hv-alan">
+                  <label for="maske-genislet" class="hv-etiket">
+                    <span>Maske</span>
+                    <span id="maske-genislet-degeri" class="hv-deger">0</span>
+                  </label>
+                  <input type="range" class="form-range" id="maske-genislet"
+                    min="-30" max="30" step="1" value="0" />
+                </div>
+
+                <div class="hv-alan">
+                  <label for="maske-yumusat" class="hv-etiket">
+                    <span>Kenar yumuşatma</span>
+                    <span id="maske-yumusat-degeri" class="hv-deger">1 px</span>
+                  </label>
+                  <input type="range" class="form-range" id="maske-yumusat"
+                    min="0" max="8" step="0.5" value="1" />
+                </div>
+
+                <p class="hv-ipucu hv-ipucu-arac">
+                  <i class="bi bi-info-circle" aria-hidden="true"></i>
+                  <span>
+                    Kenarları düzeltmek için üstteki <em>Sil</em> ve
+                    <em>Geri getir</em> araçlarını kullanın.
+                  </span>
                 </p>
 
-                <div id="arkaplan-ayarlari" class="d-none">
-                  <label for="maske-genislet" class="form-label d-flex justify-content-between mb-1">
-                    <span>Maske</span>
-                    <span id="maske-genislet-degeri" class="font-monospace">0</span>
-                  </label>
-                  <input
-                    type="range" class="form-range" id="maske-genislet"
-                    min="-30" max="30" step="1" value="0"
-                  />
-
-                  <label for="maske-yumusat" class="form-label d-flex justify-content-between mb-1">
-                    <span>Kenar yumuşatma</span>
-                    <span id="maske-yumusat-degeri" class="font-monospace">1 px</span>
-                  </label>
-                  <input
-                    type="range" class="form-range" id="maske-yumusat"
-                    min="0" max="8" step="0.5" value="1"
-                  />
-
-                  <hr />
-
-                  <p class="small text-body-secondary mb-2">
-                    Kenarları düzeltmek için üstteki <em>Sil</em> ve <em>Geri getir</em>
-                    araçlarını kullanın.
-                  </p>
-
-                  <label for="firca-boyu" class="form-label d-flex justify-content-between mb-1">
+                <div class="hv-alan">
+                  <label for="firca-boyu" class="hv-etiket">
                     <span>Fırça boyu</span>
-                    <span id="firca-boyu-degeri" class="font-monospace">24 px</span>
+                    <span id="firca-boyu-degeri" class="hv-deger">24 px</span>
                   </label>
-                  <input
-                    type="range" class="form-range" id="firca-boyu"
-                    min="4" max="120" step="2" value="24"
-                  />
+                  <input type="range" class="form-range" id="firca-boyu"
+                    min="4" max="120" step="2" value="24" />
                 </div>
               </div>
-            </div>
+            </section>
 
-            <div class="card">
-              <div class="card-header fw-semibold">Rötuş</div>
-              <div class="card-body">
-                <label for="rotus-parlaklik" class="form-label d-flex justify-content-between mb-1">
+            <section class="hv-bolum">
+              <h2 class="hv-bolum-basligi">
+                <i class="bi bi-sliders" aria-hidden="true"></i> Renk ve ton
+              </h2>
+
+              <div class="hv-alan">
+                <label for="rotus-parlaklik" class="hv-etiket">
                   <span>Parlaklık</span>
-                  <span id="rotus-parlaklik-degeri" class="font-monospace">0</span>
+                  <span id="rotus-parlaklik-degeri" class="hv-deger">0</span>
                 </label>
                 <input type="range" class="form-range" id="rotus-parlaklik"
                   min="-50" max="50" step="1" value="0" />
+              </div>
 
-                <label for="rotus-kontrast" class="form-label d-flex justify-content-between mb-1">
+              <div class="hv-alan">
+                <label for="rotus-kontrast" class="hv-etiket">
                   <span>Kontrast</span>
-                  <span id="rotus-kontrast-degeri" class="font-monospace">0</span>
+                  <span id="rotus-kontrast-degeri" class="hv-deger">0</span>
                 </label>
                 <input type="range" class="form-range" id="rotus-kontrast"
                   min="-50" max="50" step="1" value="0" />
+              </div>
 
-                <label for="rotus-doygunluk" class="form-label d-flex justify-content-between mb-1">
+              <div class="hv-alan">
+                <label for="rotus-doygunluk" class="hv-etiket">
                   <span>Doygunluk</span>
-                  <span id="rotus-doygunluk-degeri" class="font-monospace">0</span>
+                  <span id="rotus-doygunluk-degeri" class="hv-deger">0</span>
                 </label>
                 <input type="range" class="form-range" id="rotus-doygunluk"
                   min="-50" max="50" step="1" value="0" />
+              </div>
 
-                <label for="rotus-sicaklik" class="form-label d-flex justify-content-between mb-1">
+              <div class="hv-alan">
+                <label for="rotus-sicaklik" class="hv-etiket">
                   <span>Renk sıcaklığı</span>
-                  <span id="rotus-sicaklik-degeri" class="font-monospace">0</span>
+                  <span id="rotus-sicaklik-degeri" class="hv-deger">0</span>
                 </label>
                 <input type="range" class="form-range" id="rotus-sicaklik"
                   min="-50" max="50" step="1" value="0" />
+              </div>
 
-                <label for="rotus-keskinlik" class="form-label d-flex justify-content-between mb-1">
+              <div class="hv-alan">
+                <label for="rotus-keskinlik" class="hv-etiket">
                   <span>Keskinlik</span>
-                  <span id="rotus-keskinlik-degeri" class="font-monospace">0</span>
+                  <span id="rotus-keskinlik-degeri" class="hv-deger">0</span>
                 </label>
                 <input type="range" class="form-range" id="rotus-keskinlik"
                   min="0" max="100" step="1" value="0" />
+              </div>
+            </section>
 
-                <hr />
+            <section class="hv-bolum">
+              <h2 class="hv-bolum-basligi">
+                <i class="bi bi-bandaid" aria-hidden="true"></i> Leke temizleme
+              </h2>
 
-                <label for="leke-boyu" class="form-label d-flex justify-content-between mb-1">
+              <div class="hv-alan">
+                <label for="leke-boyu" class="hv-etiket">
                   <span>Leke boyu</span>
-                  <span id="leke-boyu-degeri" class="font-monospace">24 px</span>
+                  <span id="leke-boyu-degeri" class="hv-deger">24 px</span>
                 </label>
                 <input type="range" class="form-range" id="leke-boyu"
                   min="6" max="80" step="2" value="24" />
-                <p id="leke-durumu" class="small text-body-secondary mb-2">
-                  Üstteki <em>Leke</em> aracıyla lekenin üzerine tıklayın.
-                </p>
+              </div>
+              <p id="leke-durumu" class="hv-ipucu">
+                Üstteki <em>Leke</em> aracıyla lekenin üzerine tıklayın.
+              </p>
 
-                <button id="btn-rotusu-sifirla" type="button"
-                  class="btn btn-outline-secondary btn-sm w-100">
-                  Rötuşu sıfırla
+              <button id="btn-rotusu-sifirla" type="button" class="btn hv-dugme hv-dugme-sade w-100">
+                <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                Rötuşu sıfırla
+              </button>
+            </section>
+          </div>
+
+          <!-- ADIM 3: Çıktı -->
+          <div class="tab-pane fade" id="adim-cikti" role="tabpanel"
+            aria-labelledby="adim-cikti-dugmesi" tabindex="0">
+
+            <section class="hv-bolum">
+              <h2 class="hv-bolum-basligi">
+                <i class="bi bi-download" aria-hidden="true"></i> Tek fotoğraf
+              </h2>
+
+              <div class="hv-alan">
+                <span class="hv-etiket"><span>Biçim</span></span>
+                <div class="hv-arac-grubu hv-bicim" role="group" aria-label="Biçim">
+                  <input type="radio" class="btn-check" name="cikti-turu" id="tur-jpg" checked />
+                  <label class="btn hv-secim" for="tur-jpg">JPG</label>
+
+                  <input type="radio" class="btn-check" name="cikti-turu" id="tur-png" />
+                  <label class="btn hv-secim" for="tur-png">PNG</label>
+                </div>
+              </div>
+
+              <div id="kalite-alani" class="hv-alan">
+                <label for="jpg-kalitesi" class="hv-etiket">
+                  <span>JPEG kalitesi</span>
+                  <span id="jpg-kalitesi-degeri" class="hv-deger">%92</span>
+                </label>
+                <input type="range" class="form-range" id="jpg-kalitesi"
+                  min="60" max="100" step="1" value="92" />
+              </div>
+
+              <button id="btn-indir" type="button" class="btn btn-primary btn-sm hv-dugme w-100">
+                <i class="bi bi-download" aria-hidden="true"></i>
+                Fotoğrafı indir
+              </button>
+              <p id="indirme-durumu" class="hv-ipucu">
+                Kırpılan alan seçilen ölçüde ve çözünürlükte kaydedilir.
+              </p>
+            </section>
+
+            <section class="hv-bolum">
+              <h2 class="hv-bolum-basligi">
+                <i class="bi bi-grid-3x3-gap" aria-hidden="true"></i> Kağıda dizme
+              </h2>
+
+              <div class="hv-alan">
+                <label for="kagit-onayari" class="hv-etiket"><span>Baskı kağıdı</span></label>
+                <select id="kagit-onayari" class="form-select form-select-sm"></select>
+              </div>
+
+              <div class="hv-ikili">
+                <div class="hv-alan">
+                  <label for="kagit-genislik" class="hv-etiket">
+                    <span>Genişlik <span class="hv-birim">mm</span></span>
+                  </label>
+                  <input id="kagit-genislik" type="number" class="form-control form-control-sm"
+                    min="50" max="1000" step="1" />
+                </div>
+                <div class="hv-alan">
+                  <label for="kagit-yukseklik" class="hv-etiket">
+                    <span>Yükseklik <span class="hv-birim">mm</span></span>
+                  </label>
+                  <input id="kagit-yukseklik" type="number" class="form-control form-control-sm"
+                    min="50" max="1000" step="1" />
+                </div>
+              </div>
+              <div id="kagit-hatasi" class="hv-hata d-none">
+                Kağıt ölçüleri 50 ile 1000 mm arasında olmalıdır.
+              </div>
+
+              <div class="hv-dugme-cifti">
+                <button id="btn-kagit-kaydet" type="button" class="btn hv-dugme hv-dugme-sade">
+                  <i class="bi bi-bookmark-plus" aria-hidden="true"></i>
+                  Kağıdı kaydet
+                </button>
+                <button id="btn-kagit-sil" type="button" class="btn hv-dugme hv-dugme-tehlike"
+                  title="Seçili ön ayarı sil" disabled>
+                  <i class="bi bi-trash3" aria-hidden="true"></i>
                 </button>
               </div>
-            </div>
 
-            <div class="card">
-              <div class="card-header fw-semibold">Vesikalık ölçüsü</div>
-              <div class="card-body">
-                <div class="mb-3">
-                  <label for="onayar-secimi" class="form-label">Hazır ölçüler</label>
-                  <select id="onayar-secimi" class="form-select form-select-sm"></select>
+              <button id="btn-kagit-cevir" type="button" class="btn hv-dugme hv-dugme-sade w-100">
+                <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+                Yatay / dikey çevir
+              </button>
+
+              <div class="hv-uclu">
+                <div class="hv-alan">
+                  <label for="dizme-kenar" class="hv-etiket">
+                    <span>Kenar <span class="hv-birim">mm</span></span>
+                  </label>
+                  <input id="dizme-kenar" type="number" class="form-control form-control-sm"
+                    min="0" max="50" step="1" value="0" />
                 </div>
-
-                <div class="row g-2 mb-3">
-                  <div class="col-6">
-                    <label for="genislik-mm" class="form-label">Genişlik (mm)</label>
-                    <input
-                      id="genislik-mm"
-                      type="number"
-                      class="form-control form-control-sm"
-                      min="10"
-                      max="300"
-                      step="0.5"
-                    />
-                  </div>
-                  <div class="col-6">
-                    <label for="yukseklik-mm" class="form-label">Yükseklik (mm)</label>
-                    <input
-                      id="yukseklik-mm"
-                      type="number"
-                      class="form-control form-control-sm"
-                      min="10"
-                      max="300"
-                      step="0.5"
-                    />
-                  </div>
-                  <div class="col-12">
-                    <div id="olcu-hatasi" class="form-text text-danger d-none">
-                      Ölçüler 10 ile 300 mm arasında olmalıdır.
-                    </div>
-                  </div>
+                <div class="hv-alan">
+                  <label for="dizme-aralik" class="hv-etiket">
+                    <span>Aralık <span class="hv-birim">mm</span></span>
+                  </label>
+                  <input id="dizme-aralik" type="number" class="form-control form-control-sm"
+                    min="0" max="50" step="1" value="0" />
                 </div>
-
-                <div class="d-flex gap-2 mb-3">
-                  <button id="btn-olcu-kaydet" type="button"
-                    class="btn btn-outline-secondary btn-sm flex-grow-1">
-                    Ölçüyü kaydet
-                  </button>
-                  <button id="btn-olcu-sil" type="button"
-                    class="btn btn-outline-danger btn-sm" disabled>
-                    Sil
-                  </button>
-                </div>
-
-                <div class="mb-3">
-                  <label for="dpi-secimi" class="form-label">Baskı çözünürlüğü</label>
-                  <select id="dpi-secimi" class="form-select form-select-sm"></select>
-                </div>
-
-                <hr />
-
-                <div class="small mb-2">
-                  <div class="d-flex justify-content-between">
-                    <span class="text-body-secondary">Çıktı boyutu</span>
-                    <span id="cikti-piksel" class="font-monospace">—</span>
-                  </div>
-                  <div class="d-flex justify-content-between">
-                    <span class="text-body-secondary">Kaynak çözünürlük</span>
-                    <span id="efektif-dpi" class="font-monospace">—</span>
-                  </div>
-                </div>
-
-                <div id="cozunurluk-uyarisi" class="alert py-2 small d-none" role="status"></div>
-
-                <button
-                  id="btn-kirpmayi-sifirla"
-                  type="button"
-                  class="btn btn-outline-secondary btn-sm w-100"
-                >
-                  Kırpmayı sıfırla
-                </button>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-header fw-semibold">Kağıda dizme</div>
-              <div class="card-body">
-                <div class="mb-3">
-                  <label for="kagit-onayari" class="form-label">Baskı kağıdı</label>
-                  <select id="kagit-onayari" class="form-select form-select-sm"></select>
-                </div>
-
-                <div class="row g-2 mb-2">
-                  <div class="col-6">
-                    <label for="kagit-genislik" class="form-label">Genişlik (mm)</label>
-                    <input id="kagit-genislik" type="number" class="form-control form-control-sm"
-                      min="50" max="1000" step="1" />
-                  </div>
-                  <div class="col-6">
-                    <label for="kagit-yukseklik" class="form-label">Yükseklik (mm)</label>
-                    <input id="kagit-yukseklik" type="number" class="form-control form-control-sm"
-                      min="50" max="1000" step="1" />
-                  </div>
-                  <div class="col-12">
-                    <div id="kagit-hatasi" class="form-text text-danger d-none">
-                      Kağıt ölçüleri 50 ile 1000 mm arasında olmalıdır.
-                    </div>
-                  </div>
-                </div>
-
-                <div class="d-flex gap-2 mb-3">
-                  <button id="btn-kagit-kaydet" type="button"
-                    class="btn btn-outline-secondary btn-sm flex-grow-1">
-                    Kağıdı kaydet
-                  </button>
-                  <button id="btn-kagit-sil" type="button"
-                    class="btn btn-outline-danger btn-sm" disabled>
-                    Sil
-                  </button>
-                </div>
-
-                <button id="btn-kagit-cevir" type="button"
-                  class="btn btn-outline-secondary btn-sm w-100 mb-3">
-                  Yatay / dikey çevir
-                </button>
-
-                <div class="row g-2 mb-2">
-                  <div class="col-6">
-                    <label for="dizme-kenar" class="form-label">Kenar boşluğu (mm)</label>
-                    <input id="dizme-kenar" type="number" class="form-control form-control-sm"
-                      min="0" max="50" step="1" value="0" />
-                  </div>
-                  <div class="col-6">
-                    <label for="dizme-aralik" class="form-label">Aralık (mm)</label>
-                    <input id="dizme-aralik" type="number" class="form-control form-control-sm"
-                      min="0" max="50" step="1" value="0" />
-                  </div>
-                </div>
-
-                <div class="mb-2">
-                  <label for="dizme-adet" class="form-label d-flex justify-content-between mb-1">
+                <div class="hv-alan">
+                  <label for="dizme-adet" class="hv-etiket">
                     <span>Adet</span>
-                    <span id="dizme-adet-siniri" class="font-monospace text-body-secondary"></span>
+                    <span id="dizme-adet-siniri" class="hv-birim"></span>
                   </label>
                   <input id="dizme-adet" type="number" class="form-control form-control-sm"
                     min="1" step="1" value="4" />
                 </div>
-
-                <div class="form-check mb-2">
-                  <input class="form-check-input" type="checkbox" id="kesim-kilavuzu" checked />
-                  <label class="form-check-label" for="kesim-kilavuzu">Kesim kılavuzu</label>
-                </div>
-
-                <p id="dizme-durumu" class="small text-body-secondary mb-0">
-                  Sayfayı görmek için üstteki <em>Sayfa</em> görünümüne geçin.
-                </p>
               </div>
-            </div>
 
-            <div class="card">
-              <div class="card-header fw-semibold">İndir</div>
-              <div class="card-body">
-                <div class="btn-group btn-group-sm w-100 mb-3" role="group" aria-label="Biçim">
-                  <input type="radio" class="btn-check" name="cikti-turu" id="tur-jpg" checked />
-                  <label class="btn btn-outline-secondary" for="tur-jpg">JPG</label>
-
-                  <input type="radio" class="btn-check" name="cikti-turu" id="tur-png" />
-                  <label class="btn btn-outline-secondary" for="tur-png">PNG</label>
-                </div>
-
-                <div id="kalite-alani">
-                  <label for="jpg-kalitesi" class="form-label d-flex justify-content-between mb-1">
-                    <span>JPEG kalitesi</span>
-                    <span id="jpg-kalitesi-degeri" class="font-monospace">%92</span>
-                  </label>
-                  <input type="range" class="form-range" id="jpg-kalitesi"
-                    min="60" max="100" step="1" value="92" />
-                </div>
-
-                <button id="btn-indir" type="button" class="btn btn-primary btn-sm w-100">
-                  Fotoğrafı indir
-                </button>
-                <p id="indirme-durumu" class="small text-body-secondary mt-2 mb-0">
-                  Kırpılan alan seçilen ölçüde ve çözünürlükte kaydedilir.
-                </p>
+              <div class="form-check hv-anahtar">
+                <input class="form-check-input" type="checkbox" id="kesim-kilavuzu" checked />
+                <label class="form-check-label" for="kesim-kilavuzu">Kesim kılavuzu</label>
               </div>
-            </div>
 
-            <div class="card">
-              <div class="card-header fw-semibold">Baskı</div>
-              <div class="card-body">
-                <div class="mb-2">
-                  <label for="yazici-secimi" class="form-label">Yazıcı</label>
-                  <select id="yazici-secimi" class="form-select form-select-sm"></select>
+              <p id="dizme-durumu" class="hv-ipucu">
+                Sayfayı görmek için üstteki <em>Sayfa</em> görünümüne geçin.
+              </p>
+            </section>
+
+            <section class="hv-bolum">
+              <h2 class="hv-bolum-basligi">
+                <i class="bi bi-printer" aria-hidden="true"></i> Baskı
+              </h2>
+
+              <div class="hv-alan">
+                <label for="yazici-secimi" class="hv-etiket"><span>Yazıcı</span></label>
+                <select id="yazici-secimi" class="form-select form-select-sm"></select>
+              </div>
+
+              <div class="hv-ikili">
+                <div class="hv-alan">
+                  <label for="kopya-sayisi" class="hv-etiket"><span>Kopya</span></label>
+                  <input id="kopya-sayisi" type="number" class="form-control form-control-sm"
+                    min="1" max="99" step="1" value="1" />
                 </div>
-
-                <div class="row g-2 mb-2 align-items-end">
-                  <div class="col-5">
-                    <label for="kopya-sayisi" class="form-label">Kopya</label>
-                    <input id="kopya-sayisi" type="number" class="form-control form-control-sm"
-                      min="1" max="99" step="1" value="1" />
-                  </div>
-                  <div class="col-7">
-                    <div class="form-check mb-1">
-                      <input class="form-check-input" type="checkbox" id="yazici-penceresi" />
-                      <label class="form-check-label small" for="yazici-penceresi">
-                        Yazıcı penceresini göster
-                      </label>
-                    </div>
+                <div class="hv-alan hv-alan-anahtar">
+                  <div class="form-check hv-anahtar">
+                    <input class="form-check-input" type="checkbox" id="yazici-penceresi" />
+                    <label class="form-check-label" for="yazici-penceresi">
+                      Yazıcı penceresi
+                    </label>
                   </div>
                 </div>
-
-                <button id="btn-sayfayi-bas" type="button" class="btn btn-primary btn-sm w-100 mb-2">
-                  Sayfayı yazdır
-                </button>
-                <button id="btn-sayfayi-pdf" type="button"
-                  class="btn btn-outline-secondary btn-sm w-100 mb-2">
-                  Sayfayı PDF olarak kaydet
-                </button>
-                <button id="btn-sayfayi-kaydet" type="button"
-                  class="btn btn-outline-secondary btn-sm w-100">
-                  Sayfayı görüntü olarak kaydet
-                </button>
-
-                <p id="baski-durumu" class="small text-body-secondary mt-2 mb-1">
-                  Sayfa, kağıt ölçüsünde ve seçilen DPI'da basılır.
-                </p>
-                <p id="baski-kisayollari" class="small text-body-secondary mb-0"></p>
               </div>
-            </div>
-          </aside>
+
+              <button id="btn-sayfayi-bas" type="button" class="btn btn-primary btn-sm hv-dugme w-100">
+                <i class="bi bi-printer" aria-hidden="true"></i>
+                Sayfayı yazdır
+              </button>
+              <div class="hv-dugme-cifti hv-dugme-cifti-esit">
+                <button id="btn-sayfayi-pdf" type="button" class="btn hv-dugme hv-dugme-sade">
+                  <i class="bi bi-filetype-pdf" aria-hidden="true"></i>
+                  PDF
+                </button>
+                <button id="btn-sayfayi-kaydet" type="button" class="btn hv-dugme hv-dugme-sade">
+                  <i class="bi bi-file-earmark-image" aria-hidden="true"></i>
+                  Görüntü
+                </button>
+              </div>
+
+              <p id="baski-durumu" class="hv-ipucu">
+                Sayfa, kağıt ölçüsünde ve seçilen DPI'da basılır.
+              </p>
+              <p id="baski-kisayollari" class="hv-kisayollar"></p>
+            </section>
+          </div>
         </div>
-      </div>
+      </aside>
     </main>
 
-    <footer class="border-top bg-body flex-shrink-0">
-      <div class="container-fluid d-flex justify-content-between py-1">
-        <span id="durum" class="small text-body-secondary">Hazır</span>
-        <span id="surum-bilgisi" class="small text-body-secondary font-monospace"></span>
-      </div>
+    <footer class="hv-durum-cubugu">
+      <span id="durum">Hazır</span>
+      <span id="surum-bilgisi"></span>
     </footer>
 
     <!-- Ön ayar adı sorulan pencere. Electron'da window.prompt çalışmaz. -->
     <div class="modal fade" id="onayar-modali" tabindex="-1" aria-hidden="true"
       aria-labelledby="onayar-modal-basligi">
       <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content">
+        <div class="modal-content hv-pencere">
           <div class="modal-header">
             <h6 class="modal-title" id="onayar-modal-basligi">Ön ayar olarak kaydet</h6>
             <button type="button" class="btn-close" data-bs-dismiss="modal"
               aria-label="Kapat"></button>
           </div>
           <div class="modal-body">
-            <label for="onayar-adi" class="form-label">Ön ayar adı</label>
+            <label for="onayar-adi" class="hv-etiket"><span>Ön ayar adı</span></label>
             <input id="onayar-adi" type="text" class="form-control form-control-sm"
               maxlength="40" autocomplete="off" />
-            <div id="onayar-modal-bilgisi" class="form-text"></div>
+            <div id="onayar-modal-bilgisi" class="hv-ipucu"></div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary btn-sm"
+            <button type="button" class="btn hv-dugme hv-dugme-sade"
               data-bs-dismiss="modal">Vazgeç</button>
-            <button id="btn-onayar-kaydet" type="button" class="btn btn-primary btn-sm">
+            <button id="btn-onayar-kaydet" type="button" class="btn btn-primary btn-sm hv-dugme">
               Kaydet
             </button>
           </div>

@@ -29,6 +29,16 @@ const kopyalanacaklar = [
     dosyalar: [path.join('css', 'bootstrap.min.css'), path.join('js', 'bootstrap.bundle.min.js')]
   },
   {
+    // Simge yazi tipi CSS'in yaninda "fonts/" altinda aranir; yol korunmali.
+    kaynak: path.join(root, 'node_modules', 'bootstrap-icons', 'font'),
+    hedef: path.join(hedefKok, 'bootstrap-icons'),
+    dosyalar: [
+      'bootstrap-icons.min.css',
+      path.join('fonts', 'bootstrap-icons.woff2'),
+      path.join('fonts', 'bootstrap-icons.woff')
+    ]
+  },
+  {
     kaynak: path.join(root, 'node_modules', '@vladmandic', 'human', 'dist'),
     hedef: path.join(hedefKok, 'human'),
     dosyalar: ['human.js']

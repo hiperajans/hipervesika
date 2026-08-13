@@ -25,5 +25,8 @@ Herhangi bir işleme başlamadan önce `AGENTS.md` dosyasını oku ve tamamını
 Hiper Vesika — vesikalık fotoğraf düzenleme ve dizdirme uygulaması. README ve alan terimleri
 Türkçedir.
 
-Depo henüz kod içermiyor: build/lint/test komutu ve mimari yok. Uygulama iskeleti kurulduktan
-sonra bu dosya komutlar ve mimariyle güncellenmelidir.
+Komutlar: `npm start` (çalıştır), `npm run test:birim` (birim testleri), `npm run vendor`
+(Bootstrap/simge/Human dosyalarını `src/renderer/vendor/` altına kopyalar).
+
+Mimari ve yol haritası `AGENTS.md` → "Yapı" bölümü ile [`docs/FAZLAR.md`](./docs/FAZLAR.md)
+içinde; arayüzün tasarım katmanı [`docs/ARAYUZ.md`](./docs/ARAYUZ.md) içinde anlatılır.
