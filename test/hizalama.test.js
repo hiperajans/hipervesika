@@ -125,6 +125,21 @@ test('nokta donusumu egik goz hattini yataya getirir', () => {
   yakin(sol.y, sag.y, 0.01)
 })
 
+test('kaynaga tasima calismaya tasimanin tersidir', () => {
+  // Firca darbeleri calisma uzayindan maskeye bu donusumle tasiniyor; tersinir
+  // olmazsa firca izleri kayar.
+  const gorsel = { genislik: 1200, yukseklik: 900 }
+  const aci = hizalama.radyana(8)
+  const calisma = hizalama.enBuyukIcKutu(1200, 900, aci)
+
+  for (const nokta of [{ x: 100, y: 80 }, { x: 640, y: 480 }, { x: 1100, y: 820 }]) {
+    const ileri = hizalama.calismayaTasi(nokta, gorsel, calisma, aci)
+    const geri = hizalama.kaynagaTasi(ileri, gorsel, calisma, aci)
+    yakin(geri.x, nokta.x, 0.0001)
+    yakin(geri.y, nokta.y, 0.0001)
+  }
+})
+
 test('otomatik cerceve yuz oranini ve goz hattini uygular', () => {
   const calisma = { genislik: 2000, yukseklik: 2000 }
   const cene = { x: 1000, y: 1200 }

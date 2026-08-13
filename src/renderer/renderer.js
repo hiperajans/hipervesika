@@ -33,7 +33,19 @@ const el = {
   hizalamaDurumu: document.getElementById('hizalama-durumu'),
   donmeAcisi: document.getElementById('donme-acisi'),
   donmeDegeri: document.getElementById('donme-degeri'),
-  donmeyiSifirla: document.getElementById('btn-donmeyi-sifirla')
+  donmeyiSifirla: document.getElementById('btn-donmeyi-sifirla'),
+  arkaplanBeyazlat: document.getElementById('arkaplan-beyazlat'),
+  arkaplanDurumu: document.getElementById('arkaplan-durumu'),
+  arkaplanAyarlari: document.getElementById('arkaplan-ayarlari'),
+  maskeGenislet: document.getElementById('maske-genislet'),
+  maskeGenisletDegeri: document.getElementById('maske-genislet-degeri'),
+  maskeYumusat: document.getElementById('maske-yumusat'),
+  maskeYumusatDegeri: document.getElementById('maske-yumusat-degeri'),
+  aracKirpma: document.getElementById('arac-kirpma'),
+  aracFircaSil: document.getElementById('arac-firca-sil'),
+  aracFircaGetir: document.getElementById('arac-firca-getir'),
+  fircaBoyu: document.getElementById('firca-boyu'),
+  fircaBoyuDegeri: document.getElementById('firca-boyu-degeri')
 }
 
 const tuval = new window.HV.Tuval(el.tuval, {
@@ -46,9 +58,19 @@ const kirpma = new window.HV.KirpmaAraci(tuval, {
   degisimde: () => ciktiBilgisiniGuncelle()
 })
 
+const firca = new window.HV.Firca(tuval, {
+  maskeyiAl: () => hamMaske,
+  gorseliAl: () => yuklenenGorsel,
+  degisimde: () => gosterimiTazele()
+})
+
 let yuklenenGorsel = null
 let olcuDurumu = { genislikMm: 50, yukseklikMm: 60 }
 let dpi = 300
+
+// Segmentasyondan gelen ham maske ve kullanicinin firca duzeltmeleri burada
+// birikir; kenar ayarlari her tazelemede bunun uzerine uygulanir.
+let hamMaske = null
 
 // --- Bicimlendirme -----------------------------------------------------------
 
@@ -79,7 +101,7 @@ function uyariGizle () {
 function araclariEtkinlestir (etkin) {
   const ogeler = [
     el.yakinlas, el.uzaklas, el.sigdir, el.kirpmayiSifirla,
-    el.otomatikHizala, el.donmeAcisi, el.donmeyiSifirla
+    el.otomatikHizala, el.donmeAcisi, el.donmeyiSifirla, el.arkaplanBeyazlat
   ]
   for (const oge of ogeler) oge.disabled = !etkin
 }
@@ -175,6 +197,94 @@ async function otomatikHizala () {
   } finally {
     el.otomatikHizala.disabled = false
   }
+}
+
+// --- Arka plan ---------------------------------------------------------------
+
+function arkaplanDurumu (mesaj, tur = 'bilgi') {
+  el.arkaplanDurumu.textContent = mesaj
+  el.arkaplanDurumu.classList.toggle('text-danger', tur === 'hata')
+  el.arkaplanDurumu.classList.toggle('text-body-secondary', tur !== 'hata')
+}
+
+// Kenar ayarlarini uygulayip ekranda gosterilecek beyaz zeminli onizlemeyi
+// yeniden uretir. Tam cozunurluklu birlestirme disa aktarmada yapilir.
+function gosterimiTazele () {
+  if (!yuklenenGorsel) return
+
+  if (!hamMaske || !el.arkaplanBeyazlat.checked) {
+    yuklenenGorsel.gosterim = null
+    tuval.ciz()
+    return
+  }
+
+  const maske = window.HV.arkaplan.maskeyiAyarla(hamMaske, {
+    genislet: Number.parseFloat(el.maskeGenislet.value) / 100,
+    yumusat: Number.parseFloat(el.maskeYumusat.value)
+  })
+
+  const kaynak = yuklenenGorsel.onizleme
+  yuklenenGorsel.gosterim = window.HV.arkaplan.beyazZemineBirlestir(
+    kaynak, maske, kaynak.width, kaynak.height
+  )
+  tuval.ciz()
+}
+
+async function arkaplaniAyir () {
+  if (!yuklenenGorsel) return
+
+  el.arkaplanBeyazlat.disabled = true
+  arkaplanDurumu(
+    window.HV.yuz.hazirMi ? 'Arka plan ayrılıyor…' : 'Modeller yükleniyor, ilk çalıştırma biraz sürebilir…'
+  )
+
+  try {
+    hamMaske = await window.HV.arkaplan.maskeCikar(yuklenenGorsel.asil)
+    const kapsam = window.HV.arkaplan.maskeKapsami(hamMaske)
+
+    // Bos ya da neredeyse bos maske: beyazlatma goruntuyu tamamen silerdi.
+    if (kapsam < 0.02) {
+      hamMaske = null
+      el.arkaplanBeyazlat.checked = false
+      el.arkaplanAyarlari.classList.add('d-none')
+      arkaplanDurumu(
+        'Kişi arka plandan ayrılamadı. Fotoğrafta kişi net görünmüyor olabilir.',
+        'hata'
+      )
+      return
+    }
+
+    el.arkaplanAyarlari.classList.remove('d-none')
+    gosterimiTazele()
+    arkaplanDurumu(
+      `Arka plan beyazlatıldı (kadrajın %${Math.round(kapsam * 100)}'i kişi). ` +
+      'Kenarları fırçayla düzeltebilirsiniz.'
+    )
+  } catch (hata) {
+    hamMaske = null
+    el.arkaplanBeyazlat.checked = false
+    arkaplanDurumu(`Arka plan ayrılamadı: ${hata.message}`, 'hata')
+  } finally {
+    el.arkaplanBeyazlat.disabled = false
+  }
+}
+
+function aracSec () {
+  const fircaModu = el.aracFircaSil.checked || el.aracFircaGetir.checked
+
+  if (fircaModu) {
+    firca.sil = el.aracFircaSil.checked
+    tuval.etkilesim = firca
+    tuval.ustKatman = (ctx, olcek) => {
+      kirpma.ciz(ctx, olcek)
+      firca.ciz(ctx, olcek)
+    }
+  } else {
+    tuval.etkilesim = kirpma
+    tuval.ustKatman = (ctx, olcek) => kirpma.ciz(ctx, olcek)
+  }
+
+  tuval.ciz()
 }
 
 function bicimliDerece (radyan) {
@@ -290,9 +400,15 @@ async function gorselYukle (dosya) {
     tuval.gorselAta(gorsel)
     kirpma.calismaAta(gorsel.calisma)
 
-    // Yeni fotografta onceki hizalama gecerli degil.
+    // Yeni fotografta onceki hizalama ve maske gecerli degil.
     el.donmeAcisi.value = '0'
     el.donmeDegeri.textContent = '0,0°'
+    hamMaske = null
+    el.arkaplanBeyazlat.checked = false
+    el.arkaplanAyarlari.classList.add('d-none')
+    el.aracKirpma.checked = true
+    aracSec()
+    arkaplanDurumu('Kişiyi arka plandan ayırır ve zemini beyaza çevirir.')
     hizalamaDurumu('Yüz ve omuz konumuna göre eğikliği düzeltir, biyometrik kadrajı kurar.')
 
     const { width, height } = gorsel.asil
@@ -399,11 +515,54 @@ el.donmeAcisi.addEventListener('input', () => {
 
 el.donmeyiSifirla.addEventListener('click', () => aciAta(0))
 
+// --- Arka plan denetimleri ---------------------------------------------------
+
+el.arkaplanBeyazlat.addEventListener('change', () => {
+  if (!el.arkaplanBeyazlat.checked) {
+    el.arkaplanAyarlari.classList.add('d-none')
+    el.aracKirpma.checked = true
+    aracSec()
+    gosterimiTazele()
+    arkaplanDurumu('Kişiyi arka plandan ayırır ve zemini beyaza çevirir.')
+    return
+  }
+
+  // Maske zaten cikarilmissa yeniden hesaplanmaz.
+  if (hamMaske) {
+    el.arkaplanAyarlari.classList.remove('d-none')
+    gosterimiTazele()
+    return
+  }
+
+  arkaplaniAyir()
+})
+
+el.maskeGenislet.addEventListener('input', () => {
+  el.maskeGenisletDegeri.textContent = el.maskeGenislet.value
+  gosterimiTazele()
+})
+
+el.maskeYumusat.addEventListener('input', () => {
+  el.maskeYumusatDegeri.textContent = `${el.maskeYumusat.value} px`
+  gosterimiTazele()
+})
+
+for (const secim of [el.aracKirpma, el.aracFircaSil, el.aracFircaGetir]) {
+  secim.addEventListener('change', () => aracSec())
+}
+
+el.fircaBoyu.addEventListener('input', () => {
+  firca.yaricap = Number.parseInt(el.fircaBoyu.value, 10) / 2
+  el.fircaBoyuDegeri.textContent = `${el.fircaBoyu.value} px`
+})
+
 // --- Baslangic ---------------------------------------------------------------
 
 onayarlariDoldur()
 dpiSecenekleriniDoldur()
 onayariUygula(olcuMotoru.FOTOGRAF_ONAYARLARI[0].kod)
+firca.yaricap = Number.parseInt(el.fircaBoyu.value, 10) / 2
+aracSec()
 araclariEtkinlestir(false)
 
 el.surumBilgisi.textContent =

@@ -126,7 +126,11 @@ window.HV.Tuval = class Tuval {
   // Ekranda gorunen boyut onizlemeden buyukse asil goruntuye gecilir; yakinlasinca
   // bulaniklik olusmaz, uzaklasinca da buyuk goruntuyu bosuna olceklemeyiz.
   #kaynakSec () {
-    const { asil, onizleme } = this.gorsel
+    const { asil, onizleme, gosterim } = this.gorsel
+
+    // Arka plani beyazlatilmis onizleme varsa ekranda o gosterilir.
+    if (gosterim) return gosterim
+
     if (onizleme === asil) return asil
 
     const gorunenGenislik = asil.width * this.olcek * (window.devicePixelRatio || 1)
@@ -209,7 +213,14 @@ window.HV.Tuval = class Tuval {
 
       // Surukleme yokken imleci ust katmana gore guncelle.
       if (this.gorsel && this.etkilesim) {
-        canvas.style.cursor = this.etkilesim.imlecTipi(this.goruntuyeCevir(ekran), this.olcek) ?? ''
+        const goruntu = this.goruntuyeCevir(ekran)
+        canvas.style.cursor = this.etkilesim.imlecTipi(goruntu, this.olcek) ?? ''
+
+        // Firca gibi imleci izleyen araclar icin iz guncellenir.
+        if (this.etkilesim.izGuncelle) {
+          this.etkilesim.izGuncelle(goruntu)
+          this.ciz()
+        }
       }
     })
 

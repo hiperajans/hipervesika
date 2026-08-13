@@ -105,6 +105,21 @@
     }
   }
 
+  // calismayaTasi'nin tersi: calisma uzayindaki bir noktayi kaynak goruntudeki
+  // karsiligina cevirir. Firca darbelerini maskeye yazarken gerekir.
+  function kaynagaTasi (nokta, gorselOlcusu, calisma, aci) {
+    const dx = nokta.x - calisma.genislik / 2
+    const dy = nokta.y - calisma.yukseklik / 2
+
+    const cos = Math.cos(aci)
+    const sin = Math.sin(aci)
+
+    return {
+      x: gorselOlcusu.genislik / 2 + dx * cos - dy * sin,
+      y: gorselOlcusu.yukseklik / 2 + dx * sin + dy * cos
+    }
+  }
+
   // Yuz olculerine gore biyometrik kadraj. Noktalar calisma uzayinda beklenir.
   function otomatikCerceve ({ cene, tepe, gozMerkezi, calisma, oran }) {
     const yuzYuksekligi = Math.hypot(tepe.x - cene.x, tepe.y - cene.y)
@@ -152,6 +167,7 @@
     tepeNoktasi,
     enBuyukIcKutu,
     calismayaTasi,
+    kaynagaTasi,
     otomatikCerceve,
     omuzSapmasi
   }

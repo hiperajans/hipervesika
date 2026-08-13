@@ -17,6 +17,11 @@ const hedefKok = path.join(root, 'src', 'renderer', 'vendor')
 //   movenet-lightning -> govde pozu (omuz hizasi)
 const MODELLER = ['blazeface', 'facemesh', 'movenet-lightning']
 
+// Segmentasyon modeli human paketiyle gelmiyor, ayri model deposundan alinir.
+// selfie ve meet modelleri denendi; bos maske urettikleri icin alpha matte
+// veren rvm kullaniliyor.
+const SEGMENTASYON_MODELLERI = ['rvm']
+
 const kopyalanacaklar = [
   {
     kaynak: path.join(root, 'node_modules', 'bootstrap', 'dist'),
@@ -32,6 +37,11 @@ const kopyalanacaklar = [
     kaynak: path.join(root, 'node_modules', '@vladmandic', 'human', 'models'),
     hedef: path.join(hedefKok, 'human', 'models'),
     dosyalar: MODELLER.flatMap((ad) => [`${ad}.json`, `${ad}.bin`])
+  },
+  {
+    kaynak: path.join(root, 'node_modules', '@vladmandic', 'human-models', 'models'),
+    hedef: path.join(hedefKok, 'human', 'models'),
+    dosyalar: SEGMENTASYON_MODELLERI.flatMap((ad) => [`${ad}.json`, `${ad}.bin`])
   }
 ]
 

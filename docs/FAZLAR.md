@@ -105,9 +105,10 @@ Bu kararlar tüm fazları bağlar:
 **Amaç:** Vesikalığın beyaz zemin şartını sağlamak.
 
 - Human'ın segmentasyon modeli ile kişi maskesi çıkarılır, maske dışı beyaza boyanır.
-- **Not:** segmentasyon modelleri (`selfie`, `meet`, `rvm`) `@vladmandic/human` paketinin
-  içinde gelmiyor; Faz 3'te kullanılan yüz ve gövde modelleri geliyor. Bu modeller ayrıca
-  temin edilip `assets`/vendor akışına eklenmeli.
+- **Model notu:** segmentasyon modelleri `@vladmandic/human` paketiyle gelmiyor;
+  `@vladmandic/human-models` (devDependency, 173 MB) içinden vendor betiğiyle kopyalanıyor.
+  `selfie` ve `meet` modelleri denendi ve test görüntülerinde **boş maske** ürettiler;
+  bu yüzden alpha matte veren `rvm` (4,3 MB) kullanılıyor.
 - Maske kenarı yumuşatılır (feather) ki kesik kenar oluşmasın.
 - **Saç kenarları bu işin en zor kısmıdır.** Segmentasyon maskesi saç telleri arasında kaba
   kalır; kenar yumuşatma yetmezse kenar temizleme fırçası veya alpha matting adımı gerekir.
