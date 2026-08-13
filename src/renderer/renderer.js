@@ -87,6 +87,7 @@ const el = {
   olcuSil: document.getElementById('btn-olcu-sil'),
   kagitKaydet: document.getElementById('btn-kagit-kaydet'),
   kagitSil: document.getElementById('btn-kagit-sil'),
+  panelIcerik: document.getElementById('panel-icerik'),
   secimModali: document.getElementById('secim-modali'),
   secimIzgarasi: document.getElementById('secim-izgarasi'),
   secimBilgisi: document.getElementById('secim-bilgisi'),
@@ -828,6 +829,15 @@ async function gorselYukle (dosya) {
     el.durum.textContent = 'Hazir'
     if (!yuklenenGorsel) el.gorselBilgisi.textContent = ''
   }
+}
+
+// --- Panel sekmeleri ---------------------------------------------------------
+
+// Uc adim tek bir kaydirma kabini paylasir (.hv-panel-icerik), bu yuzden bir
+// adimin altindayken digerine gecince ekran o yukseklikte kaliyordu. Yeni adim
+// her zaman basindan baslar.
+for (const dugme of document.querySelectorAll('.hv-adim[data-bs-toggle="tab"]')) {
+  dugme.addEventListener('shown.bs.tab', () => { el.panelIcerik.scrollTop = 0 })
 }
 
 // --- Fotograf secim penceresi ------------------------------------------------
@@ -2021,17 +2031,26 @@ const turOgeleri = {
   atla: document.getElementById('btn-tanitim-atla')
 }
 
+// Sekme gercekten degisiyorsa gecisin bitisini bekleten bir soz doner, yoksa
+// null. Beklemek sart: sekme degisimi paneli basa sariyor, olcumu once almak
+// isigi yanlis yere dusururdu.
 function adimSekmesiniAc (panel) {
-  if (!panel) return
+  if (!panel) return null
+
   const dugme = document.getElementById(`adim-${panel}-dugmesi`)
-  if (dugme && !dugme.classList.contains('active')) dugme.click()
+  if (!dugme || dugme.classList.contains('active')) return null
+
+  const gecis = new Promise((cozumle) =>
+    dugme.addEventListener('shown.bs.tab', cozumle, { once: true }))
+  dugme.click()
+  return gecis
 }
 
 function turAdiminiGoster () {
   const adim = turAdimlari[turSirasi]
   if (!adim) return turuBitir()
 
-  adimSekmesiniAc(adim.panel)
+  const gecis = adimSekmesiniAc(adim.panel)
 
   const hedef = document.querySelector(adim.hedef)
   if (!hedef) {
@@ -2047,7 +2066,12 @@ function turAdiminiGoster () {
   turOgeleri.ileri.textContent = turSirasi === turAdimlari.length - 1 ? 'Bitir' : 'İleri'
 
   // Sekme gecisi ve metin degisimi yerlesimi etkiler; olcumler sonrasinda alinir.
-  requestAnimationFrame(() => {
+  const yerlestir = () => requestAnimationFrame(() => {
+    // Panel yeni sekmede basa sarildigi icin hedef gorunur alanin disinda
+    // kalabilir; olcmeden once gorunur yapilir. 'nearest' zaten gorunen
+    // hedefte paneli oynatmaz.
+    hedef.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+
     const kutu = hedef.getBoundingClientRect()
     const isik = tanitimMotoru.isikAlani({
       x: kutu.left, y: kutu.top, genislik: kutu.width, yukseklik: kutu.height
@@ -2069,6 +2093,9 @@ function turAdiminiGoster () {
     turOgeleri.kart.style.left = `${konum.x}px`
     turOgeleri.kart.style.top = `${konum.y}px`
   })
+
+  if (gecis) gecis.then(yerlestir)
+  else yerlestir()
 }
 
 function turuBaslat () {

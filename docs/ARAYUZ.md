@@ -78,9 +78,21 @@ tekrar açılır; görülüp görülmediği `ayarlar.json` içindeki `tanitimGor
 - Karartma ayrı bir maske öğesiyle değil, ışık kutusunun çevresine verilen dev bir gölgeyle
   (`box-shadow: 0 0 0 9999px`) yapılır.
 - Esc turu kapatır, ← → adımlar arasında gezer.
+- Adım sekme değiştiriyorsa **`shown.bs.tab` beklenir**, sonra ölçülür: sekme geçişi paneli
+  başa sardığı için önce ölçmek ışığı yanlış yere düşürürdü. Ölçümden hemen önce hedef
+  `scrollIntoView({ block: 'nearest' })` ile görünür yapılır — bu olmadan panelin altında
+  kalan hedeflerde ışık pencerenin dışına düşüyordu (ölçüldü: son adım `y = 1037`,
+  pencere yüksekliği 747).
 
 Yeni bir özellik eklendiğinde tura adım eklemek gerekiyorsa `ADIMLAR` dizisine bir kayıt
 yazmak yeterlidir; yürütme kodu değişmez.
+
+### Adımlar arası geçiş
+
+Üç adım tek bir kaydırma kabını paylaşır (`#panel-icerik` / `.hv-panel-icerik`); ayrı ayrı
+kaydırılan üç kutu değildir. Bu yüzden bir adımın altındayken diğerine geçilince ekran o
+yükseklikte kalıyordu. `shown.bs.tab` ile her geçişte `scrollTop` sıfırlanır: yeni adım her
+zaman başından başlar.
 
 ## Kurallar
 
