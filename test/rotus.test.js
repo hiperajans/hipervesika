@@ -38,6 +38,25 @@ test('sicaklik matrisi kirmizi ve maviyi ters yonde kaydirir', () => {
   assert.equal(notr[12], 1)
 })
 
+test('sicaklik maskesi yalnizca gerektiginde kullanilir', () => {
+  const maske = { genislik: 10 }
+  const varsayilan = rotus.varsayilanAyarlar()
+
+  // Varsayilanda ayar acik: sicaklik verildiginde maske kullanilir.
+  assert.equal(varsayilan.sicaklikKisiye, true)
+  assert.equal(rotus.sicaklikMaskesi({ ...varsayilan, sicaklik: 0.4 }, maske), maske)
+
+  // Sicaklik notrken bosuna gecis yapilmaz.
+  assert.equal(rotus.sicaklikMaskesi(varsayilan, maske), null)
+  // Ayar kapaliyken sicaklik tum kareye uygulanir.
+  assert.equal(
+    rotus.sicaklikMaskesi({ ...varsayilan, sicaklik: 0.4, sicaklikKisiye: false }, maske),
+    null
+  )
+  // Maske yoksa kisiye sinirlama yapilamaz.
+  assert.equal(rotus.sicaklikMaskesi({ ...varsayilan, sicaklik: 0.4 }, null), null)
+})
+
 test('keskinlik cekirdeginin toplami her zaman 1', () => {
   // Toplam 1 olmazsa keskinlestirme goruntuyu genel olarak koyultur ya da acardi.
   for (const miktar of [0, 0.2, 0.5, 1]) {
@@ -178,4 +197,5 @@ test('yeni ayarlar varsayilanda kapalidir', () => {
   assert.equal(rotus.varsayilanMi(varsayilan), true)
   assert.equal(rotus.varsayilanMi({ ...varsayilan, yumusatma: 0.4 }), false)
   assert.equal(rotus.varsayilanMi({ ...varsayilan, gozCanliligi: 0.4 }), false)
+  assert.equal(rotus.varsayilanMi({ ...varsayilan, sicaklikKisiye: false }), false)
 })

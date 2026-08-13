@@ -265,6 +265,25 @@ arası mesafeye oranlıdır. Koyu tonlar açık tonlardan daha çok açılır; g
 Sıra önemli: yumuşatma keskinleştirmeden **önce** gelir, aksi hâlde keskinleştirilen dokuyu
 hemen geri bulanıklaştırırdık.
 
+### Renk sıcaklığı yalnızca kişiye
+
+Sıcaklık tüm kareye uygulandığında beyazlatılmış zemin de renkleniyordu: soğuk tarafta beyaz
+maviye/camgöbeğine kaçıyordu (ölçüldü: `−50`'de `#ffffff` → `rgb(191, 255, 255)`). Bu yüzden
+sıcaklık varsayılan olarak **yalnızca kişiye** uygulanır ve `Rötuş → Renk ve ton` altındaki
+anahtarla kapatılabilir.
+
+Kullanılan maske arka plan beyazlatmanın maskesidir — kenar ayarları (genişlet/yumuşat) ve
+fırça düzeltmeleri dâhil aynı maske, dolayısıyla kenarlar iki işlemde ayrışmaz. Maske
+beyazlatma kapalıyken de kullanılır; henüz çıkarılmamışsa (`Otomatik hizala` ya da
+`Arka planı beyazlat` çalışmadıysa) sıcaklık fotoğrafın tamamına uygulanır ve kaydıracın
+altındaki ipucu bunu söyler.
+
+Uygulama sırası: sıcak/soğuk kopya üretilir, maskeye göre kırpılır ve asıl görüntünün üzerine
+konur. Maske devredeyken sıcaklık ile keskinlik **iki ayrı SVG geçişinde** yapılır (keskinlik
+her zaman tüm kareye uygulanır); maske yoksa ikisi eskisi gibi tek geçişte birleşir. Çıktıda
+maske, rötuş adımlarıyla aynı çerçevede olması için önce döndürme + kırpma dönüşümünden
+geçirilir.
+
 ### Renk düzeni (sRGB / gri tonlama / CMYK)
 
 **Sınır:** `canvas.toBlob` yalnızca RGB üretir, CMYK JPEG yazamaz. Bu yüzden:

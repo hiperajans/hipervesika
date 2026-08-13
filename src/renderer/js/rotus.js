@@ -10,6 +10,10 @@
 // Sicaklik ve keskinlik CSS filtrelerinde karsiligi olmadigi icin SVG filtresi
 // ile yapilir. Olculdu: canvas'ta CSS filtreleri ile url(#id) ayni dizede
 // zincirlenince sonuc siyah cikiyor, bu yuzden iki ayri gecis uygulanir.
+//
+// Sicaklik varsayilan olarak yalnizca kisiye uygulanir; kisi maskesi verilirse
+// sicak/soguk kopya maskeye gore asil goruntunun uzerine karistirilir, boylece
+// beyazlatilmis zemin notr kalir.
 
 ;(function (kok) {
   const VARSAYILAN = Object.freeze({
@@ -17,6 +21,10 @@
     kontrast: 1,
     doygunluk: 1,
     sicaklik: 0,
+    // Sicaklik varsayilan olarak yalnizca kisiye uygulanir: tum kareye
+    // uygulanmasi beyaz zemini de renklendiriyordu (soguk tarafta maviye
+    // kaciyor). Kisi maskesi yoksa bu ayarin etkisi olmaz.
+    sicaklikKisiye: true,
     keskinlik: 0,
     yumusatma: 0,
     gozCanliligi: 0
@@ -55,6 +63,14 @@
     if (kontrast !== 1) parcalar.push(`contrast(${kontrast})`)
     if (doygunluk !== 1) parcalar.push(`saturate(${doygunluk})`)
     return parcalar.length ? parcalar.join(' ') : 'none'
+  }
+
+  // Sicaklik gecisinde kullanilacak maske: yalnizca ayar acikken, sicaklik
+  // sifirdan farkliyken ve elde kisi maskesi varken anlamlidir. Diger
+  // durumlarda null doner ve sicaklik tum kareye uygulanir.
+  function sicaklikMaskesi (ayarlar, maske) {
+    if (!maske || !ayarlar.sicaklikKisiye || ayarlar.sicaklik === 0) return null
+    return maske
   }
 
   // Pozitif deger sicak (kirmizi artar, mavi azalir), negatif deger soguk.
@@ -182,12 +198,34 @@
     return hedef
   }
 
+  function svgGecisi (kaynak, ayarlar) {
+    filtreyiGuncelle(ayarlar)
+    return tuvalKopyala(kaynak, `url(#${FILTRE_ID})`)
+  }
+
+  // Sicakligi yalnizca kisiye uygular: sicak/soguk kopya maskeye gore kirpilip
+  // asil goruntunun uzerine konur, arka plan dokunulmadan kalir. Maske hedef
+  // tuvalin olcusune gerilir (cagiran, maskeyi hedefle ayni cerceveye tasir).
+  function sicaklikBoya (kaynak, sicaklik, maske) {
+    const kisi = svgGecisi(kaynak, { sicaklik, keskinlik: 0 })
+    const kisiCtx = kisi.getContext('2d')
+    kisiCtx.save()
+    kisiCtx.globalCompositeOperation = 'destination-in'
+    kisiCtx.drawImage(maske, 0, 0, kisi.width, kisi.height)
+    kisiCtx.restore()
+
+    const hedef = tuvalKopyala(kaynak, null)
+    hedef.getContext('2d').drawImage(kisi, 0, 0)
+    return hedef
+  }
+
   // Ayarlari uygular ve yeni bir tuval dondurur. Hicbir ayar degismemisse
   // kaynak oldugu gibi dondurulur, bosuna kopya alinmaz.
   // olcek ve kaynakYukseklik yalnizca cilt yumusatma icin gerekir: bulaniklik
   // yaricapi kaynak goruntuye gore hesaplanir, boylece onizleme ile cikti ayni
-  // gucte gorunur.
-  function uygula (kaynak, ayarlar, { olcek = 1, kaynakYukseklik = 0 } = {}) {
+  // gucte gorunur. maske, sicakligin yalnizca kisiye uygulanmasi icin gereken
+  // kisi maskesidir ve kaynak ile ayni cercevede olmalidir.
+  function uygula (kaynak, ayarlar, { olcek = 1, kaynakYukseklik = 0, maske = null } = {}) {
     if (varsayilanMi(ayarlar)) return kaynak
 
     let sonuc = kaynak
@@ -204,9 +242,16 @@
       })
     }
 
-    if (ayarlar.sicaklik !== 0 || ayarlar.keskinlik > 0) {
-      filtreyiGuncelle(ayarlar)
-      sonuc = tuvalKopyala(sonuc, `url(#${FILTRE_ID})`)
+    // Sicaklik maskeliyse iki ayri gecis gerekir: maskeli sicaklik, sonra tum
+    // kareye keskinlik. Maske yoksa ikisi tek SVG gecisinde birlikte yapilir.
+    const kisiMaskesi = sicaklikMaskesi(ayarlar, maske)
+    if (kisiMaskesi) {
+      sonuc = sicaklikBoya(sonuc, ayarlar.sicaklik, kisiMaskesi)
+      if (ayarlar.keskinlik > 0) {
+        sonuc = svgGecisi(sonuc, { sicaklik: 0, keskinlik: ayarlar.keskinlik })
+      }
+    } else if (ayarlar.sicaklik !== 0 || ayarlar.keskinlik > 0) {
+      sonuc = svgGecisi(sonuc, ayarlar)
     }
 
     return sonuc
@@ -351,6 +396,8 @@
     varsayilanMi,
     cssFiltresi,
     sicaklikMatrisi,
+    sicaklikMaskesi,
+    sicaklikBoya,
     keskinlikCekirdegi,
     ortalamaRenk,
     yumusatmaAgirligi,

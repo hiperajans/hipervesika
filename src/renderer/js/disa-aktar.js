@@ -110,18 +110,35 @@ window.HV.disaAktar = (() => {
     )
   }
 
+  // Rotus adimlari kirpilmis ve dondurulmus tuval uzerinde calisir; sicaklik
+  // maskesi de ayni cercevede olmali, bu yuzden maske cikti uzayina tasinir.
+  function maskeyiTasi (gorsel, cerceve, olcek, cikti, maske) {
+    return katmanCiz(
+      tuvalOlustur(cikti.genislik, cikti.yukseklik), gorsel, cerceve, olcek, maske
+    )
+  }
+
   function tuvalUret ({
-    gorsel, cerceve, maske, rotusAyarlari, lekeler, olcuMm, dpi, renkDuzeni = 'srgb'
+    gorsel, cerceve, maske, kisiMaskesi = null, rotusAyarlari, lekeler, olcuMm, dpi,
+    renkDuzeni = 'srgb'
   }) {
     const cikti = window.HV.olcu.ciktiBoyutu(olcuMm, dpi)
     const olcek = cikti.genislik / cerceve.genislik
+
+    // Maske tasima ek bir tam cozunurluklu tuval demek; yalnizca sicaklik
+    // gercekten maskeye ihtiyac duyuyorsa yapilir.
+    const sicaklikMaskesi = window.HV.rotus.sicaklikMaskesi(rotusAyarlari, kisiMaskesi)
 
     // temelUret her zaman yeni bir tuval uretir ve rotus.uygula ya onu ya da
     // yine yeni bir tuvali dondurur; ikisi de bize ait oldugu icin lekeler
     // dogrudan uzerine cizilebilir.
     let sonuc = temelUret(gorsel, cerceve, olcek, cikti, maske)
     sonuc = window.HV.rotus.uygula(sonuc, rotusAyarlari, {
-      olcek, kaynakYukseklik: gorsel.asil.height
+      olcek,
+      kaynakYukseklik: gorsel.asil.height,
+      maske: sicaklikMaskesi
+        ? maskeyiTasi(gorsel, cerceve, olcek, cikti, sicaklikMaskesi)
+        : null
     })
 
     if (rotusAyarlari.gozCanliligi > 0 && gorsel.gozler) {

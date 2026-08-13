@@ -92,6 +92,8 @@ const el = {
   onayarModalBilgisi: document.getElementById('onayar-modal-bilgisi'),
   onayarAdi: document.getElementById('onayar-adi'),
   onayarKaydet: document.getElementById('btn-onayar-kaydet'),
+  sicaklikKisi: document.getElementById('rotus-sicaklik-kisi'),
+  sicaklikDurumu: document.getElementById('sicaklik-durumu'),
   gozDurumu: document.getElementById('goz-durumu'),
   renkDuzeni: document.getElementById('renk-duzeni'),
   renkDuzeniAciklamasi: document.getElementById('renk-duzeni-aciklamasi')
@@ -150,6 +152,13 @@ let dpi = 300
 // birikir; kenar ayarlari her tazelemede bunun uzerine uygulanir.
 let hamMaske = null
 
+// Maske yalnizca beyazlatmada degil, sicakligin yalnizca kisiye uygulanmasinda
+// da kullanilir; varligina bagli arayuz metinleri tek yerden tazelenir.
+function maskeyiAta (yeni) {
+  hamMaske = yeni
+  sicaklikDurumunuGuncelle()
+}
+
 // Rotus ayarlari ve leke kayitlari deger olarak tutulur; goruntuye yazilmaz.
 let rotusAyarlari = window.HV.rotus.varsayilanAyarlar()
 let lekeler = []
@@ -201,6 +210,7 @@ function araclariEtkinlestir (etkin) {
     el.yakinlas, el.uzaklas, el.sigdir, el.kirpmayiSifirla,
     el.otomatikHizala, el.donmeAcisi, el.donmeyiSifirla, el.arkaplanBeyazlat,
     el.onceSonra, el.rotusuSifirla, el.aracKirpma, el.aracLeke, el.indir,
+    el.sicaklikKisi,
     el.sayfayiBas, el.sayfayiPdf, el.sayfayiKaydet,
     ...ROTUS_KAYDIRACLARI.map((k) => document.getElementById(k.giris))
   ]
@@ -247,7 +257,7 @@ async function tepeNoktasiniBul (yuz, calismaya) {
     if (!hamMaske) {
       const aday = await window.HV.arkaplan.maskeCikar(yuklenenGorsel.asil)
       if (window.HV.arkaplan.maskeKapsami(aday) < 0.02) return null
-      hamMaske = aday
+      maskeyiAta(aday)
     }
 
     const merkezX = (yuz.solGoz.x + yuz.sagGoz.x) / 2
@@ -355,17 +365,20 @@ function gosterimiTazele () {
   // "Önce / Sonra" basiliyken hicbir islem uygulanmaz: kullanici ozgun
   // fotografi gorur.
   if (!oncesiGosteriliyor) {
-    if (hamMaske && el.arkaplanBeyazlat.checked) {
-      const maske = window.HV.arkaplan.maskeyiAyarla(hamMaske, {
-        genislet: Number.parseFloat(el.maskeGenislet.value) / 100,
-        yumusat: Number.parseFloat(el.maskeYumusat.value)
-      })
+    // Maske hem beyazlatmada hem de sicakligi yalnizca kisiye uygularken
+    // kullanilir; ikisi de ayni kenar ayarlarini gorsun diye bir kez uretilir.
+    // Kaydirac surukleniyorken bosuna uretilmesin diye once ihtiyac aranir.
+    const maskeGerek = el.arkaplanBeyazlat.checked ||
+      window.HV.rotus.sicaklikMaskesi(rotusAyarlari, hamMaske) !== null
+    const maske = maskeGerek ? ayarliMaske() : null
+
+    if (maske && el.arkaplanBeyazlat.checked) {
       sonuc = window.HV.arkaplan.beyazZemineBirlestir(sonuc, maske, kaynak.width, kaynak.height)
     }
 
     const olcek = kaynak.width / yuklenenGorsel.asil.width
     sonuc = window.HV.rotus.uygula(sonuc, rotusAyarlari, {
-      olcek, kaynakYukseklik: yuklenenGorsel.asil.height
+      olcek, kaynakYukseklik: yuklenenGorsel.asil.height, maske
     })
 
     if (rotusAyarlari.gozCanliligi > 0 && yuklenenGorsel.gozler) {
@@ -403,7 +416,7 @@ function rotusEtiketiYaz (kaydirac, ham) {
 }
 
 function rotusuOku () {
-  const ayarlar = {}
+  const ayarlar = { sicaklikKisiye: el.sicaklikKisi.checked }
   for (const kaydirac of ROTUS_KAYDIRACLARI) {
     const ham = Number.parseInt(document.getElementById(kaydirac.giris).value, 10)
     ayarlar[kaydirac.anahtar] = kaydiracDegeri(kaydirac.tur, ham)
@@ -424,6 +437,24 @@ function rotusuYaz (ayarlar) {
     document.getElementById(kaydirac.giris).value = String(ham)
     rotusEtiketiYaz(kaydirac, ham)
   }
+
+  el.sicaklikKisi.checked = ayarlar.sicaklikKisiye !== false
+  sicaklikDurumunuGuncelle()
+}
+
+// Sicaklik yalnizca kisiye uygulanabilmesi icin kisi maskesi gerekir; maske
+// yoksa ayar goruntuyu degistirmez, bunu kullaniciya soyleriz.
+function sicaklikDurumunuGuncelle () {
+  if (!el.sicaklikKisi.checked) {
+    el.sicaklikDurumu.textContent =
+      'Sıcaklık fotoğrafın tamamına uygulanır; beyaz zemin de renklenir.'
+    return
+  }
+
+  el.sicaklikDurumu.textContent = hamMaske
+    ? 'Sıcaklık yalnızca kişiye uygulanır; zemin nötr kalır.'
+    : 'Kişi maskesi henüz yok: sıcaklık şimdilik fotoğrafın tamamına uygulanır. ' +
+      'Maske için Otomatik hizala\'yı ya da Arka planı beyazlat\'ı çalıştırın.'
 }
 
 // Goz canlandirma yalnizca goz konumu bilindiginde anlamli.
@@ -492,7 +523,7 @@ function durumuUygula (durum) {
   lekeler = durum.lekeler.map((leke) => ({ ...leke }))
   // Gecmisteki kopya korunmali; uzerine firca darbesi yazilmasin diye
   // calisma maskesi ayri bir kopyadir.
-  hamMaske = maskeKopyala(durum.maske)
+  maskeyiAta(maskeKopyala(durum.maske))
 
   el.arkaplanBeyazlat.checked = durum.beyazlatma && hamMaske !== null
   el.arkaplanAyarlari.classList.toggle('d-none', !el.arkaplanBeyazlat.checked)
@@ -527,12 +558,12 @@ async function arkaplaniAyir () {
   )
 
   try {
-    hamMaske = await window.HV.arkaplan.maskeCikar(yuklenenGorsel.asil)
+    maskeyiAta(await window.HV.arkaplan.maskeCikar(yuklenenGorsel.asil))
     const kapsam = window.HV.arkaplan.maskeKapsami(hamMaske)
 
     // Bos ya da neredeyse bos maske: beyazlatma goruntuyu tamamen silerdi.
     if (kapsam < 0.02) {
-      hamMaske = null
+      maskeyiAta(null)
       el.arkaplanBeyazlat.checked = false
       el.arkaplanAyarlari.classList.add('d-none')
       arkaplanDurumu(
@@ -548,7 +579,7 @@ async function arkaplaniAyir () {
     aracSec()
     durumuKaydet({ maskeDegisti: true })
   } catch (hata) {
-    hamMaske = null
+    maskeyiAta(null)
     el.arkaplanBeyazlat.checked = false
     arkaplanDurumu(`Arka plan ayrılamadı: ${hata.message}`, 'hata')
   } finally {
@@ -749,7 +780,7 @@ async function gorselYukle (dosya) {
     // Yeni fotografta onceki hizalama ve maske gecerli degil.
     el.donmeAcisi.value = '0'
     el.donmeDegeri.textContent = '0,0°'
-    hamMaske = null
+    maskeyiAta(null)
     el.arkaplanBeyazlat.checked = false
     el.arkaplanAyarlari.classList.add('d-none')
     el.aracKirpma.checked = true
@@ -956,6 +987,13 @@ for (const kaydirac of ROTUS_KAYDIRACLARI) {
   giris.addEventListener('change', () => durumuKaydet())
 }
 
+el.sicaklikKisi.addEventListener('change', () => {
+  rotusAyarlari = rotusuOku()
+  sicaklikDurumunuGuncelle()
+  gosterimiTazele()
+  durumuKaydet()
+})
+
 el.lekeBoyu.addEventListener('input', () => {
   lekeFircasi.yaricap = Number.parseInt(el.lekeBoyu.value, 10) / 2
   el.lekeBoyuDegeri.textContent = `${el.lekeBoyu.value} px`
@@ -979,14 +1017,22 @@ function indirmeDurumu (mesaj, tur = 'bilgi') {
   el.indirmeDurumu.classList.toggle('text-body-secondary', tur === 'bilgi')
 }
 
-// Ciktida kullanilacak maske: onizlemedeki ile ayni kenar ayarlariyla uretilir.
-function ciktiMaskesi () {
-  if (!hamMaske || !el.arkaplanBeyazlat.checked) return null
+// Kenar ayarlari uygulanmis kisi maskesi; onizleme ile cikti ayni maskeyi
+// gorur. Maske henuz cikarilmamissa null doner.
+function ayarliMaske () {
+  if (!hamMaske) return null
 
   return window.HV.arkaplan.maskeyiAyarla(hamMaske, {
     genislet: Number.parseFloat(el.maskeGenislet.value) / 100,
     yumusat: Number.parseFloat(el.maskeYumusat.value)
   })
+}
+
+// Cikti uretiminin maske alanlari: beyazlatma yalnizca anahtar acikken
+// yapilir, kisi maskesi ise sicaklik icin her durumda gonderilir.
+function ciktiMaskeleri () {
+  const maske = ayarliMaske()
+  return { maske: el.arkaplanBeyazlat.checked ? maske : null, kisiMaskesi: maske }
 }
 
 async function fotografiIndir () {
@@ -1000,7 +1046,7 @@ async function fotografiIndir () {
     const { baytlar, cikti } = await window.HV.disaAktar.baytlariUret({
       gorsel: yuklenenGorsel,
       cerceve: kirpma.cerceve,
-      maske: ciktiMaskesi(),
+      ...ciktiMaskeleri(),
       rotusAyarlari,
       lekeler,
       olcuMm: olcuDurumu,
@@ -1105,7 +1151,7 @@ function sayfaKaresiniAl () {
   const { tuval: kare } = window.HV.disaAktar.tuvalUret({
     gorsel: yuklenenGorsel,
     cerceve: kirpma.cerceve,
-    maske: ciktiMaskesi(),
+    ...ciktiMaskeleri(),
     rotusAyarlari,
     lekeler,
     olcuMm: olcuDurumu,
@@ -1314,7 +1360,7 @@ function baskiSayfasiUret () {
   const { tuval: kare } = window.HV.disaAktar.tuvalUret({
     gorsel: yuklenenGorsel,
     cerceve: kirpma.cerceve,
-    maske: ciktiMaskesi(),
+    ...ciktiMaskeleri(),
     rotusAyarlari,
     lekeler,
     olcuMm: olcuDurumu,
