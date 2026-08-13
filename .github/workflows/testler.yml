@@ -1,0 +1,62 @@
+name: Testler
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # Hizli geri bildirim: kod bicimi ve saf modullerin birim testleri.
+  birim:
+    name: Biçim ve birim testleri
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run test:birim
+
+  # Gercek uygulamayi acan testler. Kural 4 geregi kod uc platformda da
+  # calismak zorunda, bu yuzden ucunde de kosulur.
+  uctan-uca:
+    name: Uçtan uca (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # Electron'un penceresi olmadan acilamamasi icin sanal ekran gerekir.
+      - name: Testler (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum npm run test:uctan-uca
+
+      - name: Testler (macOS / Windows)
+        if: runner.os != 'Linux'
+        run: npm run test:uctan-uca
+
+      # Yuz ve arka plan testleri gercek fotograf ister; CI'da atlanirlar
+      # (kisisel veri depoya girmez, bkz. AGENTS.md kural 5). Atlananlarin
+      # sayisi gorunur olsun diye ozet basilir.
+      - name: Atlanan testler
+        if: always()
+        shell: bash
+        run: echo "Yüz ve arka plan testleri gerçek fotoğraf olmadan atlanır."

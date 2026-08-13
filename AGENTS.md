@@ -120,8 +120,11 @@ Komutlar:
 | Komut | İş |
 | --- | --- |
 | `npm start` | Uygulamayı çalıştırır |
-| `npm run test:birim` | Birim testleri (`node --test`) |
-| `npm run vendor` | vendor/ dosyalarını yeniler (`npm install` sonrası kendiliğinden çalışır) |
+| `npm test` | Birim + uçtan uca testlerin tamamı |
+| `npm run test:birim` | Yalnızca birim testleri (`node --test`, saniyeler) |
+| `npm run test:uctan-uca` | Gerçek uygulamayı açan testler (~1,5 dk) |
+| `npm run lint` | Kod biçimi denetimi (`npm run lint:duzelt` düzeltir) |
+| `npm run vendor` | `vendor/` dosyalarını yeniler |
 
 `src/renderer/js/` altındaki modüller DOM'a ve Electron'a dokunmadan yazılır ki hem arayüzde
 hem Node'da (testte) çalışsınlar. Ölçüler milimetre tutulur; piksele yalnızca çizim, dışa

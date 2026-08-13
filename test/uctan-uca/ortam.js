@@ -1,0 +1,169 @@
+'use strict'
+
+// Uctan uca testlerin ortak koşum takimi: gercek uygulamayi Electron ile acar,
+// her test kendi userData klasorunde calisir (kullanicinin ayarlarina dokunmaz).
+//
+// Fotograf kaynagi iki turlu olabilir:
+//   - Varsayilan: test/uctan-uca/gorsel-uret.js ile uretilen sentetik portre.
+//     Depoya kisisel veri girmedigi icin (AGENTS.md, kural 5) CI'da da calisir.
+//   - HV_FOTOGRAFLAR ortam degiskeni bir klasoru gosteriyorsa oradaki gercek
+//     fotograflar kullanilir. Yuz bulma ve arka plan ayirma yalnizca boyle
+//     sinanabilir; aksi halde ilgili testler atlanir.
+
+const path = require('node:path')
+const fs = require('node:fs')
+const os = require('node:os')
+const { _electron: electron } = require('playwright-core')
+
+const { pngUret } = require('./gorsel-uret.js')
+
+const DEPO = path.resolve(__dirname, '..', '..')
+const FOTOGRAF_UZANTILARI = ['.jpg', '.jpeg', '.png', '.webp']
+
+// --- Fotograf kaynagi --------------------------------------------------------
+
+// HV_FOTOGRAFLAR klasorundeki gercek fotograflar. Yoksa bos dizi doner.
+function gercekFotograflar () {
+  const klasor = process.env.HV_FOTOGRAFLAR
+  if (!klasor || !fs.existsSync(klasor)) return []
+
+  return fs.readdirSync(klasor)
+    .filter((ad) => FOTOGRAF_UZANTILARI.includes(path.extname(ad).toLowerCase()))
+    .map((ad) => path.join(klasor, ad))
+    .sort()
+}
+
+// Yuz gerektiren testler icin: gercek fotograf yoksa atlama sebebi doner.
+function yuzGerekli () {
+  return gercekFotograflar().length
+    ? null
+    : 'gerçek fotoğraf yok (HV_FOTOGRAFLAR ayarlanmamış); yüz ve arka plan testleri atlandı'
+}
+
+// --- Gecici dosyalar ---------------------------------------------------------
+
+class Calisma {
+  constructor (ad) {
+    this.klasor = fs.mkdtempSync(path.join(os.tmpdir(), `hv-${ad}-`))
+    this.profil = path.join(this.klasor, 'profil')
+    fs.mkdirSync(this.profil)
+  }
+
+  // Sentetik ya da gercek fotograf; sira, birden fazla istendiginde ayirt eder.
+  fotograf (sira = 0, { gercek = false } = {}) {
+    if (gercek) {
+      const dosyalar = gercekFotograflar()
+      if (!dosyalar.length) throw new Error('Gerçek fotoğraf istendi ama bulunamadı.')
+      return dosyalar[sira % dosyalar.length]
+    }
+
+    const yol = path.join(this.klasor, `deneme-${sira}.png`)
+    if (!fs.existsSync(yol)) fs.writeFileSync(yol, pngUret(1200, 1800, sira * 37))
+    return yol
+  }
+
+  // Testin uretecegi cikti dosyasi icin yol; testten once silinir.
+  cikti (ad) {
+    const yol = path.join(this.klasor, ad)
+    if (fs.existsSync(yol)) fs.unlinkSync(yol)
+    return yol
+  }
+
+  temizle () {
+    fs.rmSync(this.klasor, { recursive: true, force: true })
+  }
+}
+
+// --- Uygulama ----------------------------------------------------------------
+
+async function uygulamayiAc (calisma, { ekArgumanlar = [] } = {}) {
+  const uygulama = await electron.launch({
+    args: ['.', `--user-data-dir=${calisma.profil}`, ...ekArgumanlar],
+    cwd: DEPO,
+    executablePath: require(path.join(DEPO, 'node_modules', 'electron'))
+  })
+
+  const sayfa = await uygulama.firstWindow()
+  const hatalar = []
+  sayfa.on('pageerror', (hata) => hatalar.push(hata.message))
+
+  await sayfa.waitForFunction(
+    () => document.getElementById('surum-bilgisi').textContent.length > 0,
+    null, { timeout: 60000 })
+  // Ayarlar okunup uygulanana kadar bekle.
+  await sayfa.waitForTimeout(1200)
+
+  return { uygulama, sayfa, hatalar }
+}
+
+// Ilk acilista tanitim turu cikar ve tiklamalari tutar.
+async function turuKapat (sayfa) {
+  const acik = await sayfa.evaluate(() => {
+    const katman = document.getElementById('tanitim-katmani')
+    return katman !== null && !katman.classList.contains('d-none')
+  })
+  if (!acik) return
+
+  await sayfa.keyboard.press('Escape')
+  await sayfa.waitForFunction(
+    () => document.getElementById('tanitim-katmani').classList.contains('d-none'))
+  await sayfa.waitForTimeout(300)
+}
+
+async function fotografYukle (sayfa, yol) {
+  await sayfa.setInputFiles('#dosya-girisi', yol)
+  await sayfa.waitForFunction(
+    () => document.getElementById('gorsel-bilgisi').textContent.length > 0,
+    null, { timeout: 90000 })
+  await sayfa.waitForTimeout(400)
+}
+
+// Panel uc adima bolundu; gizli sekmedeki denetime dokunulamaz.
+async function adima (sayfa, ad) {
+  await sayfa.click(`#adim-${ad}-dugmesi`)
+  await sayfa.waitForSelector(`#adim-${ad}.active`)
+  await sayfa.waitForTimeout(300)
+}
+
+// Kaydetme penceresini test dosyasina yonlendirir.
+async function kaydetmeyiYonlendir (uygulama, hedef) {
+  await uygulama.evaluate(async ({ dialog }, yol) => {
+    dialog.showSaveDialog = async () => ({ canceled: false, filePath: yol })
+  }, hedef)
+}
+
+// Kaydirac degerini degistirir ve onizlemenin tazelenmesini bekler.
+async function kaydiracAyarla (sayfa, secici, deger, bekleme = 700) {
+  await sayfa.fill(secici, String(deger))
+  await sayfa.dispatchEvent(secici, 'input')
+  await sayfa.waitForTimeout(bekleme)
+}
+
+// Hazir bir uygulama: acar, turu kapatir, istenirse fotograf yukler.
+// Doner: { uygulama, sayfa, hatalar, kapat }
+async function hazirla (calisma, { fotograf = null } = {}) {
+  const { uygulama, sayfa, hatalar } = await uygulamayiAc(calisma)
+  await turuKapat(sayfa)
+  if (fotograf) await fotografYukle(sayfa, fotograf)
+
+  return {
+    uygulama,
+    sayfa,
+    hatalar,
+    kapat: async () => { await uygulama.close() }
+  }
+}
+
+module.exports = {
+  DEPO,
+  Calisma,
+  gercekFotograflar,
+  yuzGerekli,
+  uygulamayiAc,
+  turuKapat,
+  fotografYukle,
+  adima,
+  kaydetmeyiYonlendir,
+  kaydiracAyarla,
+  hazirla
+}

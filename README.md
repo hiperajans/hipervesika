@@ -108,7 +108,10 @@ zorunludur; dosyalar sonradan tazelenmek istenirse `npm run vendor` yeterlidir.
 | Komut | İş |
 | --- | --- |
 | `npm start` | Uygulamayı çalıştırır |
-| `npm run test:birim` | Birim testleri (`node --test`) |
+| `npm test` | Birim + uçtan uca testlerin tamamı |
+| `npm run test:birim` | Yalnızca birim testleri (`node --test`, saniyeler) |
+| `npm run test:uctan-uca` | Gerçek uygulamayı açan testler (~1,5 dk) |
+| `npm run lint` | Kod biçimi denetimi (`npm run lint:duzelt` düzeltir) |
 | `npm run vendor` | `vendor/` dosyalarını yeniler |
 
 ## Klavye kısayolları
