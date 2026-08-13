@@ -51,6 +51,40 @@
                 </div>
                 <span id="yakinlik-orani" class="small text-body-secondary font-monospace"></span>
 
+                <div class="vr d-none d-sm-block"></div>
+
+                <div class="btn-group btn-group-sm" role="group" aria-label="Araç">
+                  <input type="radio" class="btn-check" name="arac" id="arac-kirpma" checked />
+                  <label class="btn btn-outline-secondary" for="arac-kirpma">Kırpma</label>
+
+                  <input type="radio" class="btn-check" name="arac" id="arac-leke" />
+                  <label class="btn btn-outline-success" for="arac-leke">Leke</label>
+
+                  <input type="radio" class="btn-check" name="arac" id="arac-firca-sil" />
+                  <label class="btn btn-outline-danger" for="arac-firca-sil">Sil</label>
+
+                  <input type="radio" class="btn-check" name="arac" id="arac-firca-getir" />
+                  <label class="btn btn-outline-primary" for="arac-firca-getir">Geri getir</label>
+                </div>
+
+                <div class="btn-group btn-group-sm" role="group" aria-label="Geçmiş">
+                  <button id="btn-geri-al" type="button" class="btn btn-outline-secondary" title="Geri al">
+                    ↶
+                  </button>
+                  <button id="btn-yinele" type="button" class="btn btn-outline-secondary" title="Yinele">
+                    ↷
+                  </button>
+                </div>
+
+                <button
+                  id="btn-once-sonra"
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  title="Basılı tutunca özgün fotoğrafı gösterir"
+                >
+                  Önce / Sonra
+                </button>
+
                 <span
                   id="gorsel-bilgisi"
                   class="small text-body-secondary ms-auto text-truncate"
@@ -150,16 +184,10 @@
 
                   <hr />
 
-                  <div class="btn-group btn-group-sm w-100 mb-2" role="group" aria-label="Araç">
-                    <input type="radio" class="btn-check" name="arac" id="arac-kirpma" checked />
-                    <label class="btn btn-outline-secondary" for="arac-kirpma">Kırpma</label>
-
-                    <input type="radio" class="btn-check" name="arac" id="arac-firca-sil" />
-                    <label class="btn btn-outline-danger" for="arac-firca-sil">Sil</label>
-
-                    <input type="radio" class="btn-check" name="arac" id="arac-firca-getir" />
-                    <label class="btn btn-outline-primary" for="arac-firca-getir">Geri getir</label>
-                  </div>
+                  <p class="small text-body-secondary mb-2">
+                    Kenarları düzeltmek için üstteki <em>Sil</em> ve <em>Geri getir</em>
+                    araçlarını kullanın.
+                  </p>
 
                   <label for="firca-boyu" class="form-label d-flex justify-content-between mb-1">
                     <span>Fırça boyu</span>
@@ -170,6 +198,63 @@
                     min="4" max="120" step="2" value="24"
                   />
                 </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header fw-semibold">Rötuş</div>
+              <div class="card-body">
+                <label for="rotus-parlaklik" class="form-label d-flex justify-content-between mb-1">
+                  <span>Parlaklık</span>
+                  <span id="rotus-parlaklik-degeri" class="font-monospace">0</span>
+                </label>
+                <input type="range" class="form-range" id="rotus-parlaklik"
+                  min="-50" max="50" step="1" value="0" />
+
+                <label for="rotus-kontrast" class="form-label d-flex justify-content-between mb-1">
+                  <span>Kontrast</span>
+                  <span id="rotus-kontrast-degeri" class="font-monospace">0</span>
+                </label>
+                <input type="range" class="form-range" id="rotus-kontrast"
+                  min="-50" max="50" step="1" value="0" />
+
+                <label for="rotus-doygunluk" class="form-label d-flex justify-content-between mb-1">
+                  <span>Doygunluk</span>
+                  <span id="rotus-doygunluk-degeri" class="font-monospace">0</span>
+                </label>
+                <input type="range" class="form-range" id="rotus-doygunluk"
+                  min="-50" max="50" step="1" value="0" />
+
+                <label for="rotus-sicaklik" class="form-label d-flex justify-content-between mb-1">
+                  <span>Renk sıcaklığı</span>
+                  <span id="rotus-sicaklik-degeri" class="font-monospace">0</span>
+                </label>
+                <input type="range" class="form-range" id="rotus-sicaklik"
+                  min="-50" max="50" step="1" value="0" />
+
+                <label for="rotus-keskinlik" class="form-label d-flex justify-content-between mb-1">
+                  <span>Keskinlik</span>
+                  <span id="rotus-keskinlik-degeri" class="font-monospace">0</span>
+                </label>
+                <input type="range" class="form-range" id="rotus-keskinlik"
+                  min="0" max="100" step="1" value="0" />
+
+                <hr />
+
+                <label for="leke-boyu" class="form-label d-flex justify-content-between mb-1">
+                  <span>Leke boyu</span>
+                  <span id="leke-boyu-degeri" class="font-monospace">24 px</span>
+                </label>
+                <input type="range" class="form-range" id="leke-boyu"
+                  min="6" max="80" step="2" value="24" />
+                <p id="leke-durumu" class="small text-body-secondary mb-2">
+                  Üstteki <em>Leke</em> aracıyla lekenin üzerine tıklayın.
+                </p>
+
+                <button id="btn-rotusu-sifirla" type="button"
+                  class="btn btn-outline-secondary btn-sm w-100">
+                  Rötuşu sıfırla
+                </button>
               </div>
             </div>
 
@@ -255,6 +340,8 @@
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="js/olcu.js"></script>
     <script src="js/hizalama.js"></script>
+    <script src="js/rotus.js"></script>
+    <script src="js/gecmis.js"></script>
     <script src="js/gorsel.js"></script>
     <script src="js/tuval.js"></script>
     <script src="js/kirpma.js"></script>

@@ -42,11 +42,28 @@ const el = {
   maskeYumusat: document.getElementById('maske-yumusat'),
   maskeYumusatDegeri: document.getElementById('maske-yumusat-degeri'),
   aracKirpma: document.getElementById('arac-kirpma'),
+  aracLeke: document.getElementById('arac-leke'),
   aracFircaSil: document.getElementById('arac-firca-sil'),
   aracFircaGetir: document.getElementById('arac-firca-getir'),
   fircaBoyu: document.getElementById('firca-boyu'),
-  fircaBoyuDegeri: document.getElementById('firca-boyu-degeri')
+  fircaBoyuDegeri: document.getElementById('firca-boyu-degeri'),
+  geriAl: document.getElementById('btn-geri-al'),
+  yinele: document.getElementById('btn-yinele'),
+  onceSonra: document.getElementById('btn-once-sonra'),
+  lekeBoyu: document.getElementById('leke-boyu'),
+  lekeBoyuDegeri: document.getElementById('leke-boyu-degeri'),
+  lekeDurumu: document.getElementById('leke-durumu'),
+  rotusuSifirla: document.getElementById('btn-rotusu-sifirla')
 }
+
+// Rotus kaydiraclari -50..+50 arasinda; motorun bekledigi carpanlara cevrilir.
+const ROTUS_KAYDIRACLARI = [
+  { anahtar: 'parlaklik', giris: 'rotus-parlaklik', deger: 'rotus-parlaklik-degeri', tur: 'carpan' },
+  { anahtar: 'kontrast', giris: 'rotus-kontrast', deger: 'rotus-kontrast-degeri', tur: 'carpan' },
+  { anahtar: 'doygunluk', giris: 'rotus-doygunluk', deger: 'rotus-doygunluk-degeri', tur: 'carpan' },
+  { anahtar: 'sicaklik', giris: 'rotus-sicaklik', deger: 'rotus-sicaklik-degeri', tur: 'birim' },
+  { anahtar: 'keskinlik', giris: 'rotus-keskinlik', deger: 'rotus-keskinlik-degeri', tur: 'birim' }
+]
 
 const tuval = new window.HV.Tuval(el.tuval, {
   degisimde: (t) => {
@@ -61,7 +78,19 @@ const kirpma = new window.HV.KirpmaAraci(tuval, {
 const firca = new window.HV.Firca(tuval, {
   maskeyiAl: () => hamMaske,
   gorseliAl: () => yuklenenGorsel,
-  degisimde: () => gosterimiTazele()
+  degisimde: () => gosterimiTazele(),
+  // Darbenin tamami tek bir geri alma adimi olur.
+  bittiginde: () => durumuKaydet({ maskeDegisti: true })
+})
+
+const lekeFircasi = new window.HV.LekeFircasi(tuval, {
+  gorseliAl: () => yuklenenGorsel,
+  lekeEkle: (leke) => {
+    lekeler.push(leke)
+    gosterimiTazele()
+    durumuKaydet()
+    lekeDurumunuGuncelle()
+  }
 })
 
 let yuklenenGorsel = null
@@ -71,6 +100,13 @@ let dpi = 300
 // Segmentasyondan gelen ham maske ve kullanicinin firca duzeltmeleri burada
 // birikir; kenar ayarlari her tazelemede bunun uzerine uygulanir.
 let hamMaske = null
+
+// Rotus ayarlari ve leke kayitlari deger olarak tutulur; goruntuye yazilmaz.
+let rotusAyarlari = window.HV.rotus.varsayilanAyarlar()
+let lekeler = []
+let oncesiGosteriliyor = false
+
+const gecmis = new window.HV.Gecmis()
 
 // --- Bicimlendirme -----------------------------------------------------------
 
@@ -101,7 +137,9 @@ function uyariGizle () {
 function araclariEtkinlestir (etkin) {
   const ogeler = [
     el.yakinlas, el.uzaklas, el.sigdir, el.kirpmayiSifirla,
-    el.otomatikHizala, el.donmeAcisi, el.donmeyiSifirla, el.arkaplanBeyazlat
+    el.otomatikHizala, el.donmeAcisi, el.donmeyiSifirla, el.arkaplanBeyazlat,
+    el.onceSonra, el.rotusuSifirla, el.aracKirpma, el.aracLeke,
+    ...ROTUS_KAYDIRACLARI.map((k) => document.getElementById(k.giris))
   ]
   for (const oge of ogeler) oge.disabled = !etkin
 }
@@ -235,27 +273,118 @@ function arkaplanDurumu (mesaj, tur = 'bilgi') {
   el.arkaplanDurumu.classList.toggle('text-body-secondary', tur !== 'hata')
 }
 
-// Kenar ayarlarini uygulayip ekranda gosterilecek beyaz zeminli onizlemeyi
-// yeniden uretir. Tam cozunurluklu birlestirme disa aktarmada yapilir.
+// Ekranda gosterilecek onizlemeyi kaynaktan yeniden uretir. Sira onemli:
+// once arka plan beyazlatma, sonra rotus, en son lekeler. Ayni islem disa
+// aktarmada tam cozunurlukte tekrarlanir.
 function gosterimiTazele () {
   if (!yuklenenGorsel) return
 
-  if (!hamMaske || !el.arkaplanBeyazlat.checked) {
-    yuklenenGorsel.gosterim = null
-    tuval.ciz()
-    return
+  const kaynak = yuklenenGorsel.onizleme
+  let sonuc = kaynak
+
+  // "Önce / Sonra" basiliyken hicbir islem uygulanmaz: kullanici ozgun
+  // fotografi gorur.
+  if (!oncesiGosteriliyor) {
+    if (hamMaske && el.arkaplanBeyazlat.checked) {
+      const maske = window.HV.arkaplan.maskeyiAyarla(hamMaske, {
+        genislet: Number.parseFloat(el.maskeGenislet.value) / 100,
+        yumusat: Number.parseFloat(el.maskeYumusat.value)
+      })
+      sonuc = window.HV.arkaplan.beyazZemineBirlestir(sonuc, maske, kaynak.width, kaynak.height)
+    }
+
+    sonuc = window.HV.rotus.uygula(sonuc, rotusAyarlari)
+    sonuc = window.HV.rotus.lekeleriUygula(sonuc, lekeler, kaynak.width / yuklenenGorsel.asil.width)
   }
 
-  const maske = window.HV.arkaplan.maskeyiAyarla(hamMaske, {
-    genislet: Number.parseFloat(el.maskeGenislet.value) / 100,
-    yumusat: Number.parseFloat(el.maskeYumusat.value)
-  })
-
-  const kaynak = yuklenenGorsel.onizleme
-  yuklenenGorsel.gosterim = window.HV.arkaplan.beyazZemineBirlestir(
-    kaynak, maske, kaynak.width, kaynak.height
-  )
+  yuklenenGorsel.gosterim = sonuc === kaynak ? null : sonuc
   tuval.ciz()
+}
+
+// --- Rotus -------------------------------------------------------------------
+
+// Kaydirac degerini motorun bekledigi bicime cevirir: carpan tipi 1 etrafinda
+// (0.5-1.5), birim tipi -1..+1 (keskinlikte 0..1) araliginda calisir.
+function kaydiracDegeri (tur, ham) {
+  return tur === 'carpan' ? 1 + ham / 100 : ham / 50
+}
+
+function rotusEtiketiYaz (kaydirac, ham) {
+  document.getElementById(kaydirac.deger).textContent = String(ham)
+}
+
+function rotusuOku () {
+  const ayarlar = {}
+  for (const kaydirac of ROTUS_KAYDIRACLARI) {
+    const ham = Number.parseInt(document.getElementById(kaydirac.giris).value, 10)
+    ayarlar[kaydirac.anahtar] = kaydiracDegeri(kaydirac.tur, ham)
+    rotusEtiketiYaz(kaydirac, ham)
+  }
+  return ayarlar
+}
+
+// Kaydiraclari verilen ayarlara gore geri yazar (geri al / sifirla sonrasi).
+function rotusuYaz (ayarlar) {
+  for (const kaydirac of ROTUS_KAYDIRACLARI) {
+    const deger = ayarlar[kaydirac.anahtar]
+    const ham = Math.round(kaydirac.tur === 'carpan' ? (deger - 1) * 100 : deger * 50)
+    document.getElementById(kaydirac.giris).value = String(ham)
+    rotusEtiketiYaz(kaydirac, ham)
+  }
+}
+
+function lekeDurumunuGuncelle () {
+  el.lekeDurumu.textContent = lekeler.length
+    ? `${lekeler.length} leke temizlendi. Geri almak için ↶ düğmesini kullanın.`
+    : 'Üstteki Leke aracıyla lekenin üzerine tıklayın.'
+}
+
+// --- Gecmis ------------------------------------------------------------------
+
+function maskeKopyala (maske) {
+  if (!maske) return null
+  const kopya = document.createElement('canvas')
+  kopya.width = maske.width
+  kopya.height = maske.height
+  kopya.getContext('2d').drawImage(maske, 0, 0)
+  return kopya
+}
+
+// Maske anlik goruntusu yalnizca maske degistiginde alinir; rotus adimlari
+// onceki kopyayi paylasir, boylece gecmis bellegi sisirmez.
+function durumuKaydet ({ maskeDegisti = false } = {}) {
+  const onceki = gecmis.simdiki
+  gecmis.kaydet({
+    ayarlar: { ...rotusAyarlari },
+    lekeler: lekeler.map((leke) => ({ ...leke })),
+    maske: maskeDegisti ? maskeKopyala(hamMaske) : (onceki?.maske ?? null),
+    beyazlatma: el.arkaplanBeyazlat.checked
+  })
+  gecmisDugmeleriniGuncelle()
+}
+
+function durumuUygula (durum) {
+  if (!durum) return
+
+  rotusAyarlari = { ...durum.ayarlar }
+  lekeler = durum.lekeler.map((leke) => ({ ...leke }))
+  // Gecmisteki kopya korunmali; uzerine firca darbesi yazilmasin diye
+  // calisma maskesi ayri bir kopyadir.
+  hamMaske = maskeKopyala(durum.maske)
+
+  el.arkaplanBeyazlat.checked = durum.beyazlatma && hamMaske !== null
+  el.arkaplanAyarlari.classList.toggle('d-none', !el.arkaplanBeyazlat.checked)
+
+  rotusuYaz(rotusAyarlari)
+  lekeDurumunuGuncelle()
+  aracSec()
+  gosterimiTazele()
+  gecmisDugmeleriniGuncelle()
+}
+
+function gecmisDugmeleriniGuncelle () {
+  el.geriAl.disabled = !gecmis.geriAlinabilir
+  el.yinele.disabled = !gecmis.yinelenebilir
 }
 
 function arkaplanBasariniBildir () {
@@ -294,6 +423,8 @@ async function arkaplaniAyir () {
     el.arkaplanAyarlari.classList.remove('d-none')
     gosterimiTazele()
     arkaplanBasariniBildir()
+    aracSec()
+    durumuKaydet({ maskeDegisti: true })
   } catch (hata) {
     hamMaske = null
     el.arkaplanBeyazlat.checked = false
@@ -304,14 +435,28 @@ async function arkaplaniAyir () {
 }
 
 function aracSec () {
-  const fircaModu = el.aracFircaSil.checked || el.aracFircaGetir.checked
+  // Maske araclari yalnizca maske varken anlamli.
+  const maskeVar = hamMaske !== null
+  el.aracFircaSil.disabled = !maskeVar
+  el.aracFircaGetir.disabled = !maskeVar
+  if (!maskeVar && (el.aracFircaSil.checked || el.aracFircaGetir.checked)) {
+    el.aracKirpma.checked = true
+  }
 
-  if (fircaModu) {
+  const maskeFircasi = el.aracFircaSil.checked || el.aracFircaGetir.checked
+
+  if (maskeFircasi) {
     firca.sil = el.aracFircaSil.checked
     tuval.etkilesim = firca
     tuval.ustKatman = (ctx, olcek) => {
       kirpma.ciz(ctx, olcek)
       firca.ciz(ctx, olcek)
+    }
+  } else if (el.aracLeke.checked) {
+    tuval.etkilesim = lekeFircasi
+    tuval.ustKatman = (ctx, olcek) => {
+      kirpma.ciz(ctx, olcek)
+      lekeFircasi.ciz(ctx, olcek)
     }
   } else {
     tuval.etkilesim = kirpma
@@ -441,8 +586,17 @@ async function gorselYukle (dosya) {
     el.arkaplanBeyazlat.checked = false
     el.arkaplanAyarlari.classList.add('d-none')
     el.aracKirpma.checked = true
-    aracSec()
     arkaplanDurumu('Kişiyi arka plandan ayırır ve zemini beyaza çevirir.')
+
+    rotusAyarlari = window.HV.rotus.varsayilanAyarlar()
+    lekeler = []
+    oncesiGosteriliyor = false
+    rotusuYaz(rotusAyarlari)
+    lekeDurumunuGuncelle()
+    aracSec()
+
+    gecmis.temizle()
+    durumuKaydet()
     hizalamaDurumu('Yüz ve omuz konumuna göre eğikliği düzeltir, biyometrik kadrajı kurar.')
 
     const { width, height } = gorsel.asil
@@ -583,7 +737,7 @@ el.maskeYumusat.addEventListener('input', () => {
   gosterimiTazele()
 })
 
-for (const secim of [el.aracKirpma, el.aracFircaSil, el.aracFircaGetir]) {
+for (const secim of [el.aracKirpma, el.aracLeke, el.aracFircaSil, el.aracFircaGetir]) {
   secim.addEventListener('change', () => aracSec())
 }
 
@@ -592,14 +746,73 @@ el.fircaBoyu.addEventListener('input', () => {
   el.fircaBoyuDegeri.textContent = `${el.fircaBoyu.value} px`
 })
 
+// --- Rotus denetimleri -------------------------------------------------------
+
+for (const kaydirac of ROTUS_KAYDIRACLARI) {
+  const giris = document.getElementById(kaydirac.giris)
+
+  // Surukleme boyunca onizleme tazelenir, gecmise ise yalnizca birakildiginda
+  // tek bir adim yazilir.
+  giris.addEventListener('input', () => {
+    rotusAyarlari = rotusuOku()
+    gosterimiTazele()
+  })
+  giris.addEventListener('change', () => durumuKaydet())
+}
+
+el.lekeBoyu.addEventListener('input', () => {
+  lekeFircasi.yaricap = Number.parseInt(el.lekeBoyu.value, 10) / 2
+  el.lekeBoyuDegeri.textContent = `${el.lekeBoyu.value} px`
+})
+
+el.rotusuSifirla.addEventListener('click', () => {
+  rotusAyarlari = window.HV.rotus.varsayilanAyarlar()
+  lekeler = []
+  rotusuYaz(rotusAyarlari)
+  lekeDurumunuGuncelle()
+  gosterimiTazele()
+  durumuKaydet()
+})
+
+// --- Once / sonra ------------------------------------------------------------
+
+// Dugme basili tutuldugu surece ozgun fotograf gosterilir.
+function oncesiniGoster (goster) {
+  if (oncesiGosteriliyor === goster) return
+  oncesiGosteriliyor = goster
+  gosterimiTazele()
+}
+
+el.onceSonra.addEventListener('pointerdown', () => oncesiniGoster(true))
+for (const olay of ['pointerup', 'pointerleave', 'pointercancel']) {
+  el.onceSonra.addEventListener(olay, () => oncesiniGoster(false))
+}
+
+// --- Geri al / yinele --------------------------------------------------------
+
+el.geriAl.addEventListener('click', () => durumuUygula(gecmis.geriAl()))
+el.yinele.addEventListener('click', () => durumuUygula(gecmis.yinele()))
+
+window.addEventListener('keydown', (olay) => {
+  // CmdOrCtrl+Z geri al, CmdOrCtrl+Shift+Z yinele.
+  const denetim = olay.metaKey || olay.ctrlKey
+  if (!denetim || olay.key.toLowerCase() !== 'z') return
+
+  olay.preventDefault()
+  durumuUygula(olay.shiftKey ? gecmis.yinele() : gecmis.geriAl())
+})
+
 // --- Baslangic ---------------------------------------------------------------
 
 onayarlariDoldur()
 dpiSecenekleriniDoldur()
 onayariUygula(olcuMotoru.FOTOGRAF_ONAYARLARI[0].kod)
 firca.yaricap = Number.parseInt(el.fircaBoyu.value, 10) / 2
+lekeFircasi.yaricap = Number.parseInt(el.lekeBoyu.value, 10) / 2
+rotusuYaz(rotusAyarlari)
 aracSec()
 araclariEtkinlestir(false)
+gecmisDugmeleriniGuncelle()
 
 el.surumBilgisi.textContent =
   `Electron ${versions.electron} · Chromium ${versions.chrome} · Node ${versions.node}`
