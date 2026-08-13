@@ -135,6 +135,31 @@ function hizalamaDurumu (mesaj, tur = 'bilgi') {
   el.hizalamaDurumu.classList.toggle('text-body-secondary', tur !== 'hata')
 }
 
+// Kafanin gercek tepesi kisi maskesinden okunur; yuz noktalarindan kestirilen
+// tepe sac hacmini hesaba katmadigi icin kadraj kafanin ustunu kesiyordu.
+// Maske ayrica arka plan beyazlatmada yeniden kullanilir, ikinci kez uretilmez.
+async function tepeNoktasiniBul (yuz, calismaya) {
+  try {
+    if (!hamMaske) {
+      const aday = await window.HV.arkaplan.maskeCikar(yuklenenGorsel.asil)
+      if (window.HV.arkaplan.maskeKapsami(aday) < 0.02) return null
+      hamMaske = aday
+    }
+
+    const merkezX = (yuz.solGoz.x + yuz.sagGoz.x) / 2
+    const tepeY = window.HV.arkaplan.kafaTepesi(hamMaske, {
+      merkezX,
+      yariGenislik: Math.abs(yuz.solGoz.x - yuz.sagGoz.x),
+      gorselGenislik: yuklenenGorsel.asil.width
+    })
+
+    return tepeY === null ? null : calismaya({ x: merkezX, y: tepeY })
+  } catch {
+    // Maske alinamazsa kestirime dusulur; hizalama yine de calisir.
+    return null
+  }
+}
+
 async function otomatikHizala () {
   if (!yuklenenGorsel) return
 
@@ -172,9 +197,12 @@ async function otomatikHizala () {
     const solGoz = calismaya(bulgu.yuz.solGoz)
     const sagGoz = calismaya(bulgu.yuz.sagGoz)
 
+    const tepe = await tepeNoktasiniBul(bulgu.yuz, calismaya) ??
+      hizalamaMotoru.tepeNoktasi(cene, alin)
+
     kirpma.cerceveAta(hizalamaMotoru.otomatikCerceve({
       cene,
-      tepe: hizalamaMotoru.tepeNoktasi(cene, alin),
+      tepe,
       gozMerkezi: { x: (solGoz.x + sagGoz.x) / 2, y: (solGoz.y + sagGoz.y) / 2 },
       calisma,
       oran: olcuMotoru.oran(olcuDurumu.genislikMm, olcuDurumu.yukseklikMm)
@@ -230,6 +258,15 @@ function gosterimiTazele () {
   tuval.ciz()
 }
 
+function arkaplanBasariniBildir () {
+  if (!hamMaske) return
+  const kapsam = window.HV.arkaplan.maskeKapsami(hamMaske)
+  arkaplanDurumu(
+    `Arka plan beyazlatıldı (fotoğrafın %${Math.round(kapsam * 100)}'i kişi). ` +
+    'Kenarları fırçayla düzeltebilirsiniz.'
+  )
+}
+
 async function arkaplaniAyir () {
   if (!yuklenenGorsel) return
 
@@ -256,10 +293,7 @@ async function arkaplaniAyir () {
 
     el.arkaplanAyarlari.classList.remove('d-none')
     gosterimiTazele()
-    arkaplanDurumu(
-      `Arka plan beyazlatıldı (kadrajın %${Math.round(kapsam * 100)}'i kişi). ` +
-      'Kenarları fırçayla düzeltebilirsiniz.'
-    )
+    arkaplanBasariniBildir()
   } catch (hata) {
     hamMaske = null
     el.arkaplanBeyazlat.checked = false
@@ -527,10 +561,12 @@ el.arkaplanBeyazlat.addEventListener('change', () => {
     return
   }
 
-  // Maske zaten cikarilmissa yeniden hesaplanmaz.
+  // Maske zaten cikarilmissa (ornegin otomatik hizalama sirasinda) yeniden
+  // hesaplanmaz.
   if (hamMaske) {
     el.arkaplanAyarlari.classList.remove('d-none')
     gosterimiTazele()
+    arkaplanBasariniBildir()
     return
   }
 

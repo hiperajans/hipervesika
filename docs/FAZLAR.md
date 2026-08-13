@@ -95,6 +95,9 @@ Bu kararlar tüm fazları bağlar:
   standartların ölçütü odur), omuz farkı kullanıcıya bilgi olarak gösterilir.
 - **Otomatik yerleşim:** yüz yüksekliği kadrajın %70–80'i, göz hattı alttan %50–60 aralığına
   gelecek şekilde kırpma çerçevesi konumlandırılır.
+- **Kafanın tepesi Faz 4'ün kişi maskesinden okunur.** Yüz noktalarından (çene→alın vektörünü
+  uzatarak) kestirilen tepe saç hacmini hesaba katmıyor; gerçek fotoğraflarda 84–214 piksel
+  aşağıda kaldığı ölçüldü ve kadraj kafanın üstünü kesti. Maske alınamazsa kestirime düşülür.
 - Yüz bulunamazsa veya birden fazla yüz varsa kullanıcı bilgilendirilir ve elle hizalamaya
   düşülür. Otomatik hizalama her zaman kullanıcı tarafından değiştirilebilir olmalıdır.
 

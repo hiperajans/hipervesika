@@ -1,6 +1,25 @@
 /* Yalnizca Bootstrap'in karsilamadigi stiller. Bootstrap'in kendi dosyalari
    duzenlenmez (bkz. AGENTS.md, kural 6). */
 
+/* Dar ekranda sayfa normal sekilde kayar. */
+.ana-alan {
+  overflow-y: auto;
+}
+
+/* Genis ekranda yan panel kendi icinde kayar; tuval yerinde kalir. Ayar
+   kartlari pencere yuksekligini asinca tuvalin de yukari kaymasi arayuzu
+   kullanilmaz hale getiriyordu. */
+@media (min-width: 992px) {
+  .ana-alan {
+    overflow: hidden;
+  }
+
+  .ana-alan aside {
+    max-height: 100%;
+    overflow-y: auto;
+  }
+}
+
 /* Calisma alani kartinin tuval govdesi esnesin diye. */
 #tuval-sarmal {
   min-height: 20rem;

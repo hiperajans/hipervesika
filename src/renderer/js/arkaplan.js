@@ -102,6 +102,31 @@
     return kisi / (veri.length / 4)
   }
 
+  // Maskede kafanin en ust noktasi. Yuz noktalarindan kestirilen tepe sac
+  // hacmini hesaba katmadigi icin (olcumde 84-214 piksel asagida kaliyordu)
+  // biyometrik kadraj bu degeri kullanir.
+  //
+  // Arama yalnizca yuz genisligi kadar bir sutun araliginda yapilir; aksi halde
+  // kaldirilmis bir el ya da omuz kafa sanilirdi. Sonuc kaynak goruntunun
+  // koordinat sisteminde y degeridir.
+  function kafaTepesi (maske, { merkezX, yariGenislik, gorselGenislik }) {
+    const olcek = maske.width / gorselGenislik
+    const sol = Math.max(0, Math.round((merkezX - yariGenislik) * olcek))
+    const sag = Math.min(maske.width - 1, Math.round((merkezX + yariGenislik) * olcek))
+    if (sag < sol) return null
+
+    const veri = maske.getContext('2d')
+      .getImageData(0, 0, maske.width, maske.height).data
+
+    for (let y = 0; y < maske.height; y++) {
+      for (let x = sol; x <= sag; x++) {
+        if (veri[(y * maske.width + x) * 4 + 3] > 127) return y / olcek
+      }
+    }
+
+    return null
+  }
+
   // Kullanicinin kenar ayarlarini uygulanmis yeni bir maske uretir.
   // Once genislet/daralt egrisi, sonra yumusatma: yumusatma en son uygulanir ki
   // istenen yumusaklik egri tarafindan yeniden keskinlestirilmesin.
@@ -177,6 +202,7 @@
     alphaEgrisi,
     maskeCikar,
     maskeKapsami,
+    kafaTepesi,
     maskeyiAyarla,
     beyazZemineBirlestir,
     fircaDarbesi
