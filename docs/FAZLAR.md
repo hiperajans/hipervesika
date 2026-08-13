@@ -218,6 +218,23 @@ bu adım yapılamadı.
 
 **Çıktı:** Sık kullanılan ölçüler tek tıkla seçilebiliyor.
 
+### Uygulanan çözüm
+
+Ayarlar `app.getPath('userData')/ayarlar.json` dosyasında tutulur. Dosya elle
+düzenlenebildiği ve bozulabildiği için okunan her değer `src/main/ayarlar.js` içinde
+doğrulanır: ölçü sınırları, ad uzunluğu, tekrar eden kod ve en fazla 50 ön ayar. Anlaşılmayan
+alan sessizce atılır, bozuk dosya uygulamayı açılmaktan alıkoymaz — varsayılanla açılır.
+
+Yazma önce geçici dosyaya yapılıp `rename` ile yerine konur; yazarken uygulama kapanırsa eski
+ayarlar bozulmadan kalır.
+
+Kaydırgaç ve sayı girişleri her tuşta diske yazmasın diye 400 ms geciktirilir; **ön ayar
+kaydetme ve silme beklemeden yazılır**, çünkü kullanıcı hemen ardından pencereyi kapatabilir.
+Bekleyen bir yazma varken pencere kapanırsa `beforeunload` son değerleri yine de gönderir.
+
+Ön ayarın kodu adından bağımsızdır (`kullanici-1`), böylece ad değişse de seçim bozulmaz.
+Aynı adla kaydetmek eskisinin üzerine yazar, listeye ikinci bir satır eklemez.
+
 ## Faz 10 — Paketleme ve dağıtım
 
 **Amaç:** Uygulamanın kurulabilir hale gelmesi.

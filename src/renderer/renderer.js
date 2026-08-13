@@ -82,7 +82,16 @@ const el = {
   sayfayiPdf: document.getElementById('btn-sayfayi-pdf'),
   sayfayiKaydet: document.getElementById('btn-sayfayi-kaydet'),
   baskiDurumu: document.getElementById('baski-durumu'),
-  baskiKisayollari: document.getElementById('baski-kisayollari')
+  baskiKisayollari: document.getElementById('baski-kisayollari'),
+  olcuKaydet: document.getElementById('btn-olcu-kaydet'),
+  olcuSil: document.getElementById('btn-olcu-sil'),
+  kagitKaydet: document.getElementById('btn-kagit-kaydet'),
+  kagitSil: document.getElementById('btn-kagit-sil'),
+  onayarModali: document.getElementById('onayar-modali'),
+  onayarModalBasligi: document.getElementById('onayar-modal-basligi'),
+  onayarModalBilgisi: document.getElementById('onayar-modal-bilgisi'),
+  onayarAdi: document.getElementById('onayar-adi'),
+  onayarKaydet: document.getElementById('btn-onayar-kaydet')
 }
 
 // Rotus kaydiraclari -50..+50 arasinda; motorun bekledigi carpanlara cevrilir.
@@ -139,6 +148,19 @@ let lekeler = []
 let oncesiGosteriliyor = false
 
 const gecmis = new window.HV.Gecmis()
+
+// Kullanicinin kendi on ayarlari ve son kullandigi degerler. Ana surecten
+// okunur; okunana kadar bos kabul edilir ve hicbir sey yazilmaz.
+let kullaniciAyarlari = { fotografOnayarlari: [], kagitOnayarlari: [], sonKullanilan: {} }
+let ayarlarHazir = false
+
+// Bir ada karsilik gelmeyen, listede kullanilmayan kod. Kullanici adi
+// degistirdiginde secim bozulmasin diye kod addan bagimsizdir.
+function benzersizKod (liste) {
+  let sayac = 1
+  while (liste.some((oge) => oge.kod === `kullanici-${sayac}`)) sayac++
+  return `kullanici-${sayac}`
+}
 
 // --- Bicimlendirme -----------------------------------------------------------
 
@@ -509,18 +531,57 @@ function bicimliDerece (radyan) {
 
 // --- Olcu paneli -------------------------------------------------------------
 
+function secenekEkle (hedef, deger, metin) {
+  const secenek = document.createElement('option')
+  secenek.value = deger
+  secenek.textContent = metin
+  hedef.append(secenek)
+}
+
+// Kullanici on ayarlari ayri bir baslik altinda listelenir; hazir olculer
+// silinemez, kullanicininkiler silinebilir.
+function kullaniciGrubu (secim, onayarlar, etiketle) {
+  if (!onayarlar.length) return
+
+  const grup = document.createElement('optgroup')
+  grup.label = 'Kendi ölçülerim'
+  for (const onayar of onayarlar) secenekEkle(grup, onayar.kod, etiketle(onayar))
+  secim.append(grup)
+}
+
+function fotoOnayariBul (kod) {
+  return olcuMotoru.FOTOGRAF_ONAYARLARI.find((o) => o.kod === kod) ??
+    kullaniciAyarlari.fotografOnayarlari.find((o) => o.kod === kod) ?? null
+}
+
 function onayarlariDoldur () {
+  const onceki = el.onayarSecimi.value
+  el.onayarSecimi.replaceChildren()
+
   for (const onayar of olcuMotoru.FOTOGRAF_ONAYARLARI) {
-    const secenek = document.createElement('option')
-    secenek.value = onayar.kod
-    secenek.textContent = `${onayar.ad} — ${onayar.genislikMm}×${onayar.yukseklikMm} mm`
-    el.onayarSecimi.append(secenek)
+    secenekEkle(
+      el.onayarSecimi, onayar.kod,
+      `${onayar.ad} — ${onayar.genislikMm}×${onayar.yukseklikMm} mm`
+    )
   }
 
-  const ozel = document.createElement('option')
-  ozel.value = 'ozel'
-  ozel.textContent = 'Özel ölçü'
-  el.onayarSecimi.append(ozel)
+  kullaniciGrubu(
+    el.onayarSecimi, kullaniciAyarlari.fotografOnayarlari,
+    (o) => `${o.ad} — ${o.genislikMm}×${o.yukseklikMm} mm`
+  )
+  secenekEkle(el.onayarSecimi, 'ozel', 'Özel ölçü')
+
+  // Secili on ayar silinmisse ozel olcuye dusulur.
+  el.onayarSecimi.value = onceki
+  if (!el.onayarSecimi.value) el.onayarSecimi.value = 'ozel'
+  silDugmeleriniGuncelle()
+}
+
+function silDugmeleriniGuncelle () {
+  el.olcuSil.disabled = !kullaniciAyarlari.fotografOnayarlari
+    .some((o) => o.kod === el.onayarSecimi.value)
+  el.kagitSil.disabled = !kullaniciAyarlari.kagitOnayarlari
+    .some((o) => o.kod === el.kagitOnayari.value)
 }
 
 function dpiSecenekleriniDoldur () {
@@ -557,12 +618,14 @@ function olculeriUygula () {
   // Vesikalik olcusu degisince sayfaya sigan adet de degisir.
   sayfaKaresiniGecersizKil()
   adediEnFazlayaAyarla()
+  ayarlariKaydet()
 }
 
 function onayariUygula (kod) {
-  const onayar = olcuMotoru.FOTOGRAF_ONAYARLARI.find((o) => o.kod === kod)
+  const onayar = fotoOnayariBul(kod)
   if (!onayar) return
 
+  el.onayarSecimi.value = kod
   el.genislikMm.value = String(onayar.genislikMm)
   el.yukseklikMm.value = String(onayar.yukseklikMm)
   olculeriUygula()
@@ -716,6 +779,8 @@ el.sigdir.addEventListener('click', () => tuval.sigdir())
 
 el.onayarSecimi.addEventListener('change', () => {
   if (el.onayarSecimi.value !== 'ozel') onayariUygula(el.onayarSecimi.value)
+  silDugmeleriniGuncelle()
+  ayarlariKaydet()
 })
 
 // Olculeri elle degistirmek secimi otomatik olarak "Özel ölçü"ye tasir.
@@ -729,7 +794,13 @@ for (const giris of [el.genislikMm, el.yukseklikMm]) {
 el.dpiSecimi.addEventListener('change', () => {
   dpi = Number.parseInt(el.dpiSecimi.value, 10)
   ciktiBilgisiniGuncelle()
+  ayarlariKaydet()
 })
+
+el.olcuKaydet.addEventListener('click', () => olcuyuOnayarKaydet())
+el.olcuSil.addEventListener('click', () => onayarSil('fotograf'))
+el.kagitKaydet.addEventListener('click', () => kagidiOnayarKaydet())
+el.kagitSil.addEventListener('click', () => onayarSil('kagit'))
 
 el.kirpmayiSifirla.addEventListener('click', () => kirpma.sifirla())
 
@@ -1007,27 +1078,39 @@ function gorunumuUygula () {
   else tuval.ciz()
 }
 
+function kagitOnayariBul (kod) {
+  return window.HV.sayfa.KAGIT_ONAYARLARI.find((k) => k.kod === kod) ??
+    kullaniciAyarlari.kagitOnayarlari.find((k) => k.kod === kod) ?? null
+}
+
 function kagitOnayarlariniDoldur () {
+  const onceki = el.kagitOnayari.value
+  el.kagitOnayari.replaceChildren()
+
   for (const onayar of window.HV.sayfa.KAGIT_ONAYARLARI) {
-    const secenek = document.createElement('option')
-    secenek.value = onayar.kod
-    secenek.textContent = onayar.ad
-    el.kagitOnayari.append(secenek)
+    secenekEkle(el.kagitOnayari, onayar.kod, onayar.ad)
   }
 
-  const ozel = document.createElement('option')
-  ozel.value = 'ozel'
-  ozel.textContent = 'Özel ölçü'
-  el.kagitOnayari.append(ozel)
+  kullaniciGrubu(
+    el.kagitOnayari, kullaniciAyarlari.kagitOnayarlari,
+    (k) => `${k.ad} — ${k.genislik}×${k.yukseklik} mm`
+  )
+  secenekEkle(el.kagitOnayari, 'ozel', 'Özel ölçü')
+
+  el.kagitOnayari.value = onceki
+  if (!el.kagitOnayari.value) el.kagitOnayari.value = 'ozel'
+  silDugmeleriniGuncelle()
 }
 
 function kagitOnayariniUygula (kod) {
-  const onayar = window.HV.sayfa.KAGIT_ONAYARLARI.find((k) => k.kod === kod)
+  const onayar = kagitOnayariBul(kod)
   if (!onayar) return
 
+  el.kagitOnayari.value = kod
   el.kagitGenislik.value = String(onayar.genislik)
   el.kagitYukseklik.value = String(onayar.yukseklik)
   adediEnFazlayaAyarla()
+  silDugmeleriniGuncelle()
 }
 
 // Kagit ya da olcu degisince adet, sigan en buyuk degere cekilir.
@@ -1273,6 +1356,269 @@ function kisayollariYaz () {
     `<kbd>${tus('S')}</kbd> kaydet · <kbd>${tus('S', true)}</kbd> PDF`
 }
 
+// --- Kullanici ayarlari ------------------------------------------------------
+
+// Electron'da window.prompt calismaz; ad kucuk bir pencerede sorulur.
+// Vazgecilirse null doner.
+let adPenceresi = null
+
+function onayarAdiSor ({ baslik, bilgi, varsayilanAd }) {
+  return new Promise((cozumle) => {
+    adPenceresi = adPenceresi ?? new window.bootstrap.Modal(el.onayarModali)
+
+    el.onayarModalBasligi.textContent = baslik
+    el.onayarModalBilgisi.textContent = bilgi
+    el.onayarAdi.value = varsayilanAd
+    el.onayarAdi.classList.remove('is-invalid')
+
+    // Cevap, pencerenin kapanma animasyonu beklenmeden verilir: kaydetme
+    // tiklamanin hemen ardindan olur.
+    let cevaplandi = false
+
+    const bitir = (ad) => {
+      if (cevaplandi) return
+      cevaplandi = true
+      el.onayarKaydet.removeEventListener('click', kaydet)
+      el.onayarAdi.removeEventListener('keydown', tusla)
+      cozumle(ad)
+    }
+
+    function kaydet () {
+      const ad = el.onayarAdi.value.trim()
+      if (!ad) {
+        el.onayarAdi.classList.add('is-invalid')
+        return
+      }
+      adPenceresi.hide()
+      bitir(ad)
+    }
+
+    function tusla (olay) {
+      if (olay.key !== 'Enter') return
+      olay.preventDefault()
+      kaydet()
+    }
+
+    el.onayarKaydet.addEventListener('click', kaydet)
+    el.onayarAdi.addEventListener('keydown', tusla)
+    el.onayarModali.addEventListener('shown.bs.modal', () => el.onayarAdi.select(), { once: true })
+    // Vazgecme, kapatma dugmesi, ESC ve disariya tiklama buraya duser.
+    el.onayarModali.addEventListener('hidden.bs.modal', () => bitir(null), { once: true })
+
+    adPenceresi.show()
+  })
+}
+
+// Ayni adla kaydetmek eskisinin uzerine yazar; kod korunur, boylece secim
+// listede yerinde kalir.
+function onayarYerlestir (liste, ad, degerler) {
+  const mevcut = liste.find((o) => o.ad === ad)
+  const kod = mevcut ? mevcut.kod : benzersizKod(liste)
+  const yeni = { kod, ad, ...degerler }
+
+  return {
+    kod,
+    liste: mevcut ? liste.map((o) => (o.kod === kod ? yeni : o)) : [...liste, yeni]
+  }
+}
+
+const EN_FAZLA_ONAYAR = 50
+
+function onayarSayisiUygunMu (liste, ad) {
+  if (liste.length < EN_FAZLA_ONAYAR || liste.some((o) => o.ad === ad)) return true
+  uyariGoster(`En fazla ${EN_FAZLA_ONAYAR} ön ayar kaydedilebilir. Önce birini silin.`)
+  return false
+}
+
+async function olcuyuOnayarKaydet () {
+  const { genislikMm, yukseklikMm } = olcuDurumu
+  if (!olcuMotoru.olcuGecerliMi(genislikMm) || !olcuMotoru.olcuGecerliMi(yukseklikMm)) return
+
+  const ad = await onayarAdiSor({
+    baslik: 'Ölçüyü kaydet',
+    bilgi: `${genislikMm}×${yukseklikMm} mm bu adla hazır ölçülerin altına eklenir.`,
+    varsayilanAd: `${genislikMm}×${yukseklikMm} mm`
+  })
+  if (!ad || !onayarSayisiUygunMu(kullaniciAyarlari.fotografOnayarlari, ad)) return
+
+  const { kod, liste } = onayarYerlestir(
+    kullaniciAyarlari.fotografOnayarlari, ad, { genislikMm, yukseklikMm }
+  )
+  kullaniciAyarlari.fotografOnayarlari = liste
+
+  onayarlariDoldur()
+  el.onayarSecimi.value = kod
+  silDugmeleriniGuncelle()
+  ayarlariKaydet({ hemen: true })
+  el.durum.textContent = `"${ad}" ön ayarı kaydedildi.`
+}
+
+async function kagidiOnayarKaydet () {
+  const kagitMm = kagitOlcusu()
+  if (!kagitMm) return
+
+  const ad = await onayarAdiSor({
+    baslik: 'Kağıdı kaydet',
+    bilgi: `${kagitMm.genislik}×${kagitMm.yukseklik} mm bu adla kağıt listesine eklenir.`,
+    varsayilanAd: `${kagitMm.genislik}×${kagitMm.yukseklik} mm`
+  })
+  if (!ad || !onayarSayisiUygunMu(kullaniciAyarlari.kagitOnayarlari, ad)) return
+
+  const { kod, liste } = onayarYerlestir(kullaniciAyarlari.kagitOnayarlari, ad, kagitMm)
+  kullaniciAyarlari.kagitOnayarlari = liste
+
+  kagitOnayarlariniDoldur()
+  el.kagitOnayari.value = kod
+  silDugmeleriniGuncelle()
+  ayarlariKaydet({ hemen: true })
+  el.durum.textContent = `"${ad}" ön ayarı kaydedildi.`
+}
+
+function onayarSil (tur) {
+  const fotograf = tur === 'fotograf'
+  const secim = fotograf ? el.onayarSecimi : el.kagitOnayari
+  const liste = fotograf
+    ? kullaniciAyarlari.fotografOnayarlari
+    : kullaniciAyarlari.kagitOnayarlari
+
+  const onayar = liste.find((o) => o.kod === secim.value)
+  if (!onayar) return
+
+  const kalan = liste.filter((o) => o.kod !== onayar.kod)
+  if (fotograf) kullaniciAyarlari.fotografOnayarlari = kalan
+  else kullaniciAyarlari.kagitOnayarlari = kalan
+
+  // Silinen on ayar seciliydi; olculer degismez, secim "Özel ölçü"ye duser.
+  secim.value = 'ozel'
+  if (fotograf) onayarlariDoldur()
+  else kagitOnayarlariniDoldur()
+
+  ayarlariKaydet({ hemen: true })
+  el.durum.textContent = `"${onayar.ad}" ön ayarı silindi.`
+}
+
+// Uygulama yeniden acildiginda ayni yerden devam edilsin diye tutulan degerler.
+function sonKullanilaniTopla () {
+  return {
+    fotoOnayar: el.onayarSecimi.value,
+    genislikMm: olcuDurumu.genislikMm,
+    yukseklikMm: olcuDurumu.yukseklikMm,
+    dpi,
+    tur: el.turPng.checked ? 'png' : 'jpg',
+    kalite: Number.parseInt(el.jpgKalitesi.value, 10),
+    kagitOnayar: el.kagitOnayari.value,
+    kagitGenislik: Number.parseFloat(el.kagitGenislik.value),
+    kagitYukseklik: Number.parseFloat(el.kagitYukseklik.value),
+    kenarMm: Number.parseFloat(el.dizmeKenar.value) || 0,
+    aralikMm: Number.parseFloat(el.dizmeAralik.value) || 0,
+    kesimKilavuzu: el.kesimKilavuzu.checked,
+    yazici: el.yaziciSecimi.value,
+    kopya: Number.parseInt(el.kopyaSayisi.value, 10) || 1,
+    yaziciPenceresi: el.yaziciPenceresi.checked
+  }
+}
+
+let yazmaZamanlayicisi = null
+
+function diskeYaz () {
+  kullaniciAyarlari.sonKullanilan = sonKullanilaniTopla()
+  return window.hiperVesika.ayarlariYaz(kullaniciAyarlari)
+}
+
+// Kaydirac ve sayi girisleri her tusta yazmasin diye gecikmeli toplanir.
+// On ayar kaydetme/silme gibi tek seferlik islerde beklenmez: kullanici hemen
+// ardindan pencereyi kapatirsa kaydi kaybetmemeli.
+function ayarlariKaydet ({ hemen = false } = {}) {
+  if (!ayarlarHazir) return
+
+  clearTimeout(yazmaZamanlayicisi)
+  if (hemen) {
+    diskeYaz()
+    return
+  }
+  yazmaZamanlayicisi = setTimeout(diskeYaz, 400)
+}
+
+// Bekleyen bir yazma varken pencere kapanirsa son degerler yine de gonderilir.
+window.addEventListener('beforeunload', () => {
+  if (!ayarlarHazir || yazmaZamanlayicisi === null) return
+  clearTimeout(yazmaZamanlayicisi)
+  diskeYaz()
+})
+
+function sonKullanilaniUygula (son) {
+  // Once kagit: olcu uygulanirken sigan adet buna gore hesaplaniyor.
+  const kagitGenislik = Number(son.kagitGenislik)
+  const kagitYukseklik = Number(son.kagitYukseklik)
+  if (window.HV.sayfa.kagitGecerliMi(kagitGenislik) &&
+      window.HV.sayfa.kagitGecerliMi(kagitYukseklik)) {
+    el.kagitGenislik.value = String(kagitGenislik)
+    el.kagitYukseklik.value = String(kagitYukseklik)
+    el.kagitOnayari.value = kagitOnayariBul(son.kagitOnayar) ? son.kagitOnayar : 'ozel'
+  }
+
+  if (Number.isFinite(son.kenarMm)) el.dizmeKenar.value = String(son.kenarMm)
+  if (Number.isFinite(son.aralikMm)) el.dizmeAralik.value = String(son.aralikMm)
+  if (typeof son.kesimKilavuzu === 'boolean') el.kesimKilavuzu.checked = son.kesimKilavuzu
+
+  if (olcuMotoru.olcuGecerliMi(son.genislikMm) && olcuMotoru.olcuGecerliMi(son.yukseklikMm)) {
+    el.genislikMm.value = String(son.genislikMm)
+    el.yukseklikMm.value = String(son.yukseklikMm)
+    el.onayarSecimi.value = fotoOnayariBul(son.fotoOnayar) ? son.fotoOnayar : 'ozel'
+    olculeriUygula()
+  }
+
+  if (olcuMotoru.DPI_SECENEKLERI.includes(son.dpi)) {
+    dpi = son.dpi
+    el.dpiSecimi.value = String(son.dpi)
+    ciktiBilgisiniGuncelle()
+  }
+
+  if (son.tur === 'png' || son.tur === 'jpg') {
+    el.turPng.checked = son.tur === 'png'
+    el.turJpg.checked = son.tur === 'jpg'
+    el.kaliteAlani.classList.toggle('d-none', el.turPng.checked)
+  }
+  if (Number.isFinite(son.kalite) && son.kalite >= 60 && son.kalite <= 100) {
+    el.jpgKalitesi.value = String(son.kalite)
+    el.jpgKalitesiDegeri.textContent = `%${son.kalite}`
+  }
+
+  if (Number.isFinite(son.kopya)) {
+    el.kopyaSayisi.value = String(Math.min(99, Math.max(1, Math.trunc(son.kopya))))
+  }
+  if (typeof son.yaziciPenceresi === 'boolean') {
+    el.yaziciPenceresi.checked = son.yaziciPenceresi
+  }
+  // Yazici listeden kaldirilmis olabilir; yoksa varsayilan secili kalir.
+  if (son.yazici && [...el.yaziciSecimi.options].some((o) => o.value === son.yazici)) {
+    el.yaziciSecimi.value = son.yazici
+  }
+
+  adediEnFazlayaAyarla()
+  silDugmeleriniGuncelle()
+}
+
+async function ayarlariYukle () {
+  try {
+    const okunan = await window.hiperVesika.ayarlariOku()
+    kullaniciAyarlari = {
+      fotografOnayarlari: okunan?.fotografOnayarlari ?? [],
+      kagitOnayarlari: okunan?.kagitOnayarlari ?? [],
+      sonKullanilan: okunan?.sonKullanilan ?? {}
+    }
+  } catch {
+    // Ayarlar okunamazsa uygulama varsayilanlarla acilir.
+  }
+
+  onayarlariDoldur()
+  kagitOnayarlariniDoldur()
+  sonKullanilaniUygula(kullaniciAyarlari.sonKullanilan)
+
+  // Bu noktadan sonra yapilan her degisiklik diske yazilir.
+  ayarlarHazir = true
+}
+
 // --- Once / sonra ------------------------------------------------------------
 
 // Dugme basili tutuldugu surece ozgun fotograf gosterilir.
@@ -1295,12 +1641,16 @@ for (const secim of [el.gorunumFoto, el.gorunumSayfa]) {
 
 el.kagitOnayari.addEventListener('change', () => {
   if (el.kagitOnayari.value !== 'ozel') kagitOnayariniUygula(el.kagitOnayari.value)
+  silDugmeleriniGuncelle()
+  ayarlariKaydet()
 })
 
 for (const giris of [el.kagitGenislik, el.kagitYukseklik]) {
   giris.addEventListener('input', () => {
     el.kagitOnayari.value = 'ozel'
     adediEnFazlayaAyarla()
+    silDugmeleriniGuncelle()
+    ayarlariKaydet()
   })
 }
 
@@ -1310,10 +1660,15 @@ el.kagitCevir.addEventListener('click', () => {
   el.kagitYukseklik.value = genislik
   el.kagitOnayari.value = 'ozel'
   adediEnFazlayaAyarla()
+  silDugmeleriniGuncelle()
+  ayarlariKaydet()
 })
 
 for (const giris of [el.dizmeKenar, el.dizmeAralik]) {
-  giris.addEventListener('input', () => adediEnFazlayaAyarla())
+  giris.addEventListener('input', () => {
+    adediEnFazlayaAyarla()
+    ayarlariKaydet()
+  })
 }
 
 el.dizmeAdet.addEventListener('input', () => {
@@ -1322,6 +1677,7 @@ el.dizmeAdet.addEventListener('input', () => {
 
 el.kesimKilavuzu.addEventListener('change', () => {
   if (el.gorunumSayfa.checked) sayfayiCiz()
+  ayarlariKaydet()
 })
 
 // Pencere yeniden boyutlandiginda sayfa onizlemesi de yeniden cizilir.
@@ -1335,11 +1691,13 @@ for (const secim of [el.turJpg, el.turPng]) {
   secim.addEventListener('change', () => {
     // Kalite ayari yalnizca JPEG icin anlamli.
     el.kaliteAlani.classList.toggle('d-none', el.turPng.checked)
+    ayarlariKaydet()
   })
 }
 
 el.jpgKalitesi.addEventListener('input', () => {
   el.jpgKalitesiDegeri.textContent = `%${el.jpgKalitesi.value}`
+  ayarlariKaydet()
 })
 
 el.indir.addEventListener('click', () => fotografiIndir())
@@ -1350,6 +1708,10 @@ el.geriAl.addEventListener('click', () => durumuUygula(gecmis.geriAl()))
 el.yinele.addEventListener('click', () => durumuUygula(gecmis.yinele()))
 
 // --- Baski denetimleri -------------------------------------------------------
+
+el.yaziciSecimi.addEventListener('change', () => ayarlariKaydet())
+el.kopyaSayisi.addEventListener('input', () => ayarlariKaydet())
+el.yaziciPenceresi.addEventListener('change', () => ayarlariKaydet())
 
 el.sayfayiBas.addEventListener('click', () => sayfayiBas())
 el.sayfayiPdf.addEventListener('click', () => sayfayiPdfKaydet())
@@ -1398,7 +1760,9 @@ aracSec()
 araclariEtkinlestir(false)
 gecmisDugmeleriniGuncelle()
 kisayollariYaz()
-yazicilariDoldur()
+
+// Yazicilar once doldurulur: kayitli yazici ancak listedeyse secilebilir.
+yazicilariDoldur().then(ayarlariYukle)
 
 el.surumBilgisi.textContent =
   `Electron ${versions.electron} · Chromium ${versions.chrome} · Node ${versions.node}`

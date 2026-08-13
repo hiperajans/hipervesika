@@ -308,6 +308,17 @@
                   </div>
                 </div>
 
+                <div class="d-flex gap-2 mb-3">
+                  <button id="btn-olcu-kaydet" type="button"
+                    class="btn btn-outline-secondary btn-sm flex-grow-1">
+                    Ölçüyü kaydet
+                  </button>
+                  <button id="btn-olcu-sil" type="button"
+                    class="btn btn-outline-danger btn-sm" disabled>
+                    Sil
+                  </button>
+                </div>
+
                 <div class="mb-3">
                   <label for="dpi-secimi" class="form-label">Baskı çözünürlüğü</label>
                   <select id="dpi-secimi" class="form-select form-select-sm"></select>
@@ -362,6 +373,17 @@
                       Kağıt ölçüleri 50 ile 1000 mm arasında olmalıdır.
                     </div>
                   </div>
+                </div>
+
+                <div class="d-flex gap-2 mb-3">
+                  <button id="btn-kagit-kaydet" type="button"
+                    class="btn btn-outline-secondary btn-sm flex-grow-1">
+                    Kağıdı kaydet
+                  </button>
+                  <button id="btn-kagit-sil" type="button"
+                    class="btn btn-outline-danger btn-sm" disabled>
+                    Sil
+                  </button>
                 </div>
 
                 <button id="btn-kagit-cevir" type="button"
@@ -484,6 +506,33 @@
         <span id="surum-bilgisi" class="small text-body-secondary font-monospace"></span>
       </div>
     </footer>
+
+    <!-- Ön ayar adı sorulan pencere. Electron'da window.prompt çalışmaz. -->
+    <div class="modal fade" id="onayar-modali" tabindex="-1" aria-hidden="true"
+      aria-labelledby="onayar-modal-basligi">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h6 class="modal-title" id="onayar-modal-basligi">Ön ayar olarak kaydet</h6>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"
+              aria-label="Kapat"></button>
+          </div>
+          <div class="modal-body">
+            <label for="onayar-adi" class="form-label">Ön ayar adı</label>
+            <input id="onayar-adi" type="text" class="form-control form-control-sm"
+              maxlength="40" autocomplete="off" />
+            <div id="onayar-modal-bilgisi" class="form-text"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+              data-bs-dismiss="modal">Vazgeç</button>
+            <button id="btn-onayar-kaydet" type="button" class="btn btn-primary btn-sm">
+              Kaydet
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="js/olcu.js"></script>

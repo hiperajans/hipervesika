@@ -6,6 +6,7 @@ const { pathToFileURL } = require('node:url')
 const { app, BrowserWindow, Menu, shell, protocol, net, ipcMain, dialog } = require('electron')
 
 const baski = require('./baski.js')
+const ayarlar = require('./ayarlar.js')
 
 app.setName('Hiper Vesika')
 
@@ -225,6 +226,24 @@ function baskiyiKur () {
   })
 }
 
+// --- Ayarlar -----------------------------------------------------------------
+
+// Kullanici ayarlari uygulama verisi klasorunde durur; depoya ya da fotografin
+// yanina hicbir sey yazilmaz.
+function ayarlariKur () {
+  const klasor = () => app.getPath('userData')
+
+  ipcMain.handle('ayarlar:oku', () => ayarlar.oku(klasor()))
+
+  ipcMain.handle('ayarlar:yaz', async (olay, gelen) => {
+    try {
+      return { yazildi: true, ayarlar: await ayarlar.yaz(klasor(), gelen) }
+    } catch (hata) {
+      return { yazildi: false, hata: hata.message }
+    }
+  })
+}
+
 // --- Menu --------------------------------------------------------------------
 
 // Kisayollar menude tanimlanir; platform ayrimini CmdOrCtrl yapar.
@@ -321,6 +340,7 @@ app.whenReady().then(() => {
   protokoluKur()
   kaydetmeyiKur()
   baskiyiKur()
+  ayarlariKur()
   menuyuKur()
   createWindow()
 

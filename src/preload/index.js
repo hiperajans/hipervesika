@@ -27,6 +27,10 @@ contextBridge.exposeInMainWorld('hiperVesika', {
   // Dizilmis sayfayi tam olculu PDF olarak kaydeder.
   sayfayiPdfKaydet: (istek) => ipcRenderer.invoke('sayfa:pdf', istek),
 
+  // Kullanici ayarlari (kendi on ayarlari ve son kullanilan degerler).
+  ayarlariOku: () => ipcRenderer.invoke('ayarlar:oku'),
+  ayarlariYaz: (ayarlar) => ipcRenderer.invoke('ayarlar:yaz', ayarlar),
+
   // Menudeki kisayollar buradan arayuze bildirilir.
   menuKomutu: (geriCagri) => {
     ipcRenderer.on('menu', (olay, komut) => geriCagri(komut))
