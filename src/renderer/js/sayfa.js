@@ -93,7 +93,12 @@
 
   // Sayfayi verilen tuvale, kagidin gercek oranini koruyarak cizer.
   // fotoTuvali kirpilmis tek vesikaliktir.
-  function sayfayiCiz (tuval, { kagitMm, yerlesim, fotoTuvali, kesimKilavuzu = true }) {
+  //
+  // kagitKenari yalnizca ekran onizlemesi icindir: baskiya giden tuvalde kagit
+  // kenarina cizgi cekilirse kagidin kenarinda gercek bir cerceve basilir.
+  function sayfayiCiz (
+    tuval, { kagitMm, yerlesim, fotoTuvali, kesimKilavuzu = true, kagitKenari = true }
+  ) {
     const ctx = tuval.getContext('2d')
     const olcek = Math.min(tuval.width / kagitMm.genislik, tuval.height / kagitMm.yukseklik)
 
@@ -161,10 +166,17 @@
 
     ctx.restore()
 
-    // Kagit kenari
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)'
-    ctx.lineWidth = 1
-    ctx.strokeRect(kaymaX + 0.5, kaymaY + 0.5, sayfaGenisligi - 1, sayfaYuksekligi - 1)
+    if (kagitKenari) {
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)'
+      ctx.lineWidth = 1
+      ctx.strokeRect(kaymaX + 0.5, kaymaY + 0.5, sayfaGenisligi - 1, sayfaYuksekligi - 1)
+    }
+  }
+
+  // "vesikalik-sayfa-100x150mm-4adet-300dpi.jpg"
+  function sayfaDosyaAdi (kagitMm, adet, dpi, tur) {
+    const olcu = `${kagitMm.genislik}x${kagitMm.yukseklik}`.replace(/\./g, ',')
+    return `vesikalik-sayfa-${olcu}mm-${adet}adet-${dpi}dpi.${tur}`
   }
 
   const sayfa = {
@@ -174,7 +186,8 @@
     kagitGecerliMi,
     yerlesimHesapla,
     enIyiYerlesim,
-    sayfayiCiz
+    sayfayiCiz,
+    sayfaDosyaAdi
   }
 
   kok.HV = kok.HV || {}

@@ -15,5 +15,20 @@ contextBridge.exposeInMainWorld('hiperVesika', {
 
   // Kullaniciya kaydetme penceresi acar ve secilen yola yazar.
   // { kaydedildi: boolean, yol?: string, hata?: string } dondurur.
-  gorseliKaydet: (istek) => ipcRenderer.invoke('gorsel:kaydet', istek)
+  gorseliKaydet: (istek) => ipcRenderer.invoke('gorsel:kaydet', istek),
+
+  // Sistemde tanimli yazicilar: { yazicilar: [{ ad, gorunenAd, varsayilan }] }
+  yaziciListesi: () => ipcRenderer.invoke('yazici:liste'),
+
+  // Dizilmis sayfayi tam olcusunde basar.
+  // { basildi: boolean, iptal?: boolean, hata?: string } dondurur.
+  sayfayiBas: (istek) => ipcRenderer.invoke('sayfa:bas', istek),
+
+  // Dizilmis sayfayi tam olculu PDF olarak kaydeder.
+  sayfayiPdfKaydet: (istek) => ipcRenderer.invoke('sayfa:pdf', istek),
+
+  // Menudeki kisayollar buradan arayuze bildirilir.
+  menuKomutu: (geriCagri) => {
+    ipcRenderer.on('menu', (olay, komut) => geriCagri(komut))
+  }
 })

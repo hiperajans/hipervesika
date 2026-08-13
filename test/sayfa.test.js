@@ -126,6 +126,18 @@ test('kagit olcusu dogrulamasi sinirlari uygular', () => {
   assert.equal(sayfa.kagitGecerliMi(Number.NaN), false)
 })
 
+test('sayfa dosya adi olcuyu ve adedi tasir', () => {
+  assert.equal(
+    sayfa.sayfaDosyaAdi({ genislik: 100, yukseklik: 150 }, 4, 300, 'jpg'),
+    'vesikalik-sayfa-100x150mm-4adet-300dpi.jpg'
+  )
+  // Nokta dosya adinda uzanti sanilmasin diye virgule cevrilir.
+  assert.equal(
+    sayfa.sayfaDosyaAdi({ genislik: 101.6, yukseklik: 152.4 }, 2, 600, 'pdf'),
+    'vesikalik-sayfa-101,6x152,4mm-2adet-600dpi.pdf'
+  )
+})
+
 test('on ayarlarin olculeri gecerli', () => {
   assert.equal(sayfa.KAGIT_ONAYARLARI.length, 4)
   for (const onayar of sayfa.KAGIT_ONAYARLARI) {

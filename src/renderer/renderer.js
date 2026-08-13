@@ -74,7 +74,15 @@ const el = {
   dizmeAdet: document.getElementById('dizme-adet'),
   dizmeAdetSiniri: document.getElementById('dizme-adet-siniri'),
   kesimKilavuzu: document.getElementById('kesim-kilavuzu'),
-  dizmeDurumu: document.getElementById('dizme-durumu')
+  dizmeDurumu: document.getElementById('dizme-durumu'),
+  yaziciSecimi: document.getElementById('yazici-secimi'),
+  kopyaSayisi: document.getElementById('kopya-sayisi'),
+  yaziciPenceresi: document.getElementById('yazici-penceresi'),
+  sayfayiBas: document.getElementById('btn-sayfayi-bas'),
+  sayfayiPdf: document.getElementById('btn-sayfayi-pdf'),
+  sayfayiKaydet: document.getElementById('btn-sayfayi-kaydet'),
+  baskiDurumu: document.getElementById('baski-durumu'),
+  baskiKisayollari: document.getElementById('baski-kisayollari')
 }
 
 // Rotus kaydiraclari -50..+50 arasinda; motorun bekledigi carpanlara cevrilir.
@@ -163,6 +171,7 @@ function araclariEtkinlestir (etkin) {
     el.yakinlas, el.uzaklas, el.sigdir, el.kirpmayiSifirla,
     el.otomatikHizala, el.donmeAcisi, el.donmeyiSifirla, el.arkaplanBeyazlat,
     el.onceSonra, el.rotusuSifirla, el.aracKirpma, el.aracLeke, el.indir,
+    el.sayfayiBas, el.sayfayiPdf, el.sayfayiKaydet,
     ...ROTUS_KAYDIRACLARI.map((k) => document.getElementById(k.giris))
   ]
   for (const oge of ogeler) oge.disabled = !etkin
@@ -742,6 +751,8 @@ el.arkaplanBeyazlat.addEventListener('change', () => {
     el.aracKirpma.checked = true
     aracSec()
     gosterimiTazele()
+    // Beyazlatmayi kapatmak da geri alinabilir bir adimdir.
+    durumuKaydet()
     arkaplanDurumu('Kişiyi arka plandan ayırır ve zemini beyaza çevirir.')
     return
   }
@@ -752,6 +763,8 @@ el.arkaplanBeyazlat.addEventListener('change', () => {
     el.arkaplanAyarlari.classList.remove('d-none')
     gosterimiTazele()
     arkaplanBasariniBildir()
+    // Maske hizalama sirasinda uretilmis olabilir; gecmiste henuz yoktur.
+    durumuKaydet({ maskeDegisti: true })
     return
   }
 
@@ -1033,6 +1046,233 @@ function adediEnFazlayaAyarla () {
   if (el.gorunumSayfa.checked) sayfayiCiz()
 }
 
+// --- Baski ve sayfayi kaydetme -----------------------------------------------
+
+function baskiDurumu (mesaj, tur = 'bilgi') {
+  el.baskiDurumu.textContent = mesaj
+  el.baskiDurumu.classList.toggle('text-danger', tur === 'hata')
+  el.baskiDurumu.classList.toggle('text-success', tur === 'basari')
+  el.baskiDurumu.classList.toggle('text-body-secondary', tur === 'bilgi')
+}
+
+// Basilacak / kaydedilecek sayfa. Onizlemedeki 150 DPI'lik kare degil, secilen
+// DPI'da yeniden uretilmis tam cozunurluklu vesikalik kullanilir. Tuvalin
+// piksel olcusu kagidin milimetre olcusunun tam karsiligidir; boylece sayfada
+// 1 mm her zaman ayni sayida piksele denk gelir.
+function baskiSayfasiUret () {
+  if (!yuklenenGorsel || !kirpma.cerceve) {
+    baskiDurumu('Önce bir fotoğraf açıp kadrajı ayarlayın.', 'hata')
+    return null
+  }
+
+  const kagitMm = kagitOlcusu()
+  const yerlesim = yerlesimiHesapla()
+
+  if (!kagitMm || !yerlesim) {
+    baskiDurumu('Kağıt ölçüsü geçersiz.', 'hata')
+    return null
+  }
+  if (yerlesim.sigmiyor) {
+    baskiDurumu('Vesikalık bu kağıda sığmıyor; önce kağıt ölçüsünü değiştirin.', 'hata')
+    return null
+  }
+
+  const { tuval: kare } = window.HV.disaAktar.tuvalUret({
+    gorsel: yuklenenGorsel,
+    cerceve: kirpma.cerceve,
+    maske: ciktiMaskesi(),
+    rotusAyarlari,
+    lekeler,
+    olcuMm: olcuDurumu,
+    dpi
+  })
+
+  const sayfaTuvali = document.createElement('canvas')
+  sayfaTuvali.width = Math.round(olcuMotoru.mmDenPiksel(kagitMm.genislik, dpi))
+  sayfaTuvali.height = Math.round(olcuMotoru.mmDenPiksel(kagitMm.yukseklik, dpi))
+
+  window.HV.sayfa.sayfayiCiz(sayfaTuvali, {
+    kagitMm,
+    yerlesim,
+    fotoTuvali: kare,
+    kesimKilavuzu: el.kesimKilavuzu.checked,
+    // Kagidin kenarina cizgi cekilirse basilan kagitta gercek bir cerceve olur.
+    kagitKenari: false
+  })
+
+  return { tuval: sayfaTuvali, kagitMm, yerlesim }
+}
+
+async function sayfaBaytlari (sayfaTuvali, tur, kalite) {
+  const blob = await new Promise((cozumle) => {
+    sayfaTuvali.toBlob(cozumle, tur === 'png' ? 'image/png' : 'image/jpeg', kalite)
+  })
+  if (!blob) throw new Error('Sayfa kodlanamadı.')
+
+  const ham = new Uint8Array(await blob.arrayBuffer())
+  return window.HV.metaveri.dpiYaz(ham, dpi, tur)
+}
+
+function baskiDugmeleri (etkin) {
+  for (const dugme of [el.sayfayiBas, el.sayfayiPdf, el.sayfayiKaydet]) {
+    dugme.disabled = !etkin
+  }
+}
+
+// Sayfayi JPG/PNG olarak kaydeder. Bicim ve kalite ayari Indir kartindakiyle
+// ayni; uygulamada tek bir cikti bicimi ayari var.
+async function sayfayiGoruntuKaydet () {
+  const sayfa = baskiSayfasiUret()
+  if (!sayfa) return
+
+  const tur = el.turPng.checked ? 'png' : 'jpg'
+  baskiDugmeleri(false)
+  baskiDurumu('Sayfa hazırlanıyor…')
+
+  try {
+    const baytlar = await sayfaBaytlari(
+      sayfa.tuval, tur, Number.parseInt(el.jpgKalitesi.value, 10) / 100
+    )
+
+    const sonuc = await window.hiperVesika.gorseliKaydet({
+      baytlar,
+      tur,
+      baslik: 'Sayfayı kaydet',
+      varsayilanAd: window.HV.sayfa.sayfaDosyaAdi(sayfa.kagitMm, sayfa.yerlesim.adet, dpi, tur)
+    })
+
+    if (sonuc.hata) baskiDurumu(`Kaydedilemedi: ${sonuc.hata}`, 'hata')
+    else if (sonuc.kaydedildi) {
+      baskiDurumu(
+        `Kaydedildi: ${sayfa.kagitMm.genislik}×${sayfa.kagitMm.yukseklik} mm sayfa, ` +
+        `${sayfa.yerlesim.adet} adet, ${dpi} DPI.`,
+        'basari'
+      )
+    } else baskiDurumu('Kaydetme iptal edildi.')
+  } catch (hata) {
+    baskiDurumu(`Sayfa hazırlanamadı: ${hata.message}`, 'hata')
+  } finally {
+    baskiDugmeleri(true)
+  }
+}
+
+async function sayfayiPdfKaydet () {
+  const sayfa = baskiSayfasiUret()
+  if (!sayfa) return
+
+  baskiDugmeleri(false)
+  baskiDurumu('PDF hazırlanıyor…')
+
+  try {
+    // PDF'e her zaman kayipsiz PNG gomulur; olcu tasiyicisi PDF'in kendisidir.
+    const baytlar = await sayfaBaytlari(sayfa.tuval, 'png')
+
+    const sonuc = await window.hiperVesika.sayfayiPdfKaydet({
+      baytlar,
+      kagitMm: sayfa.kagitMm,
+      varsayilanAd: window.HV.sayfa.sayfaDosyaAdi(
+        sayfa.kagitMm, sayfa.yerlesim.adet, dpi, 'pdf'
+      )
+    })
+
+    if (sonuc.hata) baskiDurumu(`PDF kaydedilemedi: ${sonuc.hata}`, 'hata')
+    else if (sonuc.kaydedildi) {
+      baskiDurumu(
+        `PDF kaydedildi: ${sayfa.kagitMm.genislik}×${sayfa.kagitMm.yukseklik} mm sayfa. ` +
+        'Yazdırırken ölçekleme "gerçek boyut / %100" seçilmelidir.',
+        'basari'
+      )
+    } else baskiDurumu('Kaydetme iptal edildi.')
+  } catch (hata) {
+    baskiDurumu(`PDF hazırlanamadı: ${hata.message}`, 'hata')
+  } finally {
+    baskiDugmeleri(true)
+  }
+}
+
+async function sayfayiBas () {
+  const sayfa = baskiSayfasiUret()
+  if (!sayfa) return
+
+  const yaziciAdi = el.yaziciSecimi.value
+  if (!yaziciAdi && !el.yaziciPenceresi.checked) {
+    baskiDurumu(
+      'Yazıcı bulunamadı. Sistem ayarlarından bir yazıcı ekleyin veya sayfayı ' +
+      'PDF olarak kaydedip başka bir bilgisayarda bastırın.',
+      'hata'
+    )
+    return
+  }
+
+  baskiDugmeleri(false)
+  baskiDurumu('Baskıya gönderiliyor…')
+
+  try {
+    const baytlar = await sayfaBaytlari(sayfa.tuval, 'png')
+
+    const sonuc = await window.hiperVesika.sayfayiBas({
+      baytlar,
+      kagitMm: sayfa.kagitMm,
+      yaziciAdi,
+      kopya: Number.parseInt(el.kopyaSayisi.value, 10) || 1,
+      pencereGoster: el.yaziciPenceresi.checked
+    })
+
+    if (sonuc.basildi) {
+      const kopya = Number.parseInt(el.kopyaSayisi.value, 10) || 1
+      baskiDurumu(
+        `Baskıya gönderildi: ${kopya} kopya, ` +
+        `${sayfa.kagitMm.genislik}×${sayfa.kagitMm.yukseklik} mm.`,
+        'basari'
+      )
+    } else if (sonuc.iptal) {
+      baskiDurumu('Baskı iptal edildi.')
+    } else {
+      baskiDurumu(`Baskı yapılamadı: ${sonuc.hata}`, 'hata')
+    }
+  } catch (hata) {
+    baskiDurumu(`Sayfa hazırlanamadı: ${hata.message}`, 'hata')
+  } finally {
+    baskiDugmeleri(true)
+  }
+}
+
+async function yazicilariDoldur () {
+  const { yazicilar, hata } = await window.hiperVesika.yaziciListesi()
+
+  el.yaziciSecimi.replaceChildren()
+
+  if (hata || !yazicilar.length) {
+    const secenek = document.createElement('option')
+    secenek.value = ''
+    secenek.textContent = 'Yazıcı bulunamadı'
+    el.yaziciSecimi.append(secenek)
+    el.yaziciSecimi.disabled = true
+    return
+  }
+
+  el.yaziciSecimi.disabled = false
+  for (const yazici of yazicilar) {
+    const secenek = document.createElement('option')
+    secenek.value = yazici.ad
+    secenek.textContent = yazici.gorunenAd
+    if (yazici.varsayilan) secenek.selected = true
+    el.yaziciSecimi.append(secenek)
+  }
+}
+
+// Kisayol adlari platforma gore yazilir; menudeki CmdOrCtrl ile ayni tuslar.
+function kisayollariYaz () {
+  const mac = window.hiperVesika.platform === 'darwin'
+  const tus = (harf, ustKarakter = false) => mac
+    ? `${ustKarakter ? '⇧' : ''}⌘${harf}`
+    : `Ctrl+${ustKarakter ? 'Shift+' : ''}${harf}`
+
+  el.baskiKisayollari.innerHTML =
+    `Kısayollar: <kbd>${tus('P')}</kbd> yazdır · ` +
+    `<kbd>${tus('S')}</kbd> kaydet · <kbd>${tus('S', true)}</kbd> PDF`
+}
+
 // --- Once / sonra ------------------------------------------------------------
 
 // Dugme basili tutuldugu surece ozgun fotograf gosterilir.
@@ -1109,13 +1349,39 @@ el.indir.addEventListener('click', () => fotografiIndir())
 el.geriAl.addEventListener('click', () => durumuUygula(gecmis.geriAl()))
 el.yinele.addEventListener('click', () => durumuUygula(gecmis.yinele()))
 
-window.addEventListener('keydown', (olay) => {
-  // CmdOrCtrl+Z geri al, CmdOrCtrl+Shift+Z yinele.
-  const denetim = olay.metaKey || olay.ctrlKey
-  if (!denetim || olay.key.toLowerCase() !== 'z') return
+// --- Baski denetimleri -------------------------------------------------------
 
-  olay.preventDefault()
-  durumuUygula(olay.shiftKey ? gecmis.yinele() : gecmis.geriAl())
+el.sayfayiBas.addEventListener('click', () => sayfayiBas())
+el.sayfayiPdf.addEventListener('click', () => sayfayiPdfKaydet())
+el.sayfayiKaydet.addEventListener('click', () => sayfayiGoruntuKaydet())
+
+// --- Menu komutlari ----------------------------------------------------------
+
+// Kisayollar Electron menusunde tanimli; tarayici tarafinda ikinci bir
+// keydown dinleyicisi yok, boylece tek tusa iki islem baglanmiyor.
+window.hiperVesika.menuKomutu((komut) => {
+  switch (komut) {
+    case 'ac':
+      el.dosyaGirisi.click()
+      break
+    case 'kaydet':
+      // Kaydetme ekranda ne varsa onu kaydeder.
+      if (el.gorunumSayfa.checked) sayfayiGoruntuKaydet()
+      else fotografiIndir()
+      break
+    case 'pdf':
+      sayfayiPdfKaydet()
+      break
+    case 'yazdir':
+      sayfayiBas()
+      break
+    case 'geri-al':
+      durumuUygula(gecmis.geriAl())
+      break
+    case 'yinele':
+      durumuUygula(gecmis.yinele())
+      break
+  }
 })
 
 // --- Baslangic ---------------------------------------------------------------
@@ -1131,6 +1397,8 @@ rotusuYaz(rotusAyarlari)
 aracSec()
 araclariEtkinlestir(false)
 gecmisDugmeleriniGuncelle()
+kisayollariYaz()
+yazicilariDoldur()
 
 el.surumBilgisi.textContent =
   `Electron ${versions.electron} · Chromium ${versions.chrome} · Node ${versions.node}`

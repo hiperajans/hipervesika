@@ -177,6 +177,36 @@ hale geliyor.
 
 **Çıktı:** Basılan kağıttan kesilen fotoğraf, istenen ölçüde çıkıyor.
 
+### Uygulanan çözüm ve ölçüm sonuçları
+
+Sayfa, arayüzde seçilen DPI'da kağıdın tam piksel karşılığında üretilir ve ana süreçte
+gizli bir pencerede `@page { size: <G>mm <Y>mm; margin: 0 }` tanımlı bir sayfaya
+yerleştirilir. Baskı ile PDF aynı sayfadan çıkar, böylece iki ayrı ölçü yolu oluşmaz.
+Sayfa görüntüsü diske değil, `app://hv/gecici/...` altında belleğe konur ve iş bitince
+silinir.
+
+Baskı varsayılan olarak `silent: true` ve `scaleFactor: 100` ile yapılır: yazıcı penceresi
+açılmazsa kimse "kağıda sığdır" seçeneğini açık bırakamaz. Kullanıcı isterse pencereyi
+açtırabilir.
+
+Ölçü doğruluğu, üretilen PDF'in içindeki çizim dönüşümü okunarak ölçüldü
+(`baski.pdfMediaBox` ve içerik akışındaki `cm` matrisi):
+
+| Kağıt | Çizilen ölçü | 50 mm vesikalığın karşılığı |
+| --- | --- | --- |
+| 100×150 mm | 100,012 × 150,019 mm | 50,006 mm |
+| 210×297 mm | 210,079 × 297,127 mm | 50,019 mm |
+| 130×180 mm | 129,910 × 179,917 mm | 49,966 mm |
+
+Yani vesikalık kenarındaki sapma **0,04 mm'nin altında**. Chromium'un PDF sayfa kutusunu
+(MediaBox) 1/300 inç'e yuvarlaması ayrı bir konudur ve en çok 0,22 mm oynar; bu sapma
+fotoğrafın ölçüsüne değil yalnızca kağıt sınırına yansır.
+
+**Kalan doğrulama:** Yukarıdaki ölçüler dosya üzerinden alınmıştır. Yazıcı sürücüsünün
+kendi ölçeklemesi ancak gerçek baskıda görülür; Windows, macOS ve Linux'ta birer sayfa
+basılıp **cetvelle ölçülmesi** gerekir. Geliştirme makinesinde tanımlı yazıcı olmadığı için
+bu adım yapılamadı.
+
 ## Faz 9 — Ön ayarlar ve kullanıcı ayarları
 
 **Amaç:** Tekrar eden işi ortadan kaldırmak.
