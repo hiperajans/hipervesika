@@ -1050,13 +1050,19 @@
   background-color: var(--hv-yuzey-ikincil);
 }
 
-/* Esit yukseklikli cerceve: dikey ve yatay fotograflar yan yana durunca izgara
-   satirlari kaymasin. Yukseklik pencereyle olceklenir, sabit piksel degil. */
+/* Cerceve kutunun genisliginden turer (3:4), sabit yukseklik verilmez: sabit
+   deger sutun sayisi degisince ya fotografi kuculturdu ya da kutuda bos alan
+   birakirdi. Boylece hem pencere hem de fotograf sayisiyla birlikte olceklenir.
+   Esit oranli oldugu icin dikey ve yatay fotograflar yan yana durunca izgara
+   satirlari da kaymaz.
+   Ust sinir gorunume baglidir; iki fotograflik genis kutuda cerceve pencereden
+   tasmasin. */
 .hv-secim-resim {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: clamp(110px, 20vh, 210px);
+  aspect-ratio: 3 / 4;
+  max-height: 58vh;
   border-radius: var(--hv-yaricap-kucuk);
   background-color: var(--hv-yuzey-ikincil);
   overflow: hidden;

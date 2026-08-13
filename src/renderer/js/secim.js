@@ -7,9 +7,11 @@
 // yoktur; secimden sonra pencere kapanir ve mevcut akis degismez.
 
 ;(function (kok) {
-  // Kucuk resmin uzun kenari (piksel). Izgarada 4 sutuna kadar cikildigi icin
-  // bundan buyugu ekranda gorunmuyor, kucugu bulanik kaliyor.
-  const KUCUK_RESIM = 320
+  // Kucuk resmin uzun kenari (piksel). Kullanici hangi karenin iyi ciktigina
+  // bakarak sectigi icin kutular buyuk: cerceve gorunumun %62'sine kadar
+  // cikabiliyor, bu da yuksek cozunurluklu ekranda 1400 civari aygit pikseli
+  // demek. Daha kucuk bir kaynak buyuk kutuda bulanik kalirdi.
+  const KUCUK_RESIM = 1440
 
   // Dosya adi kutunun altina tek satira sigmali.
   const AD_UZUNLUGU = 28

@@ -353,6 +353,25 @@ dosya normal yükleme yoluna girer, diğerleri hiçbir yerde tutulmaz. Yığın 
 - Vazgeçilirse açık fotoğraf değişmez.
 - Ok tuşlarıyla gezinilir (`secim.sonrakiSira`), Enter seçer, Esc vazgeçer.
 
+**Kutu ölçüsü.** Kullanıcı hangi karenin iyi çıktığına bakarak seçtiği için küçük resim
+büyük olmalı. Çerçeveye sabit yükseklik verilmez; yükseklik kutu genişliğinden türer
+(`aspect-ratio: 3 / 4`) ve üstten `58vh` ile sınırlanır. Sabit değer, sütun sayısı
+değiştiğinde ya fotoğrafı gereksiz küçültüyor ya da kutuda boş alan bırakıyordu — çünkü
+dikey fotoğrafta bağlayıcı ölçü yüksekliktir, genişliği artırmak yalnızca boşluk ekler.
+
+Ölçüldü (1440×747 CSS görünüm, dpr 2, ekrandaki gerçek piksel):
+
+| Fotoğraf | Sütun | Çerçeve | Fotoğraf | Yatay taşma |
+| --- | --- | --- | --- | --- |
+| 2 | 2 | 531×433 | 289×433 | yok, dikey kaydırma da yok |
+| 5 | 3 | 344×433 | 289×433 | yok |
+| 8 | 4 | 251×334 | 223×334 | yok |
+
+`58vh` sınırı ölçerek seçildi: tek satırlık yerleşim (2-3 fotoğraf) kaydırma çubuğu
+çıkarmadan sığan en büyük değer. Kaynak küçük resim 1440 piksel uzun kenarda üretilir;
+çerçeve yüksek çözünürlüklü ekranda ~1400 aygıt pikseline çıktığı için daha küçüğü
+bulanık kalırdı.
+
 Saf hesaplar `src/renderer/js/secim.js` içinde ve test edilir: seçim gerekli mi, sütun
 sayısı, dosya adı kısaltma (uzantı korunur), küçük resim ölçüsü (büyütme yapılmaz),
 klavye gezinmesi.
