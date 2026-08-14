@@ -304,6 +304,40 @@ function ayarlariKur () {
 // --- Menu --------------------------------------------------------------------
 
 // Kisayollar menude tanimlanir; platform ayrimini CmdOrCtrl yapar.
+// macOS'ta Apple menusunun altindaki "Hakkinda" penceresi, Windows ve Linux'ta
+// ise Yardim menusunden acilan kutu. Doldurulmazsa yalnizca ad ve surum
+// gorunur; kullanicinin en cok merak ettigi sey (fotograflarin nereye gittigi)
+// tam olarak burada yaziyor.
+function hakkindaKur () {
+  const s = process.versions
+  const tanitim = [
+    'Vesikalık fotoğraf hazırlama ve baskı kağıdına dizme uygulaması.',
+    '',
+    'Tüm görüntü işleme bu bilgisayarda yapılır: fotoğraflar hiçbir sunucuya ' +
+      'gönderilmez, uygulama internet bağlantısı kurmaz.',
+    '',
+    `Electron ${s.electron} · Chromium ${s.chrome} · Node ${s.node}`,
+    'github.com/hiperajans/hipervesika'
+  ].join('\n')
+
+  app.setAboutPanelOptions({
+    applicationName: app.name,
+    applicationVersion: app.getVersion(),
+    // macOS "Surum <kisa> (<yapi>)" yazar. Yapi numarasi ayri tutulmadigi icin
+    // parantez ya "0.1.0 (0.1.0)" diye tekrar ederdi (paket) ya da Electron'un
+    // surumunu gosterirdi (kaynaktan calistirmada "0.1.0 (43.4.0)"). Bos
+    // birakilinca parantez hic cizilmiyor.
+    version: '',
+    copyright: '© Hiper Ajans · Apache-2.0 lisansı',
+    credits: tanitim,
+    // Yalnizca Linux'ta kullanilir.
+    authors: ['Hiper Ajans'],
+    website: 'https://github.com/hiperajans/hipervesika',
+    // Yalnizca Windows ve Linux'ta kullanilir; macOS simgeyi paketten okur.
+    ...(simgeDosyasi('icon.png') ? { iconPath: simgeDosyasi('icon.png') } : {})
+  })
+}
+
 function menuyuKur () {
   const komut = (ad) => () => {
     const pencere = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
@@ -311,7 +345,24 @@ function menuyuKur () {
   }
 
   const sablon = [
-    ...(process.platform === 'darwin' ? [{ role: 'appMenu' }] : []),
+    // 'appMenu' rolu hazir bir alt menu verir ama etiketleri Ingilizce'dir;
+    // arayuzun geri kalani Turkce oldugu icin ayni menu elle yaziliyor.
+    ...(process.platform === 'darwin'
+      ? [{
+          label: app.name,
+          submenu: [
+            { role: 'about', label: `${app.name} Hakkında` },
+            { type: 'separator' },
+            { role: 'services', label: 'Hizmetler' },
+            { type: 'separator' },
+            { role: 'hide', label: `${app.name}'yı Gizle` },
+            { role: 'hideOthers', label: 'Diğerlerini Gizle' },
+            { role: 'unhide', label: 'Tümünü Göster' },
+            { type: 'separator' },
+            { role: 'quit', label: `${app.name}'dan Çık` }
+          ]
+        }]
+      : []),
     {
       label: 'Dosya',
       submenu: [
@@ -359,7 +410,12 @@ function menuyuKur () {
       label: 'Yardım',
       role: 'help',
       submenu: [
-        { label: 'Tanıtım turu', accelerator: 'F1', click: komut('tanitim') }
+        { label: 'Tanıtım turu', accelerator: 'F1', click: komut('tanitim') },
+        // macOS'ta "Hakkında" Apple menusunun altindadir; Windows ve Linux'ta
+        // buraya konur.
+        ...(process.platform === 'darwin'
+          ? []
+          : [{ type: 'separator' }, { role: 'about', label: `${app.name} Hakkında` }])
       ]
     }
   ]
@@ -414,6 +470,7 @@ app.whenReady().then(() => {
   kaydetmeyiKur()
   baskiyiKur()
   ayarlariKur()
+  hakkindaKur()
   menuyuKur()
   createWindow()
 

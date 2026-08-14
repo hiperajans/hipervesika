@@ -89,6 +89,8 @@ fotoğraf sürükle-bırak → otomatik hizalama → arka plan beyazlatma → r�
 **Kullanım kolaylıkları**
 
 - İlk açılışta rehberli tanıtım turu (`F1` ile her zaman tekrar açılabilir).
+- Menüler Türkçedir. *Hakkında* penceresi sürümü, çalışma zamanı bilgisini ve verinin
+  cihazdan çıkmadığını yazar (macOS'ta uygulama menüsünde, diğerlerinde *Yardım* altında).
 - Kendi fotoğraf ve kağıt ön ayarlarınız; son kullanılan değerler hatırlanır. Ayarlar
   işletim sisteminin kullanıcı verisi klasöründe JSON olarak tutulur.
 - Sürükle-bırak, dosya seçme ve panodan yapıştırma ile fotoğraf alma; JPG, PNG ve WebP
