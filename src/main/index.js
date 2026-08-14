@@ -309,15 +309,13 @@ function ayarlariKur () {
 // gorunur; kullanicinin en cok merak ettigi sey (fotograflarin nereye gittigi)
 // tam olarak burada yaziyor.
 function hakkindaKur () {
-  const s = process.versions
   const tanitim = [
     'Vesikalık fotoğraf hazırlama ve baskı kağıdına dizme uygulaması.',
     '',
     'Tüm görüntü işleme bu bilgisayarda yapılır: fotoğraflar hiçbir sunucuya ' +
       'gönderilmez, uygulama internet bağlantısı kurmaz.',
     '',
-    `Electron ${s.electron} · Chromium ${s.chrome} · Node ${s.node}`,
-    'github.com/hiperajans/hipervesika'
+    'https://github.com/hiperajans/hipervesika'
   ].join('\n')
 
   app.setAboutPanelOptions({
