@@ -10,6 +10,7 @@
     "test:uctan-uca": "node --test --test-concurrency=1 \"test/uctan-uca/*.test.js\"",
     "lint": "eslint .",
     "lint:duzelt": "eslint . --fix",
+    "simge": "electron scripts/simge-uret.js",
     "vendor": "node scripts/vendor.js",
     "postinstall": "node scripts/vendor.js"
   },

@@ -111,6 +111,9 @@ src/main/        Ana süreç: pencere, app:// protokolü, kaydetme, baskı, ayar
 src/preload/     contextBridge köprüsü (window.hiperVesika) — tek geçit
 src/renderer/    Arayüz; js/ altında saf hesap modülleri, vendor/ gitignore'da
 scripts/vendor.js  Bootstrap, bootstrap-icons ve Human modellerini vendor/'a kopyalar
+scripts/simge/   Uygulama simgesinin vektör kaynağı ve .ico/.icns kapları
+assets/          Simgenin SVG kaynağı (üretilir, depoya işlenir)
+build/icons/     Üretilmiş simgeler: icon.icns, icon.ico, Linux PNG seti
 test/            node:test birim testleri (saf modüller)
 docs/            FAZLAR.md (yol haritası), ARAYUZ.md (tasarım katmanı)
 ```
@@ -124,6 +127,7 @@ Komutlar:
 | `npm run test:birim` | Yalnızca birim testleri (`node --test`, saniyeler) |
 | `npm run test:uctan-uca` | Gerçek uygulamayı açan testler (~1,5 dk) |
 | `npm run lint` | Kod biçimi denetimi (`npm run lint:duzelt` düzeltir) |
+| `npm run simge` | Uygulama simgelerini vektör kaynaktan yeniden üretir |
 | `npm run vendor` | `vendor/` dosyalarını yeniler |
 
 `src/renderer/js/` altındaki modüller DOM'a ve Electron'a dokunmadan yazılır ki hem arayüzde

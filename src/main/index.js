@@ -2,8 +2,11 @@
 
 const path = require('node:path')
 const fs = require('node:fs/promises')
+const fsSenkron = require('node:fs')
 const { pathToFileURL } = require('node:url')
-const { app, BrowserWindow, Menu, shell, protocol, net, ipcMain, dialog } = require('electron')
+const {
+  app, BrowserWindow, Menu, shell, protocol, net, ipcMain, dialog, nativeImage
+} = require('electron')
 
 const baski = require('./baski.js')
 const ayarlar = require('./ayarlar.js')
@@ -12,6 +15,34 @@ const pdf = require('./pdf.js')
 app.setName('Hiper Vesika')
 
 const ARAYUZ_KOKU = path.join(__dirname, '..', 'renderer')
+const SIMGE_KOKU = path.join(__dirname, '..', '..', 'build', 'icons')
+
+// Uygulama simgesi. Paketlenmis uygulamada simgeyi isletim sistemi paketin
+// kendisinden okur (.app icindeki .icns, .exe'ye gomulu .ico); asagidakiler
+// yalnizca kaynaktan calistirmada (npm start) pencerenin ve Dock'un dogru
+// simgeyi gostermesi icindir. `npm run simge` hic calistirilmamissa dosyalar
+// yoktur; o durumda Electron kendi simgesine duser.
+function simgeDosyasi (ad) {
+  const yol = path.join(SIMGE_KOKU, ad)
+  return fsSenkron.existsSync(yol) ? yol : null
+}
+
+// Windows .ico, Linux PNG bekler. macOS pencere simgesi kullanmaz; orada
+// simge Dock'a ayrica verilir.
+function pencereSimgesi () {
+  if (process.platform === 'darwin') return null
+  return simgeDosyasi(process.platform === 'win32' ? 'icon.ico' : 'icon.png')
+}
+
+// nativeImage yalnizca PNG ve JPEG cozer, .icns cozmez. Dock'a bu yuzden
+// macOS yerlesiminde ayri bir PNG veriliyor: duz PNG verilseydi simge
+// Dock'ta komsularindan buyuk dururdu.
+function dockSimgesi () {
+  const yol = simgeDosyasi(path.join('macos', '512x512.png'))
+  if (!yol) return null
+  const gorsel = nativeImage.createFromPath(yol)
+  return gorsel.isEmpty() ? null : gorsel
+}
 
 // Baski penceresine gecici olarak sunulan icerikler. Diske yazmamak icin
 // bellekte tutulur ve is bitince silinir.
@@ -337,6 +368,7 @@ function menuyuKur () {
 }
 
 function createWindow () {
+  const simge = pencereSimgesi()
   const window = new BrowserWindow({
     width: 1280,
     height: 860,
@@ -345,6 +377,7 @@ function createWindow () {
     show: false,
     backgroundColor: '#f8f9fa',
     title: 'Hiper Vesika',
+    ...(simge ? { icon: simge } : {}),
     webPreferences: {
       preload: path.join(__dirname, '..', 'preload', 'index.js'),
       contextIsolation: true,
@@ -370,6 +403,13 @@ function createWindow () {
 }
 
 app.whenReady().then(() => {
+  // macOS'ta Dock simgesi pencereden degil uygulamadan gelir; paketlenmemis
+  // calistirmada Electron'un kendi simgesi gorunurdu.
+  if (process.platform === 'darwin' && !app.isPackaged) {
+    const simge = dockSimgesi()
+    if (simge) app.dock?.setIcon(simge)
+  }
+
   protokoluKur()
   kaydetmeyiKur()
   baskiyiKur()

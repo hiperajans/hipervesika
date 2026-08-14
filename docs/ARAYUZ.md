@@ -94,6 +94,43 @@ kaydırılan üç kutu değildir. Bu yüzden bir adımın altındayken diğerine
 yükseklikte kalıyordu. `shown.bs.tab` ile her geçişte `scrollTop` sıfırlanır: yeni adım her
 zaman başından başlar.
 
+## Uygulama simgesi
+
+Kaynak tek bir vektör tanımıdır: `scripts/simge/cizim.js`. Her boyut o tanımdan yeniden
+rasterlenir; büyük bir görüntüyü küçültmek 16–32 px'te bulanık sonuç verirdi. Üretim
+`npm run simge` ile yapılır ve çıktılar depoya işlenir (`build/icons/`, `assets/*.svg`).
+
+**Çizim.** Kehribar (`#f59e0b`) yumuşatılmış köşeli kare; üstünde beyaz zeminli, 5:6
+oranında (50 × 60 mm vesikalığın oranı) bir fotoğraf; içinde kişi silueti. Baş fotoğrafın
+üstten %10'unda başlar ve yaklaşık yarısını kaplar — biyometrik ölçünün istediği yerleşim.
+Fotoğrafın dört köşesinde uygulamanın kesim kılavuzuna karşılık gelen L işaretleri durur.
+
+**Boyuta göre sadeleşme.** 16 px'lik çizim 1024 px'lik çizimin küçültülmüşü değildir:
+
+| Ölçü | Ne değişir |
+| --- | --- |
+| < 48 px | Omuzlar başa değdirilir; boyun boşluğu yarım pikselin altına düşüp gri bulanıklığa dönüşürdü |
+| < 64 px | Gölge çizilmez; fotoğrafın kenarını kirletirdi |
+| < 128 px | Kesim işaretleri çizilmez; okunmaz bir tırtığa dönüşürlerdi |
+| ≤ 64 px | Kenarlar tam piksele oturtulur; yarım piksele denk gelen kenar antialias ile griye yayılırdı |
+
+**Platform yerleşimleri.** İkisi ayrı dosyadır, çünkü aynı çizim üç platformda aynı
+görünmez:
+
+- **macOS** (`icon.icns`): Apple'ın şablonu — 1024 px tuvalde 824 px gövde, altında yumuşak
+  gölge. Tuvali dolduran bir `.icns` Dock'ta komşularından büyük durur; şablonun bıraktığı
+  boşluk sistemin gölge ve seçim halkası için ayırdığı yerdir.
+- **Windows** (`icon.ico`) ve **Linux** (PNG seti): gövde tuvali doldurur, yalnızca kenara
+  yapışmasın diye %3 pay kalır. Bu ortamlarda simge sistemin çizdiği bir çerçeve içinde
+  durmaz.
+
+**Kap dosyaları.** `.ico` ve `.icns`, birden fazla boyuttaki PNG'yi taşıyan basit
+kaplardır ve `scripts/simge/kap.js` içinde elle yazılırlar. Apple'ın `iconutil` aracı
+yalnızca macOS'ta bulunur; üretim üç platformda da çalışmak zorunda (bkz. `AGENTS.md`,
+kural 4). Rasterleme Electron'un tuvalinde yapılır — depoda görüntü işleyen bir bağımlılık
+yok ve eklenmedi — donanım hızlandırma kapatılarak, böylece çıktı makineden makineye
+değişmez.
+
 ## Kurallar
 
 1. **Kimlikler mantığa aittir.** `renderer.js` öğeleri `id` ile bulur; tasarım değişikliği

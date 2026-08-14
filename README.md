@@ -115,6 +115,7 @@ zorunludur; dosyalar sonradan tazelenmek istenirse `npm run vendor` yeterlidir.
 | `npm run test:birim` | Yalnızca birim testleri (`node --test`, saniyeler) |
 | `npm run test:uctan-uca` | Gerçek uygulamayı açan testler (~1,5 dk) |
 | `npm run lint` | Kod biçimi denetimi (`npm run lint:duzelt` düzeltir) |
+| `npm run simge` | Uygulama simgelerini vektör kaynaktan yeniden üretir |
 | `npm run vendor` | `vendor/` dosyalarını yeniler |
 
 ## Klavye kısayolları
@@ -148,6 +149,9 @@ src/main/          Ana süreç: pencere, app:// protokolü, kaydetme, baskı, PD
 src/preload/       contextBridge köprüsü (window.hiperVesika) — renderer'ın tek geçidi
 src/renderer/      Arayüz; js/ altında DOM'dan bağımsız hesap modülleri
 scripts/vendor.js  Bootstrap, bootstrap-icons ve Human modellerini vendor/'a kopyalar
+scripts/simge/     Uygulama simgesinin vektör kaynağı ve .ico/.icns kapları
+assets/            Simgenin SVG kaynağı
+build/icons/       Üretilmiş simgeler (macOS .icns, Windows .ico, Linux PNG seti)
 test/              node:test birim testleri; uctan-uca/ gerçek uygulamayı açan testler
 docs/              FAZLAR.md (yol haritası), ARAYUZ.md (tasarım katmanı)
 ```

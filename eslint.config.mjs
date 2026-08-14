@@ -77,6 +77,19 @@ export default [
   },
 
   {
+    // Simge cizici Node'da degil, Electron'un olusturucu surecinde calisir;
+    // dosya oraya metin olarak enjekte edilir.
+    files: ['scripts/simge/tuval.js'],
+    languageOptions: {
+      globals: {
+        globalThis: 'writable',
+        document: 'readonly',
+        Path2D: 'readonly'
+      }
+    }
+  },
+
+  {
     // Uctan uca testlerdeki page.evaluate() geri cagrilari Node'da degil,
     // uygulamanin icinde calisir; oradaki degiskenler ESLint icin gorunmez.
     files: ['test/uctan-uca/**/*.js'],

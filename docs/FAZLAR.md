@@ -239,7 +239,10 @@ Aynı adla kaydetmek eskisinin üzerine yazar, listeye ikinci bir satır eklemez
 **Amaç:** Uygulamanın kurulabilir hale gelmesi.
 
 - `electron-builder` ile Windows, macOS ve Linux paketleri.
-- Uygulama ikonları, sürüm bilgisi, lisans.
+- ~~Uygulama ikonları~~ — hazır: `npm run simge` üç platformun simgesini tek vektör
+  kaynaktan üretir (`build/icons/`), ayrıntı [`ARAYUZ.md`](./ARAYUZ.md) → "Uygulama
+  simgesi". Paketlemede `mac.icon` → `icon.icns`, `win.icon` → `icon.ico`, `linux.icon`
+  → `build/icons/` gösterilir. Sürüm bilgisi ve lisans kaldı.
 - Model dosyalarının ve Bootstrap'in pakete dahil edildiği doğrulanır; internet kapalıyken
   temiz bir makinede sınanır.
 
