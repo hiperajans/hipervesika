@@ -1,8 +1,13 @@
 # Paketleme yapilandirmasi (electron-builder).
 #
-# Su an yalnizca macOS Intel (x64) zip uretiliyor: `npm run paket:mac`.
-# Windows ve Linux hedefleri Faz 10'un kalaninda eklenecek
-# (bkz. docs/FAZLAR.md).
+# Hedefler — her platform icin tek bicim:
+#   macOS   dmg    Intel (x64) ve Apple Silicon (arm64) ayri ayri
+#   Windows nsis   kurulum programi
+#   Linux   AppImage
+#
+# Yerelde: `npm run paket:mac`, `paket:win`, `paket:linux`.
+# GitHub'da: Actions -> "Yayın paketleri" is akisi elle tetiklenir
+# (.github/workflows/yayin.yml).
 
 appId: com.hiperajans.hipervesika
 productName: Hiper Vesika
@@ -10,7 +15,10 @@ copyright: © Hiper Ajans
 
 directories:
   output: release
-  buildResources: build
+  # Simgeler build/icons altinda ve pakete girmeleri gerekiyor. buildResources
+  # olarak gosterilen klasor uygulamanin icine kopyalanmadigi icin burasi ayri
+  # tutuluyor; kurulum programina ozel dosyalar gerekirse oraya konur.
+  buildResources: build/kurulum
 
 # Uygulamanin calismak icin ihtiyaci olan her sey src/ altinda.
 #
@@ -23,24 +31,72 @@ directories:
 # vendor/ .gitignore'da ama pakete girmek zorunda; electron-builder
 # .gitignore okumaz, src/** onu da kapsar. Paket alinmadan once
 # `npm run vendor` calismis olmali.
+#
+# build/icons pencerenin simgesi icin calisma zamaninda okunuyor
+# (src/main/index.js -> pencereSimgesi).
 files:
   - src/**/*
+  - build/icons/**/*
   - package.json
   - '!node_modules/**/*'
 
 asar: true
 
+# macOS paketini ad-hoc imzalar; imzasiz arm64 uygulamasi Apple Silicon'da
+# hic acilmaz.
+afterPack: scripts/paket/imza.js
+
 mac:
   category: public.app-category.graphics-design
   icon: build/icons/icon.icns
-  # Imzalanmiyor: Developer ID sertifikasi yok. Yerelde uretilen paket
-  # karantinaya alinmadigi icin dogrudan calisir; baskasina gonderilirse
-  # macOS "gelistirici dogrulanamadi" uyarisi verir.
+  # Imzalama afterPack kancasinda ad-hoc yapiliyor; electron-builder'in kendi
+  # imza adimi kapali. Developer ID sertifikasi yok.
   identity: null
+  artifactName: hiper-vesika-${version}-mac-${arch}.${ext}
   target:
-    - target: zip
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+
+win:
+  icon: build/icons/icon.ico
+  artifactName: hiper-vesika-${version}-windows-${arch}-kurulum.${ext}
+  target:
+    - target: nsis
       arch:
         - x64
 
-# Bosluksuz ve mimarisi belli bir ad; "Hiper Vesika-0.1.0-mac.zip" yerine.
-artifactName: hiper-vesika-${version}-mac-${arch}.${ext}
+nsis:
+  # Tek tikla kurup acan degil, klasik "ileri ileri" kurulum programi:
+  # fotografci uygulamayi nereye kuracagini gormek isteyebilir.
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  # Kullanici bazinda kurulur; yonetici yetkisi istemez.
+  perMachine: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Hiper Vesika
+  # Kurulum programi da Turkce (1055 = tr-TR).
+  language: '1055'
+
+linux:
+  # Klasordeki <n>x<n>.png dosyalari kullanilir; boylece kucuk boyutlar icin
+  # elle sadelestirilmis cizimler korunur (bkz. docs/ARAYUZ.md).
+  icon: build/icons
+  category: Graphics
+  synopsis: Vesikalık fotoğraf hazırlama ve dizdirme
+  description: >-
+    Bir portre fotoğrafını biyometrik ölçülere göre hizalar, arka planını
+    beyazlatır, rötuşlar ve istenen fiziksel ölçüde çıktı üretir — tek fotoğraf
+    olarak ya da bir baskı kağıdına dizilmiş halde.
+  # .desktop dosyasinin adini package.json'daki desktopName ile ayni tutar.
+  # Electron pencerenin app_id / WM_CLASS degerini oradan aldigi icin masaustu
+  # ortami acik pencereyi baslatici simgesiyle eslestirebiliyor; yoksa
+  # uygulama ayri ve simgesiz bir girdi olarak gorunuyor.
+  syncDesktopName: true
+  artifactName: hiper-vesika-${version}-linux-${arch}.${ext}
+  target:
+    - target: AppImage
+      arch:
+        - x64

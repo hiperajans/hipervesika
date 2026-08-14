@@ -12,9 +12,11 @@ kurmaz, fotoğraflar hiçbir sunucuya gönderilmez.
 
 > **Durum:** Etkin geliştirme aşamasında (sürüm 0.1.0). Fotoğraf alma, hizalama, arka plan
 > beyazlatma, rötuş, dışa aktarma, dizme, baskı ve ön ayarlar çalışır durumdadır.
-> Paketleme yeni başladı: `npm run paket:mac` ile macOS Intel (x64) için zip üretilir.
-> Windows/Linux hedefleri, kod imzalama ve kurulum paketleri henüz yok. Yol haritası:
-> [`docs/FAZLAR.md`](./docs/FAZLAR.md).
+> Kurulabilir paketler üretiliyor: macOS (Intel + Apple Silicon `.dmg`), Windows (kurulum
+> programı) ve Linux (`AppImage`). Hazır paketler
+> [Releases](https://github.com/hiperajans/hipervesika/releases) altında ön sürüm olarak
+> yayımlanır. Paketler henüz imzalı değil; ilk açılışta işletim sistemi bir kez uyarır.
+> Yol haritası: [`docs/FAZLAR.md`](./docs/FAZLAR.md).
 
 ## Akış
 
@@ -118,7 +120,9 @@ zorunludur; dosyalar sonradan tazelenmek istenirse `npm run vendor` yeterlidir.
 | `npm run test:uctan-uca` | Gerçek uygulamayı açan testler (~1,5 dk) |
 | `npm run lint` | Kod biçimi denetimi (`npm run lint:duzelt` düzeltir) |
 | `npm run simge` | Uygulama simgelerini vektör kaynaktan yeniden üretir |
-| `npm run paket:mac` | macOS Intel (x64) zip paketi üretir (`release/`) |
+| `npm run paket:mac` | macOS `.dmg` paketleri (Intel + Apple Silicon) |
+| `npm run paket:win` | Windows kurulum programı |
+| `npm run paket:linux` | Linux `AppImage` |
 | `npm run vendor` | `vendor/` dosyalarını yeniler |
 
 ## Klavye kısayolları
@@ -153,6 +157,7 @@ src/preload/       contextBridge köprüsü (window.hiperVesika) — renderer'ı
 src/renderer/      Arayüz; js/ altında DOM'dan bağımsız hesap modülleri
 scripts/vendor.js  Bootstrap, bootstrap-icons ve Human modellerini vendor/'a kopyalar
 scripts/simge/     Uygulama simgesinin vektör kaynağı ve .ico/.icns kapları
+scripts/paket/     Paketleme kancaları (macOS ad-hoc imza)
 assets/            Simgenin SVG kaynağı
 build/icons/       Üretilmiş simgeler (macOS .icns, Windows .ico, Linux PNG seti)
 test/              node:test birim testleri; uctan-uca/ gerçek uygulamayı açan testler

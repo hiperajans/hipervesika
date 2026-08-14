@@ -238,18 +238,35 @@ Aynı adla kaydetmek eskisinin üzerine yazar, listeye ikinci bir satır eklemez
 
 **Amaç:** Uygulamanın kurulabilir hale gelmesi.
 
-- `electron-builder` ile Windows, macOS ve Linux paketleri. **macOS Intel (x64) zip hazır:**
-  `npm run paket:mac`, yapılandırma [`electron-builder.yml`](../electron-builder.yml).
-  Kalan: Apple Silicon (arm64), Windows, Linux, kod imzalama ve kurulum paketleri.
+- ~~`electron-builder` ile Windows, macOS ve Linux paketleri~~ — hazır. Platform başına tek
+  biçim, yapılandırma [`electron-builder.yml`](../electron-builder.yml):
 
-  Pakete `src/**` giriyor, `node_modules` girmiyor: arayüz Bootstrap'i ve Human'ı npm
-  paketlerinden değil, `scripts/vendor.js`'in `src/renderer/vendor/` altına kopyaladığı
-  dosyalardan okuyor; ana süreçte hiçbir bağımlılık `require` edilmiyor. `vendor/`
-  gitignore'da olduğu için `paket:mac` önce `npm run vendor` çalıştırır.
+  | Platform | Biçim | Komut |
+  | --- | --- | --- |
+  | macOS Intel + Apple Silicon | `dmg` (ikisi ayrı) | `npm run paket:mac` |
+  | Windows | NSIS kurulum programı | `npm run paket:win` |
+  | Linux | `AppImage` | `npm run paket:linux` |
 
-  Paket doğrulandı: asar içinde `node_modules` yok, Human model dosyaları (`rvm.bin`
-  dahil) `app://` üzerinden asar içinden okunuyor, otomatik hizalama sonuna kadar
-  çalışıyor, zip açılıp çalıştırıldığında konsol hatası vermiyor.
+  Üçü de GitHub Actions'ta elle tetiklenen **Yayın paketleri** iş akışıyla derlenip ön
+  yayın (pre-release) olarak yüklenir: [`.github/workflows/yayin.yml`](../.github/workflows/yayin.yml).
+  Her push'ta çalışmaz.
+
+  Pakete `src/**` ve `build/icons/**` giriyor, `node_modules` girmiyor: arayüz Bootstrap'i
+  ve Human'ı npm paketlerinden değil, `scripts/vendor.js`'in `src/renderer/vendor/` altına
+  kopyaladığı dosyalardan okuyor; ana süreçte hiçbir bağımlılık `require` edilmiyor.
+  `vendor/` gitignore'da olduğu için `paket:*` komutları önce `npm run vendor` çalıştırır.
+
+  **İmzalama.** Kod imzalama sertifikası yok. macOS paketi `afterPack` kancasında
+  ad-hoc imzalanır ([`scripts/paket/imza.js`](../scripts/paket/imza.js)); bu şart, çünkü
+  Apple Silicon çekirdeği imzasız bir arm64 ikilisini çalıştırmayı tümden reddeder — Intel'de
+  çalışan imzasız paket arm64'te hiç açılmaz. Ad-hoc imza Gatekeeper'ı geçmez: kullanıcı ilk
+  açılışta sağ tık → Aç demek zorunda. Windows'ta SmartScreen uyarısı çıkar. Kalan iş,
+  Developer ID + noter onayı ve Windows imzalama sertifikası.
+
+  Paket doğrulandı: asar içinde `node_modules` yok, Human model dosyaları (`rvm.bin` dahil)
+  `app://` üzerinden asar içinden okunuyor, otomatik hizalama sonuna kadar çalışıyor, dmg
+  bağlanıp içinden çalıştırıldığında konsol hatası vermiyor, her iki mimaride de imza
+  `codesign --verify --deep --strict` denetiminden geçiyor.
 - ~~Uygulama ikonları~~ — hazır: `npm run simge` üç platformun simgesini tek vektör
   kaynaktan üretir (`build/icons/`), ayrıntı [`ARAYUZ.md`](./ARAYUZ.md) → "Uygulama
   simgesi". Paketlemede `mac.icon` → `icon.icns`, `win.icon` → `icon.ico`, `linux.icon`

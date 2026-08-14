@@ -112,6 +112,7 @@ src/preload/     contextBridge köprüsü (window.hiperVesika) — tek geçit
 src/renderer/    Arayüz; js/ altında saf hesap modülleri, vendor/ gitignore'da
 scripts/vendor.js  Bootstrap, bootstrap-icons ve Human modellerini vendor/'a kopyalar
 scripts/simge/   Uygulama simgesinin vektör kaynağı ve .ico/.icns kapları
+scripts/paket/   Paketleme kancaları (macOS ad-hoc imza)
 assets/          Simgenin SVG kaynağı (üretilir, depoya işlenir)
 build/icons/     Üretilmiş simgeler: icon.icns, icon.ico, Linux PNG seti
 test/            node:test birim testleri (saf modüller)
@@ -128,7 +129,9 @@ Komutlar:
 | `npm run test:uctan-uca` | Gerçek uygulamayı açan testler (~1,5 dk) |
 | `npm run lint` | Kod biçimi denetimi (`npm run lint:duzelt` düzeltir) |
 | `npm run simge` | Uygulama simgelerini vektör kaynaktan yeniden üretir |
-| `npm run paket:mac` | macOS Intel (x64) zip paketi üretir (`release/`) |
+| `npm run paket:mac` | macOS `.dmg` paketleri (Intel + Apple Silicon) |
+| `npm run paket:win` | Windows kurulum programı |
+| `npm run paket:linux` | Linux `AppImage` |
 | `npm run vendor` | `vendor/` dosyalarını yeniler |
 
 `src/renderer/js/` altındaki modüller DOM'a ve Electron'a dokunmadan yazılır ki hem arayüzde

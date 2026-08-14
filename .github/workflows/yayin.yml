@@ -1,0 +1,165 @@
+name: Yayın paketleri
+
+# Elle tetiklenir, her push'ta calismaz: paketleme dakikalarca surer ve her
+# commit icin yayin uretmenin anlami yok.
+#
+#   GitHub -> Actions -> "Yayın paketleri" -> Run workflow
+#
+# Uc kosucuda paralel derler, sonra dosyalari tek bir on yayina (pre-release)
+# yukler. Yapilandirma electron-builder.yml icinde.
+on:
+  workflow_dispatch:
+    inputs:
+      etiket:
+        description: 'Sürüm etiketi. Boş bırakılırsa package.json sürümünden üretilir (v0.1.0 gibi).'
+        required: false
+        type: string
+      mevcudu_degistir:
+        description: 'Aynı etiketli yayın zaten varsa silinip yeniden oluşturulsun.'
+        required: false
+        type: boolean
+        default: false
+
+# Yayin olusturmak icin depoya yazma yetkisi gerekir.
+permissions:
+  contents: write
+
+jobs:
+  paketle:
+    name: Paketle (${{ matrix.ad }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # Biri duserse digerleri devam etsin; hangi platformun bozuldugu tek
+      # kosuda gorunur.
+      fail-fast: false
+      matrix:
+        include:
+          # macOS kosucusu iki mimariyi birden uretir: Intel ve Apple Silicon.
+          - os: macos-latest
+            ad: macOS
+            komut: paket:mac
+          - os: windows-latest
+            ad: Windows
+            komut: paket:win
+          - os: ubuntu-latest
+            ad: Linux
+            komut: paket:linux
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Paketi üret
+        run: npm run ${{ matrix.komut }}
+        env:
+          # macOS: anahtar zincirinde imza sertifikasi aranmasin. Sertifikamiz
+          # yok; imza afterPack kancasinda ad-hoc atiliyor
+          # (scripts/paket/imza.js).
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      # Yalnizca kurulum dosyalari; release/ altindaki blockmap ve
+      # latest*.yml (otomatik guncelleme meta verisi) disarida kalir.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paket-${{ matrix.os }}
+          path: |
+            release/*.dmg
+            release/*.exe
+            release/*.AppImage
+          if-no-files-found: error
+          retention-days: 7
+
+  yayinla:
+    name: Ön yayını oluştur
+    needs: paketle
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: paketler
+          merge-multiple: true
+
+      - name: Etiketi belirle
+        id: etiket
+        env:
+          GIRILEN: ${{ inputs.etiket }}
+        run: |
+          set -euo pipefail
+          etiket="$GIRILEN"
+          if [ -z "$etiket" ]; then
+            etiket="v$(node -p "require('./package.json').version")"
+          fi
+          echo "deger=$etiket" >> "$GITHUB_OUTPUT"
+          echo "Etiket: $etiket"
+
+      - name: Dosyaları listele
+        run: ls -lh paketler
+
+      - name: Ön yayını oluştur
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ETIKET: ${{ steps.etiket.outputs.deger }}
+          DEGISTIR: ${{ inputs.mevcudu_degistir }}
+        run: |
+          set -euo pipefail
+
+          if gh release view "$ETIKET" >/dev/null 2>&1; then
+            if [ "$DEGISTIR" = "true" ]; then
+              echo "'$ETIKET' zaten var, siliniyor."
+              gh release delete "$ETIKET" --yes --cleanup-tag
+            else
+              echo "::error::'$ETIKET' etiketli bir yayın zaten var. Başka bir etiket verin ya da 'mevcudu değiştir' seçeneğini işaretleyip yeniden çalıştırın."
+              exit 1
+            fi
+          fi
+
+          cat > notlar.md <<'NOTLAR'
+          Bu bir **ön sürümdür**: denemek içindir, kararlı sürüm değildir.
+
+          ### Hangi dosyayı indirmeliyim?
+
+          | Dosya | Nerede çalışır |
+          | --- | --- |
+          | `…-mac-arm64.dmg` | Apple Silicon Mac (M1, M2, M3, M4) |
+          | `…-mac-x64.dmg` | Intel işlemcili Mac |
+          | `…-windows-x64-kurulum.exe` | Windows 10 / 11 (64 bit) |
+          | `…-linux-x86_64.AppImage` | Linux (64 bit) |
+
+          Mac'inizin hangisi olduğunu bilmiyorsanız: Apple menüsü → *Bu Mac Hakkında*.
+          "Yonga: Apple M…" yazıyorsa arm64, "İşlemci: Intel…" yazıyorsa x64.
+
+          ### İlk açılış
+
+          Paketler imzalı değil (kod imzalama sertifikası henüz alınmadı), bu yüzden
+          işletim sistemi bir kez uyarır. Bu uyarı bir hata değildir:
+
+          - **macOS** — uygulamayı *Programlar*'a sürükleyin, sonra simgeye **sağ tık →
+            Aç**, çıkan uyarıda yine **Aç**. Sonraki açılışlarda sorulmaz.
+          - **Windows** — SmartScreen uyarısında **Daha fazla bilgi → Yine de çalıştır**.
+          - **Linux** — indirdikten sonra çalıştırma izni verin:
+            `chmod +x hiper-vesika-*.AppImage`
+
+          ### Neler çalışıyor
+
+          Fotoğraf alma, otomatik hizalama, arka plan beyazlatma, rötuş, dışa aktarma,
+          baskı kağıdına dizme ve yazdırma. Tüm görüntü işleme bilgisayarınızda yapılır:
+          fotoğraflar hiçbir sunucuya gönderilmez, uygulama internet bağlantısı kurmaz.
+          NOTLAR
+
+          printf '\n---\n\nDerleme: `%s`\n' "${GITHUB_SHA:0:7}" >> notlar.md
+
+          gh release create "$ETIKET" \
+            --title "Hiper Vesika $ETIKET" \
+            --notes-file notlar.md \
+            --prerelease \
+            --target "$GITHUB_SHA" \
+            paketler/*

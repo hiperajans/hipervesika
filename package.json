@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "description": "Vesikalık fotoğraf düzenleme ve baskı dizme uygulaması",
   "main": "src/main/index.js",
+  "//desktopName": "Linux'ta pencerenin app_id degeri; bkz. electron-builder.yml -> linux.syncDesktopName",
+  "desktopName": "hiper-vesika.desktop",
   "scripts": {
     "start": "electron .",
     "test": "npm run test:birim && npm run test:uctan-uca",
@@ -10,7 +12,9 @@
     "test:uctan-uca": "node --test --test-concurrency=1 \"test/uctan-uca/*.test.js\"",
     "lint": "eslint .",
     "lint:duzelt": "eslint . --fix",
-    "paket:mac": "npm run vendor && electron-builder --mac --x64",
+    "paket:mac": "npm run vendor && electron-builder --mac --x64 --arm64",
+    "paket:win": "npm run vendor && electron-builder --win --x64",
+    "paket:linux": "npm run vendor && electron-builder --linux --x64",
     "simge": "electron scripts/simge-uret.js",
     "vendor": "node scripts/vendor.js",
     "postinstall": "node scripts/vendor.js"
