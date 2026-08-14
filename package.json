@@ -10,6 +10,7 @@
     "test:uctan-uca": "node --test --test-concurrency=1 \"test/uctan-uca/*.test.js\"",
     "lint": "eslint .",
     "lint:duzelt": "eslint . --fix",
+    "paket:mac": "npm run vendor && electron-builder --mac --x64",
     "simge": "electron scripts/simge-uret.js",
     "vendor": "node scripts/vendor.js",
     "postinstall": "node scripts/vendor.js"
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@vladmandic/human-models": "^3.0.4",
     "electron": "^43.4.0",
+    "electron-builder": "^26.15.3",
     "eslint": "^9.39.5",
     "neostandard": "^0.13.0",
     "playwright-core": "^1.62.1"

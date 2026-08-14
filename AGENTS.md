@@ -128,6 +128,7 @@ Komutlar:
 | `npm run test:uctan-uca` | Gerçek uygulamayı açan testler (~1,5 dk) |
 | `npm run lint` | Kod biçimi denetimi (`npm run lint:duzelt` düzeltir) |
 | `npm run simge` | Uygulama simgelerini vektör kaynaktan yeniden üretir |
+| `npm run paket:mac` | macOS Intel (x64) zip paketi üretir (`release/`) |
 | `npm run vendor` | `vendor/` dosyalarını yeniler |
 
 `src/renderer/js/` altındaki modüller DOM'a ve Electron'a dokunmadan yazılır ki hem arayüzde

@@ -11,9 +11,9 @@ alan terimleri Türkçedir. Tüm görüntü işleme cihazda yapılır: uygulama 
 kurmaz, fotoğraflar hiçbir sunucuya gönderilmez.
 
 > **Durum:** Etkin geliştirme aşamasında (sürüm 0.1.0). Fotoğraf alma, hizalama, arka plan
-> beyazlatma, rötuş, dışa aktarma, dizme, baskı ve ön ayarlar çalışır durumdadır. Kurulabilir
-> paketler (`electron-builder` ile Windows/macOS/Linux dağıtımları) henüz hazır değildir;
-> uygulama şimdilik kaynaktan çalıştırılır. Yol haritası:
+> beyazlatma, rötuş, dışa aktarma, dizme, baskı ve ön ayarlar çalışır durumdadır.
+> Paketleme yeni başladı: `npm run paket:mac` ile macOS Intel (x64) için zip üretilir.
+> Windows/Linux hedefleri, kod imzalama ve kurulum paketleri henüz yok. Yol haritası:
 > [`docs/FAZLAR.md`](./docs/FAZLAR.md).
 
 ## Akış
@@ -116,6 +116,7 @@ zorunludur; dosyalar sonradan tazelenmek istenirse `npm run vendor` yeterlidir.
 | `npm run test:uctan-uca` | Gerçek uygulamayı açan testler (~1,5 dk) |
 | `npm run lint` | Kod biçimi denetimi (`npm run lint:duzelt` düzeltir) |
 | `npm run simge` | Uygulama simgelerini vektör kaynaktan yeniden üretir |
+| `npm run paket:mac` | macOS Intel (x64) zip paketi üretir (`release/`) |
 | `npm run vendor` | `vendor/` dosyalarını yeniler |
 
 ## Klavye kısayolları

@@ -1,0 +1,46 @@
+# Paketleme yapilandirmasi (electron-builder).
+#
+# Su an yalnizca macOS Intel (x64) zip uretiliyor: `npm run paket:mac`.
+# Windows ve Linux hedefleri Faz 10'un kalaninda eklenecek
+# (bkz. docs/FAZLAR.md).
+
+appId: com.hiperajans.hipervesika
+productName: Hiper Vesika
+copyright: © Hiper Ajans
+
+directories:
+  output: release
+  buildResources: build
+
+# Uygulamanin calismak icin ihtiyaci olan her sey src/ altinda.
+#
+# node_modules disarida birakiliyor: arayuz Bootstrap'i ve Human'i npm
+# paketlerinden degil, scripts/vendor.js'in src/renderer/vendor/ altina
+# kopyaladigi dosyalardan okuyor (bkz. src/renderer/index.html ve
+# src/renderer/js/yuz.js). Paketleri de koymak ayni dosyalari ikinci kez
+# tasimak olurdu. Ana surecte ise hicbir bagimlilik require edilmiyor.
+#
+# vendor/ .gitignore'da ama pakete girmek zorunda; electron-builder
+# .gitignore okumaz, src/** onu da kapsar. Paket alinmadan once
+# `npm run vendor` calismis olmali.
+files:
+  - src/**/*
+  - package.json
+  - '!node_modules/**/*'
+
+asar: true
+
+mac:
+  category: public.app-category.graphics-design
+  icon: build/icons/icon.icns
+  # Imzalanmiyor: Developer ID sertifikasi yok. Yerelde uretilen paket
+  # karantinaya alinmadigi icin dogrudan calisir; baskasina gonderilirse
+  # macOS "gelistirici dogrulanamadi" uyarisi verir.
+  identity: null
+  target:
+    - target: zip
+      arch:
+        - x64
+
+# Bosluksuz ve mimarisi belli bir ad; "Hiper Vesika-0.1.0-mac.zip" yerine.
+artifactName: hiper-vesika-${version}-mac-${arch}.${ext}

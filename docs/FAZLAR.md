@@ -238,7 +238,18 @@ Aynı adla kaydetmek eskisinin üzerine yazar, listeye ikinci bir satır eklemez
 
 **Amaç:** Uygulamanın kurulabilir hale gelmesi.
 
-- `electron-builder` ile Windows, macOS ve Linux paketleri.
+- `electron-builder` ile Windows, macOS ve Linux paketleri. **macOS Intel (x64) zip hazır:**
+  `npm run paket:mac`, yapılandırma [`electron-builder.yml`](../electron-builder.yml).
+  Kalan: Apple Silicon (arm64), Windows, Linux, kod imzalama ve kurulum paketleri.
+
+  Pakete `src/**` giriyor, `node_modules` girmiyor: arayüz Bootstrap'i ve Human'ı npm
+  paketlerinden değil, `scripts/vendor.js`'in `src/renderer/vendor/` altına kopyaladığı
+  dosyalardan okuyor; ana süreçte hiçbir bağımlılık `require` edilmiyor. `vendor/`
+  gitignore'da olduğu için `paket:mac` önce `npm run vendor` çalıştırır.
+
+  Paket doğrulandı: asar içinde `node_modules` yok, Human model dosyaları (`rvm.bin`
+  dahil) `app://` üzerinden asar içinden okunuyor, otomatik hizalama sonuna kadar
+  çalışıyor, zip açılıp çalıştırıldığında konsol hatası vermiyor.
 - ~~Uygulama ikonları~~ — hazır: `npm run simge` üç platformun simgesini tek vektör
   kaynaktan üretir (`build/icons/`), ayrıntı [`ARAYUZ.md`](./ARAYUZ.md) → "Uygulama
   simgesi". Paketlemede `mac.icon` → `icon.icns`, `win.icon` → `icon.ico`, `linux.icon`
