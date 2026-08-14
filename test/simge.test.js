@@ -143,6 +143,18 @@ test('golge kucuk boyutlarda kapatilir', () => {
   assert.equal(golgeliMi(256), true)
 })
 
+test('golge ve kesim isaretleri acikca verilebilir', () => {
+  // Olceklenen bir SVG'de karar boyuttan okunamaz; arayuzun 30 px'lik marka
+  // isareti 64 birimlik cizimden uretiliyor ama golgesiz olmali.
+  const sade = cizim.sahne(64, { yerlesim: 'duz', golge: false, kesim: false })
+  assert.equal(sade.katmanlar.some((k) => k.golge), false)
+  assert.equal(sade.katmanlar.some((k) => k.ad.startsWith('kesim')), false)
+
+  const zorlanan = cizim.sahne(32, { golge: true, kesim: true })
+  assert.equal(zorlanan.katmanlar.some((k) => k.golge), true)
+  assert.equal(zorlanan.katmanlar.filter((k) => k.ad.startsWith('kesim')).length, 4)
+})
+
 test('SVG kaynak tum katmanlari tasir', () => {
   const svg = cizim.svgUret(1024, { yerlesim: 'macos' })
   const { katmanlar } = cizim.sahne(1024, { yerlesim: 'macos' })
@@ -261,6 +273,37 @@ test('islenmis icon.icns gecerli ve macOS boyutlarinin tamamini tasir', (t) => {
   for (const { tur, piksel, ad } of kap.ICNS_TURLERI) {
     assert.deepEqual(bulunan.get(tur), { en: piksel, boy: piksel }, `${ad} (${tur}) eksik ya da bozuk`)
   }
+})
+
+// Bu uc dosya depoya islenir ve biri arayuzun basliginda kullanilir. Cizim
+// degistirilip `npm run simge` unutulursa kaynak ile dosya ayrisir; asagidaki
+// denetim o durumu yakalar.
+for (const { yol, boyut, secenekler } of [
+  { yol: ['assets', 'simge.svg'], boyut: 1024, secenekler: { yerlesim: 'macos' } },
+  { yol: ['assets', 'simge-duz.svg'], boyut: 1024, secenekler: { yerlesim: 'duz' } },
+  {
+    yol: ['src', 'renderer', 'simge.svg'],
+    boyut: 64,
+    secenekler: { yerlesim: 'duz', golge: false, kesim: false }
+  }
+]) {
+  test(`${path.join(...yol)} kaynakla ayni`, (t) => {
+    const dosya = path.join(__dirname, '..', ...yol)
+    if (!fs.existsSync(dosya)) return t.skip('simgeler uretilmemis: npm run simge')
+
+    assert.equal(
+      fs.readFileSync(dosya, 'utf8'),
+      cizim.svgUret(boyut, secenekler),
+      'cizim degismis ama dosya yenilenmemis: npm run simge'
+    )
+  })
+}
+
+test('arayuzun marka isareti depoda hazir duruyor', () => {
+  // Arayuz bu dosyayi app:// uzerinden okur; yoksa baslikta kirik gorsel cikar.
+  const dosya = path.join(__dirname, '..', 'src', 'renderer', 'simge.svg')
+  assert.ok(fs.existsSync(dosya), 'src/renderer/simge.svg yok: npm run simge')
+  assert.match(fs.readFileSync(dosya, 'utf8'), /<svg[^>]+viewBox="0 0 64 64"/)
 })
 
 test('islenmis Linux PNG dosyalari beklenen olculerde', (t) => {

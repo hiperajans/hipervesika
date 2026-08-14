@@ -90,6 +90,14 @@ async function uret () {
   yaz(path.join(varlikKlasoru, 'simge.svg'), svgUret(1024, { yerlesim: 'macos' }))
   yaz(path.join(varlikKlasoru, 'simge-duz.svg'), svgUret(1024, { yerlesim: 'duz' }))
 
+  // Arayuzun basligindaki marka isareti. 30 px'lik bir rozette golge ve kesim
+  // isaretleri ise yaramaz; sade cizim olceklenerek kullanilir. Arayuz app://
+  // altindan okundugu icin dosya renderer klasorune yazilir.
+  yaz(
+    path.join(kok, 'src', 'renderer', 'simge.svg'),
+    svgUret(64, { yerlesim: 'duz', golge: false, kesim: false })
+  )
+
   console.log('macOS')
   const macos = await tumunuUret(pencere, MACOS_BOYUTLARI, 'macos')
   yaz(path.join(simgeKlasoru, 'icon.icns'), icnsUret(macos))

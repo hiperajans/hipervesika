@@ -124,6 +124,12 @@ görünmez:
   yapışmasın diye %3 pay kalır. Bu ortamlarda simge sistemin çizdiği bir çerçeve içinde
   durmaz.
 
+**Başlıktaki marka işareti.** `.hv-marka-isaret` aynı kaynaktan gelir:
+`src/renderer/simge.svg`, 64 birimlik sade çizimden (gölgesiz, kesim işaretsiz) üretilir ve
+30 px'e ölçeklenir. Yuvarlatılmış köşe ve zemin çizimin içindedir; CSS yalnızca ölçü verir.
+Dosya `npm run simge` ile yenilenir ve birim testi kaynakla birebir aynı olmasını denetler —
+çizim değişip dosya yenilenmezse test düşer.
+
 **Kap dosyaları.** `.ico` ve `.icns`, birden fazla boyuttaki PNG'yi taşıyan basit
 kaplardır ve `scripts/simge/kap.js` içinde elle yazılırlar. Apple'ın `iconutil` aracı
 yalnızca macOS'ta bulunur; üretim üç platformda da çalışmak zorunda (bkz. `AGENTS.md`,

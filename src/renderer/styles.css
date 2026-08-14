@@ -85,17 +85,13 @@
   min-width: 0;
 }
 
+/* Uygulama simgesinin kendisi (src/renderer/simge.svg, `npm run simge` ile
+   uretilir). Yuvarlatilmis kose ve zemin cizimin icinde; burada yalnizca
+   olcusu veriliyor. */
 .hv-marka-isaret {
-  display: grid;
-  place-items: center;
+  flex: 0 0 auto;
   width: 30px;
   height: 30px;
-  border-radius: var(--hv-yaricap-kucuk);
-  background: linear-gradient(140deg, var(--hv-vurgu), var(--hv-vurgu-koyu));
-  color: #fff;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
 }
 
 .hv-marka-yazi {

@@ -153,7 +153,10 @@ const KESIM = 'rgba(255, 255, 255, 0.55)'
 // bulanikliga donuseceginden cizilmez; golge de 32 px altinda fotografin
 // kenarini kirletir. Bu, macOS simgelerinin kendi yaptigi seydir: 16 px'lik
 // cizim 1024 px'lik cizimin kucultulmusu degil, sadelestirilmisidir.
-function sahne (boyut, { yerlesim = 'macos' } = {}) {
+//
+// golge ve kesim ontanimli olarak boyuta bakar; olceklenen bir SVG uretilirken
+// karar boyuttan okunamayacagi icin ikisi de acikca verilebilir.
+function sahne (boyut, { yerlesim = 'macos', golge = null, kesim = null } = {}) {
   const govdeOrani = yerlesim === 'macos' ? MACOS_GOVDE : DUZ_GOVDE
 
   // Kucuk boyutlarda kenarlar piksel izgarasina oturtulur. Yarim piksele
@@ -166,8 +169,8 @@ function sahne (boyut, { yerlesim = 'macos' } = {}) {
   const govdeX = pay
   const govdeY = pay
 
-  const ayrinti = boyut >= 128
-  const golgeVar = boyut >= 64
+  const ayrinti = kesim ?? boyut >= 128
+  const golgeVar = golge ?? boyut >= 64
   const govdeGolgesi = golgeVar && yerlesim === 'macos'
 
   // Fotograf: 50 x 60 mm vesikaligin orani (5:6).
