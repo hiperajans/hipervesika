@@ -1,6 +1,3 @@
-# macOS Finder kalintilari
-.DS_Store
-
 # Logs
 logs
 *.log
@@ -171,3 +168,8 @@ test-photos/
 !assets/**
 !build/icons/**
 !docs/**/*.png
+
+# macOS Finder kalıntısı. Kural en sonda: yukarıdaki `!assets/**` ve
+# `!build/icons/**` yeniden dahil etmeleri kendisinden sonra gelen bir
+# kuralla ezilebilir, git son eşleşen kuralı uygular.
+.DS_Store
