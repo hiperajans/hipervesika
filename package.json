@@ -12,9 +12,9 @@
     "test:uctan-uca": "node --test --test-concurrency=1 \"test/uctan-uca/*.test.js\"",
     "lint": "eslint .",
     "lint:duzelt": "eslint . --fix",
-    "paket:mac": "npm run vendor && electron-builder --mac --x64 --arm64",
-    "paket:win": "npm run vendor && electron-builder --win --x64",
-    "paket:linux": "npm run vendor && electron-builder --linux --x64",
+    "paket:mac": "npm run vendor && electron-builder --mac --x64 --arm64 --publish never",
+    "paket:win": "npm run vendor && electron-builder --win --x64 --publish never",
+    "paket:linux": "npm run vendor && electron-builder --linux --x64 --publish never",
     "simge": "electron scripts/simge-uret.js",
     "vendor": "node scripts/vendor.js",
     "postinstall": "node scripts/vendor.js"

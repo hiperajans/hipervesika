@@ -55,6 +55,11 @@ jobs:
 
       - run: npm ci
 
+      # paket:* komutlari electron-builder'i `--publish never` ile cagirir.
+      # Sart: electron-builder CI ortamini gorunce kendiliginden GitHub'a
+      # yayinlamaya kalkiyor ve GH_TOKEN olmadigi icin paketleri urettikten
+      # sonra dusuyordu. Yayini bu is akisi kendi yapiyor (asagidaki is),
+      # boylece etiket, on yayin isareti ve surum notu bizde kaliyor.
       - name: Paketi üret
         run: npm run ${{ matrix.komut }}
         env:
