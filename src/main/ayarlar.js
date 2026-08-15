@@ -149,7 +149,7 @@ async function oku (klasor) {
 
 // Once gecici dosyaya yazilip yeniden adlandirilir: yazma sirasinda uygulama
 // kapanirsa eski ayarlar bozulmadan kalir.
-async function yaz (klasor, ayarlar) {
+async function yazmayiYap (klasor, ayarlar) {
   const temiz = ayarlariDogrula(ayarlar)
   const hedef = dosyaYolu(klasor)
   const gecici = `${hedef}.gecici`
@@ -158,6 +158,24 @@ async function yaz (klasor, ayarlar) {
   await fs.writeFile(gecici, JSON.stringify(temiz, null, 2), 'utf8')
   await fs.rename(gecici, hedef)
   return temiz
+}
+
+// Yazmalar siraya alinir. Iki istek ayni anda gelirse (ornegin mod secimi ile
+// tanitim turunun bitisi pespese duserse) ikisi de ayni gecici dosyaya
+// yazardi; ic ice gecen yazmalarin ardindan yeniden adlandirilan dosya bozuk
+// JSON iceriyordu ve okuma varsayilana duserek kullanicinin tum on ayarlarini
+// goturuyordu. Sira ayrica son istegin son yazma olmasini garanti eder.
+let siradaki = Promise.resolve()
+
+function yaz (klasor, ayarlar) {
+  // Onceki yazma hata verse de sira devam etmeli; bu yuzden iki dalda da
+  // ayni is baslatilir.
+  const is = siradaki.then(
+    () => yazmayiYap(klasor, ayarlar),
+    () => yazmayiYap(klasor, ayarlar)
+  )
+  siradaki = is.catch(() => {})
+  return is
 }
 
 module.exports = {

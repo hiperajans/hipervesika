@@ -155,6 +155,33 @@ test('yazilan ayarlar geri okunur', async () => {
   fs.rmSync(klasor, { recursive: true, force: true })
 })
 
+test('pespese yazmalar dosyayi bozmaz', async () => {
+  const klasor = geciciKlasor()
+
+  // Ayni anda baslatilan yazmalar ayni gecici dosyayi kullaniyordu; ic ice
+  // gecince ortaya bozuk JSON cikiyor ve okuma varsayilana duserek kullanicinin
+  // tum on ayarlarini goturuyordu.
+  await Promise.all(
+    Array.from({ length: 20 }, (yok, sira) => ayarlar.yaz(klasor, {
+      mod: sira % 2 ? 'basit' : 'gelismis',
+      fotografOnayarlari: [
+        { kod: `kullanici-${sira}`, ad: `Ölçü ${sira}`, genislikMm: 40, yukseklikMm: 50 }
+      ]
+    }))
+  )
+
+  // Dosya elle okunur: ayarlar.oku bozuk JSON'u yutup varsayilan dondururdu ve
+  // testi yaniltirdi.
+  const metin = fs.readFileSync(path.join(klasor, ayarlar.DOSYA_ADI), 'utf8')
+  const okunan = JSON.parse(metin)
+
+  // Son istek son yazma olmali; sira bunu da garanti eder.
+  assert.equal(okunan.mod, 'basit')
+  assert.equal(okunan.fotografOnayarlari[0].kod, 'kullanici-19')
+
+  fs.rmSync(klasor, { recursive: true, force: true })
+})
+
 test('olmayan klasor ve bozuk dosya varsayilan dondurur', async () => {
   const klasor = geciciKlasor()
 
