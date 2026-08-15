@@ -23,6 +23,11 @@ const EN_BUYUK_KAGIT_MM = 1000
 const EN_FAZLA_ONAYAR = 50
 const AD_UZUNLUGU = 40
 
+// Arayuz modlari. 'basit' sihirbaz gezinmesi verir ve uzman denetimlerini
+// gizler, 'gelismis' her seyi gosterir. Ayarda null durmasi "kullaniciya henuz
+// sorulmadi" demektir: ilk acilista mod secme penceresi bu yuzden acilir.
+const MODLAR = ['basit', 'gelismis']
+
 function varsayilanAyarlar () {
   return {
     surum: SURUM,
@@ -30,7 +35,8 @@ function varsayilanAyarlar () {
     kagitOnayarlari: [],
     sonKullanilan: {},
     // Tanitim turu bir kez gosterilir; kullanici Yardim menusunden tekrarlar.
-    tanitimGoruldu: false
+    tanitimGoruldu: false,
+    mod: null
   }
 }
 
@@ -111,6 +117,9 @@ function ayarlariDogrula (ham) {
   ayarlar.kagitOnayarlari = listeTemizle(ham.kagitOnayarlari, kagitOnayariTemizle)
   ayarlar.sonKullanilan = sonKullanilanTemizle(ham.sonKullanilan)
   ayarlar.tanitimGoruldu = ham.tanitimGoruldu === true
+  // Taninmayan mod null'a duser: bozuk dosyada kullaniciya yeniden sorulur,
+  // uygulama kilitli bir moda saplanmaz.
+  ayarlar.mod = MODLAR.includes(ham.mod) ? ham.mod : null
   return ayarlar
 }
 
@@ -156,6 +165,7 @@ module.exports = {
   DOSYA_ADI,
   EN_FAZLA_ONAYAR,
   AD_UZUNLUGU,
+  MODLAR,
   varsayilanAyarlar,
   adTemizle,
   ayarlariDogrula,

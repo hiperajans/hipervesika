@@ -31,6 +31,10 @@ contextBridge.exposeInMainWorld('hiperVesika', {
   ayarlariOku: () => ipcRenderer.invoke('ayarlar:oku'),
   ayarlariYaz: (ayarlar) => ipcRenderer.invoke('ayarlar:yaz', ayarlar),
 
+  // Arayuzun icinde bulundugu mod ('basit' | 'gelismis'). Gorunum menusundeki
+  // isareti gunceller; ayara yazmak ayri istir (ayarlariYaz).
+  moduBildir: (mod) => ipcRenderer.send('mod:bildir', mod),
+
   // Menudeki kisayollar buradan arayuze bildirilir.
   menuKomutu: (geriCagri) => {
     ipcRenderer.on('menu', (olay, komut) => geriCagri(komut))

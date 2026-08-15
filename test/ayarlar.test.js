@@ -115,6 +115,31 @@ test('benzersiz kod uretilir', () => {
   )
 })
 
+test('mod yalnizca taninan degerlerle kalir', () => {
+  // Ilk acilista mod henuz secilmemis olur; null "kullaniciya sor" demektir.
+  assert.equal(ayarlar.varsayilanAyarlar().mod, null)
+
+  assert.equal(ayarlar.ayarlariDogrula({ mod: 'basit' }).mod, 'basit')
+  assert.equal(ayarlar.ayarlariDogrula({ mod: 'gelismis' }).mod, 'gelismis')
+
+  // Elle bozulmus dosya uygulamayi taninmayan bir moda saplamamali.
+  for (const bozuk of ['sihirbaz', '', 42, true, null, undefined, {}]) {
+    assert.equal(ayarlar.ayarlariDogrula({ mod: bozuk }).mod, null)
+  }
+})
+
+test('mod diske yazilip geri okunur', async () => {
+  const klasor = geciciKlasor()
+
+  await ayarlar.yaz(klasor, { mod: 'basit' })
+  assert.equal((await ayarlar.oku(klasor)).mod, 'basit')
+
+  await ayarlar.yaz(klasor, { mod: 'gelismis' })
+  assert.equal((await ayarlar.oku(klasor)).mod, 'gelismis')
+
+  fs.rmSync(klasor, { recursive: true, force: true })
+})
+
 test('yazilan ayarlar geri okunur', async () => {
   const klasor = geciciKlasor()
 

@@ -336,6 +336,20 @@ function hakkindaKur () {
   })
 }
 
+// Arayuzun icinde bulundugu mod menude isaretli durur. Arayuz modu her
+// degistirdiginde (ilk acilis sorusu ya da menunun kendisi) buraya bildirir;
+// menu yeniden kurularak isaret guncellenir. Ana surec ayar dosyasini kendisi
+// okumaz, tek kaynak arayuzdur.
+let gecerliMod = null
+
+function moduKur () {
+  ipcMain.on('mod:bildir', (olay, mod) => {
+    if (!ayarlar.MODLAR.includes(mod) || mod === gecerliMod) return
+    gecerliMod = mod
+    menuyuKur()
+  })
+}
+
 function menuyuKur () {
   const komut = (ad) => () => {
     const pencere = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
@@ -395,6 +409,21 @@ function menuyuKur () {
     {
       label: 'Görünüm',
       submenu: [
+        // Mod secimi arayuzun kendisini degistirir, bu yuzden yakinlastirma
+        // gibi pencere ayarlarindan once ve ayrilmis durur.
+        {
+          label: 'Basit mod',
+          type: 'radio',
+          checked: gecerliMod === 'basit',
+          click: komut('mod-basit')
+        },
+        {
+          label: 'Gelişmiş mod',
+          type: 'radio',
+          checked: gecerliMod === 'gelismis',
+          click: komut('mod-gelismis')
+        },
+        { type: 'separator' },
         { role: 'resetZoom', label: 'Gerçek boyut' },
         { role: 'zoomIn', label: 'Yakınlaştır' },
         { role: 'zoomOut', label: 'Uzaklaştır' },
@@ -468,6 +497,7 @@ app.whenReady().then(() => {
   kaydetmeyiKur()
   baskiyiKur()
   ayarlariKur()
+  moduKur()
   hakkindaKur()
   menuyuKur()
   createWindow()
