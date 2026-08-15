@@ -194,10 +194,11 @@ değişmez.
 
 ## Bekleme penceresi
 
-Saniyeler süren işlemlerde (şimdilik yalnızca *Otomatik hizala*) `#islem-modali` açılır:
-döndürücü, hangi aşamada olunduğu (`#islem-yazisi`) ve ne kadar sürebileceği
+Saniyeler süren işlemlerde — *Otomatik hizala* ve *Arka planı beyazlat* — `#islem-modali`
+açılır: döndürücü, hangi aşamada olunduğu (`#islem-yazisi`) ve ne kadar sürebileceği
 (`#islem-alt-yazi`). Kapatma düğmesi ve arka plana tıklayarak çıkış yoktur; iş bitince
-`beklemeKapat()` kapatır.
+`beklemeKapat()` kapatır. Beyazlatma anahtarı hazır bir maskeyi yeniden kullanıyorsa
+(hizalama sırasında çıkarılmış olabilir) hesap yapılmadığı için pencere de açılmaz.
 
 İki nokta gözden kaçmasın:
 
@@ -209,8 +210,8 @@ döndürücü, hangi aşamada olunduğu (`#islem-yazisi`) ve ne kadar sürebilec
   animasyonu `transform` üzerindedir ve kompozitörde çalışır. Animasyonu `width`/`margin`
   gibi düzen tetikleyen bir özelliğe taşımak bunu bozar.
 
-Panel içindeki durum satırı (`#hizalama-durumu`) kaldırılmadı: pencere kapandıktan sonra
-sonucun okunabildiği yer orası.
+Panel içindeki durum satırları (`#hizalama-durumu`, `#arkaplan-durumu`) kaldırılmadı:
+pencere kapandıktan sonra sonucun okunabildiği yer orası.
 
 ## Kurallar
 

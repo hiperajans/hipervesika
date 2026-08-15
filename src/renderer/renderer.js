@@ -628,9 +628,13 @@ async function arkaplaniAyir () {
   if (!yuklenenGorsel) return
 
   el.arkaplanBeyazlat.disabled = true
+  const modellerHazir = window.HV.yuz.hazirMi
   arkaplanDurumu(
-    window.HV.yuz.hazirMi ? 'Arka plan ayrılıyor…' : 'Modeller yükleniyor, ilk çalıştırma biraz sürebilir…'
+    modellerHazir ? 'Arka plan ayrılıyor…' : 'Modeller yükleniyor, ilk çalıştırma biraz sürebilir…'
   )
+  await beklemeAc('Kişi arka plandan ayrılıyor…', modellerHazir
+    ? 'Fotoğrafın büyüklüğüne göre birkaç saniye sürebilir.'
+    : 'Modeller ilk kullanımda yükleniyor, bu ilk sefere özel.')
 
   try {
     maskeyiAta(await window.HV.arkaplan.maskeCikar(yuklenenGorsel.asil))
@@ -658,6 +662,7 @@ async function arkaplaniAyir () {
     el.arkaplanBeyazlat.checked = false
     arkaplanDurumu(`Arka plan ayrılamadı: ${hata.message}`, 'hata')
   } finally {
+    beklemeKapat()
     el.arkaplanBeyazlat.disabled = false
   }
 }

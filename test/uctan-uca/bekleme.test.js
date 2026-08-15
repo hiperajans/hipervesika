@@ -1,17 +1,17 @@
 'use strict'
 
-// Otomatik hizalamanin bekleme penceresi.
+// Uzun islemlerin bekleme penceresi: otomatik hizalama ve arka plan ayirma.
 //
-// Isin kendisi (yuz bulma) gercek fotograf ister; burada sinanan pencerenin
-// acilip kapanmasi, o yuzden sentetik goruntu yeter: yuz bulunamayan yol da
-// ayni pencereden gecer.
+// Islerin kendisi (yuz bulma, kisi maskesi) gercek fotograf ister; burada
+// sinanan pencerenin acilip kapanmasi, o yuzden sentetik goruntu yeter:
+// sonuc bulunamayan yol da ayni pencereden gecer.
 
 const test = require('node:test')
 const assert = require('node:assert/strict')
 
 const ortam = require('./ortam.js')
 
-const calisma = new ortam.Calisma('hizalama')
+const calisma = new ortam.Calisma('bekleme')
 
 let sayfa, hatalar, kapat
 
@@ -42,6 +42,20 @@ test('otomatik hizala calisirken bekleme penceresi durur', async () => {
   assert.equal(await sayfa.isDisabled('#btn-otomatik-hizala'), false)
 })
 
+test('arka plan ayrilirken de ayni pencere cikar', async () => {
+  await ortam.adima(sayfa, 'rotus')
+  // Sentetik goruntude yuz bulunmadigi icin hizalama maske uretmeden dondu;
+  // anahtar bu yuzden gercekten maske cikarmaya gidiyor.
+  await sayfa.click('#arkaplan-beyazlat')
+
+  await sayfa.waitForSelector('#islem-modali.show')
+  assert.match(await sayfa.textContent('#islem-yazisi'), /arka plandan ayrılıyor/i)
+
+  await sayfa.waitForSelector('#islem-modali.show', { state: 'hidden', timeout: 300000 })
+  assert.match(await sayfa.textContent('#arkaplan-durumu'), /ayrılamadı|beyazlatıldı/)
+  assert.equal(await sayfa.isDisabled('#arkaplan-beyazlat'), false)
+})
+
 test('pencere kapaninca arayuz yeniden kullanilabiliyor', async () => {
   // Perde kalirsa panel tiklanamaz hale gelirdi.
   await ortam.adima(sayfa, 'rotus')
@@ -49,6 +63,6 @@ test('pencere kapaninca arayuz yeniden kullanilabiliyor', async () => {
   await ortam.adima(sayfa, 'kadraj')
 })
 
-test('hizalama arayuzde hata birakmadi', () => {
+test('bekleme penceresi arayuzde hata birakmadi', () => {
   assert.deepEqual(hatalar, [])
 })
