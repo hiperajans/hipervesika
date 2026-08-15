@@ -712,7 +712,9 @@
   color: var(--hv-metin-soluk);
 }
 
-.hv-kisayollar kbd {
+/* Ipuclarindaki tus adlari da ayni gorunumu paylasir. */
+.hv-kisayollar kbd,
+.hv-ipucu kbd {
   padding: 0.0625rem 0.3125rem;
   border-radius: 4px;
   background-color: var(--hv-yuzey-ikincil);

@@ -100,6 +100,8 @@ export default [
         DataTransfer: 'readonly',
         DragEvent: 'readonly',
         File: 'readonly',
+        Image: 'readonly',
+        createImageBitmap: 'readonly',
         atob: 'readonly',
         // renderer.js'in modul kapsamindaki durumu
         yuklenenGorsel: 'readonly',
@@ -107,6 +109,7 @@ export default [
         lekeler: 'readonly',
         olcuDurumu: 'readonly',
         kirpma: 'readonly',
+        tuval: 'readonly',
         dpi: 'readonly',
         ciktiMaskeleri: 'readonly'
       }

@@ -44,6 +44,10 @@ hv-durum-cubugu    durum · sürüm
   yükseklik kullanılmaz, çünkü `d-none` kalkınca tuval kendi ölçüsünü kaba dayatıp her
   çizimde büyüyordu.
 - Yakınlık denetimi tuvalin sağ alt köşesinde yüzer; araç çubuğunu şişirmez.
+- **Fotoğrafı taşıma:** boş alandan sürüklemek tuvali kaydırır. Leke ve fırça araçlarında
+  her tıklama araca gittiği için bu yol kapanıyordu; <kbd>Boşluk</kbd> basılıyken araç
+  devreden çıkar ve sürükleme yine kaydırır. Tuş yalnızca **imleç tuvalin üzerindeyken**
+  dinlenir — başka yerde boşluk odaktaki denetimin işidir.
 - `hv-panel`: yedi ayar kartı **üç adıma** indirildi — `1 Kadraj`, `2 Rötuş`, `3 Çıktı`.
   Sekmeler Bootstrap'in `data-bs-toggle="tab"` davranışını kullanır.
 - 992 px altında panel çalışma alanının altına iner ve sayfa bir bütün olarak kayar.

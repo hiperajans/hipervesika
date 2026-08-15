@@ -27,6 +27,12 @@ window.HV.Tuval = class Tuval {
     this.etkilesim = null
     this.etkilesimSuruyor = false
 
+    // Bosluk tusu basiliyken surukleme her zaman kaydirir. Leke ve firca
+    // araclarinda her tiklama araca gittigi icin fotografi tasimanin baska
+    // yolu kalmiyordu; bosluk o araclari gecici olarak devre disi birakir.
+    this.bosluk = false
+    this.imlecIcerde = false
+
     this.#olcuyuGuncelle()
     new ResizeObserver(() => {
       const oncekiGorsel = this.gorsel
@@ -35,6 +41,7 @@ window.HV.Tuval = class Tuval {
     }).observe(canvas)
 
     this.#olaylariBagla()
+    this.#tuslariBagla()
   }
 
   gorselAta (gorsel) {
@@ -182,8 +189,8 @@ window.HV.Tuval = class Tuval {
       const ekran = this.#imlecKonumu(olay)
 
       // Once kirpma cercevesi gibi ust katmanlara sorulur; olayi o sahiplenmezse
-      // kaydirmaya duser.
-      if (this.etkilesim?.basla(this.goruntuyeCevir(ekran), this.olcek)) {
+      // kaydirmaya duser. Bosluk basiliyken hic sorulmaz.
+      if (!this.bosluk && this.etkilesim?.basla(this.goruntuyeCevir(ekran), this.olcek)) {
         this.#yakala(olay)
         this.etkilesimSuruyor = true
         return
@@ -191,6 +198,9 @@ window.HV.Tuval = class Tuval {
 
       this.#yakala(olay)
       this.surukleme = ekran
+      // Arac imleci (ornegin fircanin arti isareti) satir ici stille duruyor;
+      // silinmezse tasima imlecini gizlerdi.
+      canvas.style.cursor = ''
       canvas.classList.add('tasiniyor')
     })
 
@@ -214,7 +224,9 @@ window.HV.Tuval = class Tuval {
       // Surukleme yokken imleci ust katmana gore guncelle.
       if (this.gorsel && this.etkilesim) {
         const goruntu = this.goruntuyeCevir(ekran)
-        canvas.style.cursor = this.etkilesim.imlecTipi(goruntu, this.olcek) ?? ''
+        canvas.style.cursor = this.bosluk
+          ? 'grab'
+          : this.etkilesim.imlecTipi(goruntu, this.olcek) ?? ''
 
         // Firca gibi imleci izleyen araclar icin iz guncellenir.
         if (this.etkilesim.izGuncelle) {
@@ -240,5 +252,45 @@ window.HV.Tuval = class Tuval {
 
     canvas.addEventListener('pointerup', suruklemeyiBitir)
     canvas.addEventListener('pointercancel', suruklemeyiBitir)
+
+    canvas.addEventListener('pointerenter', () => { this.imlecIcerde = true })
+    canvas.addEventListener('pointerleave', () => { this.imlecIcerde = false })
+  }
+
+  // Icine yazi girilen bir alanda bosluk tusu kullanicinin kendi tusudur.
+  // Radyo, kutucuk ve kaydiraclarda bosluk zaten is gormedigi icin elenmez;
+  // arac dugmesine tiklayan kullanici odagi orada birakmis olur.
+  #yaziAlaninda () {
+    const odak = document.activeElement
+    return odak?.matches?.(
+      'textarea, input:not([type="radio"]):not([type="checkbox"]):not([type="range"])'
+    ) === true
+  }
+
+  #boslugaGec (basili) {
+    if (this.bosluk === basili) return
+    this.bosluk = basili
+    // Imlec hemen degissin; kullanici fare oynatmadan da geri bildirim alir.
+    this.canvas.style.cursor = basili ? 'grab' : ''
+  }
+
+  #tuslariBagla () {
+    window.addEventListener('keydown', (olay) => {
+      if (olay.code !== 'Space') return
+      // Yalnizca imlec tuvalin uzerindeyken: baska yerde bosluk tusu odaktaki
+      // denetimin isidir.
+      if (!this.gorsel || !this.imlecIcerde || this.#yaziAlaninda()) return
+
+      // Sayfa kaymasin ve odakta duran dugme tetiklenmesin.
+      olay.preventDefault()
+      this.#boslugaGec(true)
+    })
+
+    window.addEventListener('keyup', (olay) => {
+      if (olay.code === 'Space') this.#boslugaGec(false)
+    })
+
+    // Pencere odagi kayarsa keyup gelmez; tus basili kalmis gorunmesin.
+    window.addEventListener('blur', () => this.#boslugaGec(false))
   }
 }
