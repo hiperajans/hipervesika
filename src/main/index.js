@@ -17,6 +17,15 @@ app.setName('Hiper Vesika')
 const ARAYUZ_KOKU = path.join(__dirname, '..', 'renderer')
 const SIMGE_KOKU = path.join(__dirname, '..', '..', 'build', 'icons')
 
+// Gelistirici araclari kapali: kullaniciya sunulan uygulamada isi yok, magaza
+// incelemelerinde de hos karsilanmiyor. devTools: false kesin kapatmadir —
+// menuden, kisayoldan ya da koddan acilamaz.
+//
+// Gerektiginde ortam degiskeniyle acilir:  HV_GELISTIRICI=1 npm start
+// Kaynaktan calistirmada da varsayilan kapali; boylece gelistirirken gorulen
+// uygulama kullanicinin gordugunun aynisi olur.
+const GELISTIRICI = process.env.HV_GELISTIRICI === '1'
+
 // Uygulama simgesi. Paketlenmis uygulamada simgeyi isletim sistemi paketin
 // kendisinden okur (.app icindeki .icns, .exe'ye gomulu .ico); asagidakiler
 // yalnizca kaynaktan calistirmada (npm start) pencerenin ve Dock'un dogru
@@ -168,7 +177,9 @@ async function baskiSayfasindaCalis (istek, gorev) {
 
   const pencere = new BrowserWindow({
     show: false,
-    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true }
+    webPreferences: {
+      contextIsolation: true, nodeIntegration: false, sandbox: true, devTools: GELISTIRICI
+    }
   })
 
   try {
@@ -429,7 +440,9 @@ function menuyuKur () {
         { role: 'zoomOut', label: 'Uzaklaştır' },
         { type: 'separator' },
         { role: 'togglefullscreen', label: 'Tam ekran' },
-        { role: 'toggleDevTools', label: 'Geliştirici araçları' }
+        ...(GELISTIRICI
+          ? [{ role: 'toggleDevTools', label: 'Geliştirici araçları' }]
+          : [])
       ]
     },
     { role: 'windowMenu', label: 'Pencere' },
@@ -465,7 +478,8 @@ function createWindow () {
       preload: path.join(__dirname, '..', 'preload', 'index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true
+      sandbox: true,
+      devTools: GELISTIRICI
     }
   })
 

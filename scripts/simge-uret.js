@@ -39,6 +39,11 @@ const LINUX_BOYUTLARI = [16, 24, 32, 48, 64, 128, 256, 512, 1024]
 // icns kap tablosunun ihtiyac duydugu piksel olculeri.
 const MACOS_BOYUTLARI = [16, 32, 64, 128, 256, 512, 1024]
 
+// Magaza listelemelerinin istedigi olculer. Microsoft Store 300x300 bir logo
+// ister; Mac App Store 1024x1024 ister ve macOS yerlesimini (golgeli, kenar
+// bosluklu) kullanir, o yuzden asagida ayri uretilir.
+const MAGAZA_BOYUTLARI = [300, 512]
+
 const ONEK = 'data:image/png;base64,'
 
 function benzersiz (sayilar) {
@@ -121,6 +126,16 @@ async function uret () {
   }
   // electron-builder ve cogu masaustu ortami tek dosya isterse bunu okur.
   yaz(path.join(simgeKlasoru, 'icon.png'), duz.get(512))
+
+  // Magaza logolari. Alt klasorde: build/icons/*.png Linux simge seti olarak
+  // taraniyor, oraya baska olcu koymak o seti kirletirdi.
+  console.log('Mağaza logoları')
+  const magaza = await tumunuUret(pencere, MAGAZA_BOYUTLARI, 'duz')
+  for (const boyut of MAGAZA_BOYUTLARI) {
+    yaz(path.join(simgeKlasoru, 'magaza', `${boyut}x${boyut}.png`), magaza.get(boyut))
+  }
+  // Mac App Store uygulama simgesini macOS yerlesiminde ister.
+  yaz(path.join(simgeKlasoru, 'magaza', 'apple-1024x1024.png'), macos.get(1024))
 
   pencere.destroy()
 }

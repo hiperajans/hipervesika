@@ -88,7 +88,7 @@ async function uygulamayiAc (calisma, { ekArgumanlar = [] } = {}) {
   sayfa.on('pageerror', (hata) => hatalar.push(hata.message))
 
   await sayfa.waitForFunction(
-    () => document.getElementById('surum-bilgisi').textContent.length > 0,
+    () => document.getElementById('sistem-bilgisi').textContent.length > 0,
     null, { timeout: 60000 })
   // Ayarlar okunup uygulanana kadar bekle.
   await sayfa.waitForTimeout(1200)
@@ -155,8 +155,8 @@ async function kaydiracAyarla (sayfa, secici, deger, bekleme = 700) {
 
 // Hazir bir uygulama: acar, turu kapatir, istenirse fotograf yukler.
 // Doner: { uygulama, sayfa, hatalar, kapat }
-async function hazirla (calisma, { fotograf = null, mod = 'gelismis' } = {}) {
-  const { uygulama, sayfa, hatalar } = await uygulamayiAc(calisma)
+async function hazirla (calisma, { fotograf = null, mod = 'gelismis', ekArgumanlar = [] } = {}) {
+  const { uygulama, sayfa, hatalar } = await uygulamayiAc(calisma, { ekArgumanlar })
   await moduSec(sayfa, mod)
   await turuKapat(sayfa)
   if (fotograf) await fotografYukle(sayfa, fotograf)

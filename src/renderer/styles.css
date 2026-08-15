@@ -1023,8 +1023,7 @@
   color: var(--hv-metin-soluk);
 }
 
-#surum-bilgisi {
-  font-variant-numeric: tabular-nums;
+#sistem-bilgisi {
   letter-spacing: 0.01em;
 }
 

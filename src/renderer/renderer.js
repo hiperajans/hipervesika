@@ -3,7 +3,6 @@
 // Arayuz kodu. Node API'lerine erisim yok; ana surece ihtiyac duyulan her sey
 // preload'daki window.hiperVesika koprusunden gelir.
 
-const { versions } = window.hiperVesika
 const olcuMotoru = window.HV.olcu
 const hizalamaMotoru = window.HV.hizalama
 
@@ -19,7 +18,7 @@ const el = {
   gorselBilgisi: document.getElementById('gorsel-bilgisi'),
   uyari: document.getElementById('uyari'),
   durum: document.getElementById('durum'),
-  surumBilgisi: document.getElementById('surum-bilgisi'),
+  sistemBilgisi: document.getElementById('sistem-bilgisi'),
   onayarSecimi: document.getElementById('onayar-secimi'),
   genislikMm: document.getElementById('genislik-mm'),
   yukseklikMm: document.getElementById('yukseklik-mm'),
@@ -1904,6 +1903,15 @@ async function yazicilariDenetle () {
   }
 }
 
+// process.platform degerlerinin kullaniciya gosterilen karsiliklari. Taninmayan
+// bir platformda ham deger yazilir; yanlis bir ad yazmaktansa oyle dursun.
+const ISLETIM_SISTEMLERI = { darwin: 'macOS', win32: 'Windows', linux: 'Linux' }
+
+function isletimSistemiAdi () {
+  const kod = window.hiperVesika.platform
+  return ISLETIM_SISTEMLERI[kod] ?? kod
+}
+
 // Kisayol adlari platforma gore yazilir; menudeki CmdOrCtrl ile ayni tuslar.
 function kisayollariYaz () {
   const mac = window.hiperVesika.platform === 'darwin'
@@ -2581,5 +2589,7 @@ ayarlariYukle()
 yazicilariDenetle()
 modelleriOnyukle()
 
-el.surumBilgisi.textContent =
-  `Electron ${versions.electron} · Chromium ${versions.chrome} · Node ${versions.node}`
+// Durum cubugunun sag ucunda calisilan isletim sistemi yazar. Surum numaralari
+// (Electron/Chromium/Node) kullaniciya bir sey anlatmiyordu; uygulamanin kendi
+// surumu Hakkinda penceresinde duruyor.
+el.sistemBilgisi.textContent = isletimSistemiAdi()

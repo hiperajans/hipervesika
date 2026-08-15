@@ -129,10 +129,15 @@ Komutlar:
 | `npm run test:uctan-uca` | Gerçek uygulamayı açan testler (~1,5 dk) |
 | `npm run lint` | Kod biçimi denetimi (`npm run lint:duzelt` düzeltir) |
 | `npm run simge` | Uygulama simgelerini vektör kaynaktan yeniden üretir |
+| `npm run magaza` | Mağaza listelemesi için ekran görüntüleri üretir (`release/magaza/`) |
 | `npm run paket:mac` | macOS `.dmg` paketleri (Intel + Apple Silicon) |
 | `npm run paket:win` | Windows kurulum programı |
 | `npm run paket:linux` | Linux `AppImage` |
 | `npm run vendor` | `vendor/` dosyalarını yeniler |
+
+Geliştirici araçları kapalıdır (`webPreferences.devTools: false`) ve *Görünüm* menüsünde
+görünmez; kullanıcıya sunulan uygulamada işi yok. Gerekirse açılır:
+`HV_GELISTIRICI=1 npm start`.
 
 `src/renderer/js/` altındaki modüller DOM'a ve Electron'a dokunmadan yazılır ki hem arayüzde
 hem Node'da (testte) çalışsınlar. Ölçüler milimetre tutulur; piksele yalnızca çizim, dışa

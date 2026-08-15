@@ -36,7 +36,7 @@ gri tonları üzerine kurulur, böylece fotoğrafın renkleri arayüzle yarışm
 ```
 hv-baslik          marka · açık dosya · Fotoğraf Seç
 hv-govde-alani     hv-calisma (esner) | hv-panel (clamp 300–400px)
-hv-durum-cubugu    durum · sürüm
+hv-durum-cubugu    durum · işletim sistemi
 ```
 
 - `hv-calisma`: üstte `hv-arac-cubugu` (görünüm, araç, geçmiş, Önce/Sonra), altta

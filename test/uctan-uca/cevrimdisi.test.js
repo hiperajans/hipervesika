@@ -40,7 +40,7 @@ test.after(async () => {
 })
 
 test('uygulama ag kapaliyken aciliyor', async () => {
-  assert.match(await sayfa.textContent('#surum-bilgisi'), /Electron/)
+  assert.match(await sayfa.textContent('#sistem-bilgisi'), /macOS|Windows|Linux/)
 })
 
 test('Bootstrap ve simge yazi tipi yerelden yukleniyor', async () => {

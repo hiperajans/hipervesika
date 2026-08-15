@@ -70,6 +70,26 @@ test('Hakkinda her platformda menuden ulasilabilir', async () => {
   )
 })
 
+test('gelistirici araclari kapali', async () => {
+  const gorunum = (await menuyuOku()).find((ust) => ust.baslik === 'Görünüm')
+  assert.equal(gorunum.ogeler.includes('Geliştirici araçları'), false)
+
+  // Menude olmamasi yetmez: koddan da acilamamali (webPreferences.devTools).
+  const acik = await uygulama.evaluate(async ({ BrowserWindow }) => {
+    const pencere = BrowserWindow.getAllWindows()[0]
+    pencere.webContents.openDevTools()
+    await new Promise((cozumle) => setTimeout(cozumle, 500))
+    return pencere.webContents.isDevToolsOpened()
+  })
+
+  assert.equal(acik, false)
+})
+
+test('durum cubugunda isletim sisteminin adi yazar', async () => {
+  const beklenen = { darwin: 'macOS', win32: 'Windows', linux: 'Linux' }[process.platform]
+  assert.equal(await sayfa.textContent('#sistem-bilgisi'), beklenen)
+})
+
 test('Hakkinda penceresi acilabiliyor', async () => {
   const sonuc = await uygulama.evaluate(({ app }) => {
     try {

@@ -6,12 +6,8 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('hiperVesika', {
+  // Kisayol adlari ve durum cubugundaki isletim sistemi adi bundan uretilir.
   platform: process.platform,
-  versions: {
-    electron: process.versions.electron,
-    chrome: process.versions.chrome,
-    node: process.versions.node
-  },
 
   // Kullaniciya kaydetme penceresi acar ve secilen yola yazar.
   // { kaydedildi: boolean, yol?: string, hata?: string } dondurur.
