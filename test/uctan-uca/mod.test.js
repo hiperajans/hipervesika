@@ -16,10 +16,13 @@ const ortam = require('./ortam.js')
 const calisma = new ortam.Calisma('mod')
 const AYAR_DOSYASI = path.join(calisma.profil, 'ayarlar.json')
 
-let uygulama, sayfa, kapat
+let uygulama, sayfa, hatalar, kapat
 
 test.before(async () => {
-  ;({ uygulama, sayfa, kapat } = await ortam.hazirla(calisma, { mod: 'basit' }))
+  // Fotograf yuklu acilir: sayfa gorunumu ancak dizilecek bir kare varken
+  // gercekten cizilir, bos ekranda sinav yarim kalirdi.
+  ;({ uygulama, sayfa, hatalar, kapat } = await ortam.hazirla(
+    calisma, { mod: 'basit', fotograf: calisma.fotograf(0) }))
 })
 
 test.after(async () => {
@@ -112,6 +115,10 @@ test('basit modda uzman denetimleri gizli, gerekli olanlar duruyor', async () =>
 })
 
 test('basit modda elle rotus araclari arac cubugundan kalkar', async () => {
+  // Fotograf araclari sayfa gorunumunde zaten gizli; olcum fotograf
+  // gorunumunde yapilmali.
+  await ortam.adima(sayfa, 'kadraj')
+
   assert.equal(await sayfa.isVisible('label[for="arac-kirpma"]'), true)
   for (const arac of ['arac-leke', 'arac-firca-sil', 'arac-firca-getir']) {
     assert.equal(await sayfa.isVisible(`label[for="${arac}"]`), false, arac)
@@ -136,6 +143,35 @@ test('sihirbaz ileri ve geri adimlar arasinda gezinir', async () => {
   await sayfa.click('#btn-sihirbaz-geri')
   await sayfa.waitForSelector('#adim-rotus.active')
   assert.equal(await sayfa.isVisible('#btn-sihirbaz-ileri'), true)
+})
+
+test('basit modda gorunum adimi izler', async () => {
+  const sayfaGorunumu = () => sayfa.isChecked('#gorunum-sayfa')
+
+  await ortam.adima(sayfa, 'kadraj')
+  assert.equal(await sayfaGorunumu(), false)
+
+  // Cikti adimi dizilmis sayfayi gosterir: kullanicinin gorunumu elle
+  // degistirmesi gerekmesin.
+  await ortam.adima(sayfa, 'cikti')
+  assert.equal(await sayfaGorunumu(), true)
+  assert.equal(await sayfa.isVisible('#sayfa-tuvali'), true)
+  assert.equal(await sayfa.isVisible('#tuval'), false)
+
+  // Geri donunce fotografa: kirpma ve rotus sayfa gorunumunde is gormez.
+  await ortam.adima(sayfa, 'rotus')
+  assert.equal(await sayfaGorunumu(), false)
+  assert.equal(await sayfa.isVisible('#tuval'), true)
+})
+
+test('gelismis modda gorunum kullanicinin elinde kalir', async () => {
+  await menudenModSec('Gelişmiş mod')
+  await ortam.adima(sayfa, 'kadraj')
+
+  await ortam.adima(sayfa, 'cikti')
+  assert.equal(await sayfa.isChecked('#gorunum-sayfa'), false)
+
+  await menudenModSec('Basit mod')
 })
 
 test('adim seridi basit modda da tiklanabilir kalir', async () => {
@@ -186,4 +222,8 @@ test('basit moda donunce ciktiyi etkileyen uzman degerleri varsayilana doner', a
 
   assert.equal(await sayfa.inputValue('#renk-duzeni'), 'srgb')
   assert.equal(await sayfa.inputValue('#dpi-secimi'), '300')
+})
+
+test('mod gecisleri arayuzde hata birakmadi', () => {
+  assert.deepEqual(hatalar, [])
 })

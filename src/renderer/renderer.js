@@ -847,6 +847,7 @@ for (const dugme of document.querySelectorAll('.hv-adim[data-bs-toggle="tab"]'))
   dugme.addEventListener('shown.bs.tab', () => {
     el.panelIcerik.scrollTop = 0
     sihirbaziGuncelle()
+    gorunumuAdimaUydur()
   })
 }
 
@@ -898,6 +899,25 @@ function adimaGec (sira) {
   if (adim) adimDugmesi(adim.kod)?.click()
 }
 
+// Basit modda gorunum adimi izler: Cikti adiminda dizilmis sayfa, oncekilerde
+// fotograf gosterilir. Boylece panel "Sayfayi gormek icin ustteki Sayfa
+// gorunumune gecin" diye yon tarif etmek zorunda kalmiyor; o ipucu zaten
+// arayuzun kullaniciya is birakttigi yeri isaret ediyordu.
+//
+// Gelismis modda gorunum kullanicinin elinde kalir: adim degistirmek onun
+// secimini bozmamali.
+function gorunumuAdimaUydur () {
+  if (mod !== 'basit') return
+
+  const sayfaOlmali = acikAdimSirasi() === SIHIRBAZ_ADIMLARI.length - 1
+  if (el.gorunumSayfa.checked === sayfaOlmali) return
+
+  el.gorunumSayfa.checked = sayfaOlmali
+  el.gorunumFoto.checked = !sayfaOlmali
+  // Deger koddan verilince 'change' tetiklenmez; uygulama elle cagrilir.
+  gorunumuUygula()
+}
+
 // Basit modda gizli kalan denetimler ciktiyi sessizce degistirmesin: gelismis
 // modda CMYK ya da 150 DPI secip basit moda gecen kullanici, goremedigi bir
 // ayarin etkisini yasamamali. Yalnizca ciktiyi etkileyen degerler sifirlanir;
@@ -938,6 +958,8 @@ function modAta (yeni, { kaydet = true } = {}) {
       aracSec()
     }
     if (degisti) basitVarsayilanlariUygula()
+    // Cikti adiminda basit moda gecilmis olabilir; gorunum de uymali.
+    gorunumuAdimaUydur()
   }
 
   sihirbaziGuncelle()
