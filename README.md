@@ -133,7 +133,6 @@ zorunludur; dosyalar sonradan tazelenmek istenirse `npm run vendor` yeterlidir.
 | `npm run test:uctan-uca` | Gerçek uygulamayı açan testler (~1,5 dk) |
 | `npm run lint` | Kod biçimi denetimi (`npm run lint:duzelt` düzeltir) |
 | `npm run simge` | Uygulama simgelerini vektör kaynaktan yeniden üretir |
-| `npm run magaza` | Mağaza listelemesi için ekran görüntüleri üretir (`release/magaza/`) |
 | `npm run paket:mac` | macOS `.dmg` paketleri (Intel + Apple Silicon) |
 | `npm run paket:win` | Windows kurulum programı |
 | `npm run paket:linux` | Linux `AppImage` |

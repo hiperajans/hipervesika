@@ -544,18 +544,10 @@ Mağazalara (Microsoft Store, Mac App Store) ve GitHub'a yayın öncesi yapılan
   Electron/Chromium/Node numaraları kullanıcıya bir şey anlatmıyordu; uygulamanın kendi
   sürümü *Hakkında* penceresinde duruyor. Destek isteyen kullanıcıdan hangi sistemde
   olduğunu sormak yerine ekranda görmek işe yarıyor.
-- **Mağaza görüntüleri betikle üretiliyor** (`npm run magaza`): gerçek uygulama açılıp dört
-  sahnenin görüntüsü alınıyor. Ölçü pencereye değil Chromium'un ölçüm katmanına veriliyor
-  (`Emulation.setDeviceMetricsOverride`); pencereyi büyütmek ekrana takılıyor ve görüntü
-  sessizce kısa çıkıyordu. Piksel yoğunluğu açılışta `--force-device-scale-factor` ile
-  veriliyor, sonradan değiştirilemiyor.
-  - Microsoft Store 1920×1080, Mac App Store 2880×1800 (= 1440×900 pencere, iki kat
-    yoğunluk). Apple yalnızca dört ölçüyü kabul ettiği için bu değerler sabit.
-  - Fotoğraf kaynağı testlerdekiyle aynı: `HV_FOTOGRAFLAR` ayarlıysa gerçek fotoğraf
-    kullanılır ve otomatik hizalama ile beyazlatma da çalıştırılır. Ayarlı değilse sentetik
-    portre kullanılır; o görüntüler yalnızca yerleşimi gösterir, mağazaya gönderilmez.
-  - Çıktı `release/magaza/` altına yazılır — `release/` gitignore'da olduğu için gerçek bir
-    yüz içeren görüntü kazara depoya girmez (kural 5).
+- **Mağaza logoları** `npm run simge` ile üretiliyor: `build/icons/magaza/` altında
+  300×300 ve 512×512 (düz yerleşim, Microsoft Store listelemesi) ile macOS yerleşiminde
+  1024×1024 (Mac App Store uygulama simgesi). Ayrı klasörde duruyorlar çünkü
+  `build/icons/*.png` Linux simge seti olarak taranıyor.
 
 ## Riskler
 

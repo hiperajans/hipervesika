@@ -155,8 +155,8 @@ async function kaydiracAyarla (sayfa, secici, deger, bekleme = 700) {
 
 // Hazir bir uygulama: acar, turu kapatir, istenirse fotograf yukler.
 // Doner: { uygulama, sayfa, hatalar, kapat }
-async function hazirla (calisma, { fotograf = null, mod = 'gelismis', ekArgumanlar = [] } = {}) {
-  const { uygulama, sayfa, hatalar } = await uygulamayiAc(calisma, { ekArgumanlar })
+async function hazirla (calisma, { fotograf = null, mod = 'gelismis' } = {}) {
+  const { uygulama, sayfa, hatalar } = await uygulamayiAc(calisma)
   await moduSec(sayfa, mod)
   await turuKapat(sayfa)
   if (fotograf) await fotografYukle(sayfa, fotograf)
