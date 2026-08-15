@@ -2490,6 +2490,23 @@ window.hiperVesika.menuKomutu((komut) => {
 
 // --- Baslangic ---------------------------------------------------------------
 
+// Yuz, govde ve segmentasyon modelleri toplam 11 MB; ilk kullanimda yuklenince
+// "Otomatik hizala" dugmesi saniyelerce bekletiyordu. Arayuz yerine oturur
+// oturmaz arka planda yuklenirler, kullanici dugmeye bastiginda is bitmis olur.
+// Basarisiz olursa ses cikarilmaz: dugmeye basildiginda ayni yukleme yeniden
+// denenir ve hata orada bildirilir.
+function modelleriOnyukle () {
+  const yukle = () => window.HV.yuz.hazirla()
+    // Segmentasyon ayrica isitilir: modeli okumak yetmiyor, ilk calistirma da
+    // pahali. Sirayla yapilir ki iki is ekran kartinda yarismasin.
+    .then(() => window.HV.arkaplan.isit())
+    .catch(() => {})
+
+  // Bosta beklenir ki yukleme ilk cizimle ve fotograf acmayla yarismasin.
+  if (window.requestIdleCallback) window.requestIdleCallback(yukle, { timeout: 4000 })
+  else setTimeout(yukle, 1500)
+}
+
 onayarlariDoldur()
 dpiSecenekleriniDoldur()
 renkDuzeniniDoldur()
@@ -2507,6 +2524,7 @@ kisayollariYaz()
 
 ayarlariYukle()
 yazicilariDenetle()
+modelleriOnyukle()
 
 el.surumBilgisi.textContent =
   `Electron ${versions.electron} · Chromium ${versions.chrome} · Node ${versions.node}`

@@ -483,8 +483,9 @@ sihirbaz şeridini açar hem uzman denetimlerini gizler.
 - **Rötuş adımı çoğu fotoğrafta atlanır.** Zorunlu istasyon gibi görünmesin diye basit modda
   yalnızca dört denetim bırakıldı (arka plan, parlaklık, kontrast, cilt yumuşatma);
   kullanıcı hiçbir şey yapmadan geçebilmeli.
-- **Otomatik başlangıç bilinçli olarak ertelendi.** Fotoğraf yüklenince hizalama ve
-  beyazlatmanın kendiliğinden çalışması ayrı bir iş olarak duruyor.
+- **Otomatik başlangıç yapılmayacak.** Fotoğraf yüklenince hizalamanın ve beyazlatmanın
+  kendiliğinden çalışması değerlendirildi ve kalıcı olarak reddedildi: kullanıcı ne olduğunu
+  görmeden sonuç üretilmesini istemiyor. Basit mod da bu kuralı bozmaz.
 
 Modun tek anahtarı gövdedeki `data-hv-mod`; gizlemeyi CSS yapar. Ayrıntı ve sınıf sözleşmesi
 [`ARAYUZ.md`](./ARAYUZ.md) → "Basit ve Gelişmiş mod".
@@ -493,6 +494,43 @@ Bu iş sırasında ayarlarda gerçek bir hata çıktı: eşzamanlı iki yazma ay
 kullanıyor, yeniden adlandırılan dosyada bozuk JSON kalıyor ve okuma varsayılana düşerek
 kullanıcının bütün ön ayarlarını siliyordu. Yazmalar artık sıraya alınıyor
 (`src/main/ayarlar.js`).
+
+### Modellerin açılışta yüklenmesi ve segmentasyon durumu
+
+"Otomatik hizala" ilk tıklamada saniyelerce bekletiyordu; beklemenin tamamı işin kendisi
+değil, hazırlıktı. Modeller (blazeface, facemesh, movenet, rvm — toplam ~11 MB) artık arayüz
+yerine oturur oturmaz, boşta (`requestIdleCallback`) arka planda yükleniyor
+(`modelleriOnyukle`, `src/renderer/renderer.js`).
+
+- **Segmentasyon modeli de açılışta okunuyor.** `yuz.js` yapılandırmasında `segmentation`
+  açık; bu yalnızca `load()` sırasında ağırlıkların diskten okunmasını sağlar, `detect()`
+  bu modeli hiç çalıştırmaz — algılamaya ağırlık binmez.
+- **Isıtma Human'ın `warmup()`'ı ile yapılamadı.** Human örnek görüntüyü `data:` adresinden
+  `fetch` ediyor, uygulamanın güvenlik ilkesi (`connect-src 'self'`) bunu engelliyor ve
+  geriye çözülmeyen bir söz kalıyordu. Yerine boş bir tuval işletiliyor.
+- **Ölçüm (Intel mac, sentetik 900×1200):** maske çıkarma soğukta 5,5 sn; açılışta ısıtılınca
+  3,9 sn; aynı ölçüde ikinci istek 0,7 sn. Kalan pay girdi ölçüsüne özel shader derlemesi —
+  her yeni fotoğraf ölçüsünde bir kez ödeniyor, ısıtmayla kapatılamıyor (fotoğrafların
+  ölçüsü önceden bilinemez).
+
+Isıtma denemesi **mevcut sürümde duran gerçek bir hatayı** ortaya çıkardı: `rvm` bir video
+modeli, her çalıştırmada yinelemeli bir durum üretip bir sonrakine taşıyor ve bu durum
+girdinin ölçüsüne bağlı. Bir fotoğrafın arka planı beyazlatıldıktan sonra **farklı ölçüde**
+ikinci bir fotoğrafta maske çıkmıyordu:
+
+```
+broadcastTo(): [1,38,29,64] cannot be broadcast to [1,32,32,64]
+```
+
+Human durumu yalnızca segmentasyon oranı değiştiğinde sıfırdan kuruyor, dışarıdan
+sıfırlamanın başka yolu yok. Bu yüzden `arkaplan.js` her istekte oranı `0,000001` kadar
+oynatıyor: iki değer de yuvarlandığında aynı iç ölçüyü verir, fark yalnızca durumu
+sıfırlamaya yarar. Böylece her maske uygulama yeni açılmış gibi hesaplanır — vesikalıkta
+kareler zaten birbirinden bağımsız.
+
+İkinci bulgu: Human örneği tek ve içinde durum tutuyor. Açılıştaki ısıtma kullanıcının ilk
+isteğiyle çakışınca maske **ısıtmanın ölçüsünde** (256×256) dönüyordu. Modeli çalıştıran her
+iş artık `yuz.sirala` üzerinden sırayla geçiyor.
 
 ## Riskler
 

@@ -66,29 +66,80 @@
     return kaynakTuval
   }
 
+  // Segmentasyon orani: model goruntuyu bu oranda kucultup calisiyor.
+  const ORAN = 0.5
+
+  // rvm bir video modeli: her calistirmada yinelemeli bir durum uretip bir
+  // sonraki calistirmaya tasiyor. Vesikalikta kareler birbirinden bagimsiz,
+  // ustelik bu durum girdinin olcusune bagli; farkli olcude ikinci bir fotograf
+  // maske isterken hata veriyordu:
+  //   broadcastTo(): [1,38,29,64] cannot be broadcast to [1,32,32,64]
+  // (Ilk fotograf 900x1200, ikincisi 1000x1000 iken olculdu.)
+  //
+  // Human durumu yalnizca oran degistiginde sifirdan kuruyor, disaridan
+  // sifirlamanin baska bir yolu yok. Bu yuzden her istekte oran cok kucuk bir
+  // miktar oynatilir: iki deger de yuvarlandiginda ayni ic olcuyu verir
+  // (1536 x 0.500001 = 768.0015 -> 768), fark yalnizca durumu sifirlamaya
+  // yarar. Boylece her maske, uygulama yeni acilmis gibi hesaplanir.
+  const ORAN_TIKI = 0.000001
+  let tikli = false
+
+  function siradakiOran () {
+    tikli = !tikli
+    return tikli ? ORAN + ORAN_TIKI : ORAN
+  }
+
+  function segmentasyonAyari () {
+    return {
+      segmentation: { enabled: true, modelPath: MODEL, mode: 'default', ratio: siradakiOran() }
+    }
+  }
+
+  // Modelin agirliklari acilista okunuyor ama ilk calistirmadaki shader
+  // derlemesi de pahali; bu bedel ya ilk beyazlatmada ya da (kafa tepesi
+  // maskeden okundugu icin) otomatik hizalamada kullaniciya cikiyordu. Isitma
+  // bir kez bos bir tuval isleterek bunun bir bolumunu arka plana alir.
+  async function isit () {
+    const human = await kok.HV.yuz.hazirla()
+
+    const tuval = document.createElement('canvas')
+    tuval.width = 256
+    tuval.height = 256
+    const ctx = tuval.getContext('2d')
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, tuval.width, tuval.height)
+
+    await kok.HV.yuz.sirala(async () => {
+      const tensor = await human.segmentation(tuval, segmentasyonAyari())
+      if (tensor) human.tf.dispose(tensor)
+    })
+  }
+
   // Kisi maskesini uretir. Sonuc, kaynak goruntunun kucultulmus kopyasi
   // olcusunde, alpha kanali kisiyi gosteren bir tuvaldir.
   async function maskeCikar (bitmap) {
     const human = await kok.HV.yuz.hazirla()
     const girdi = kucultulmusTuval(bitmap, MASKE_UZUN_KENAR)
 
-    const tensor = await human.segmentation(girdi, {
-      segmentation: { enabled: true, modelPath: MODEL, mode: 'default', ratio: 0.5 }
+    // Sonucun tensorunden okunana kadar model baska bir is yapmamali; bu
+    // yuzden tuvale aktarma da sira icinde kalir.
+    return kok.HV.yuz.sirala(async () => {
+      const tensor = await human.segmentation(girdi, segmentasyonAyari())
+
+      if (!tensor) throw new Error('Arka plan ayrılamadı.')
+
+      const maske = document.createElement('canvas')
+      maske.width = tensor.shape[1]
+      maske.height = tensor.shape[0]
+
+      try {
+        await human.tf.browser.toPixels(tensor, maske)
+      } finally {
+        human.tf.dispose(tensor)
+      }
+
+      return alphayaIndirge(maske)
     })
-
-    if (!tensor) throw new Error('Arka plan ayrılamadı.')
-
-    const maske = document.createElement('canvas')
-    maske.width = tensor.shape[1]
-    maske.height = tensor.shape[0]
-
-    try {
-      await human.tf.browser.toPixels(tensor, maske)
-    } finally {
-      human.tf.dispose(tensor)
-    }
-
-    return alphayaIndirge(maske)
   }
 
   // Maskenin kac pikselinin kisiye ait oldugu; bos maskeyi anlamak icin.
@@ -200,6 +251,7 @@
     MASKE_UZUN_KENAR,
     EGRI_SERTLIGI,
     alphaEgrisi,
+    isit,
     maskeCikar,
     maskeKapsami,
     kafaTepesi,

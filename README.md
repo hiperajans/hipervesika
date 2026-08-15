@@ -102,6 +102,8 @@ fotoğraf sürükle-bırak → otomatik hizalama → arka plan beyazlatma → r�
 - İlk açılışta rehberli tanıtım turu (`F1` ile her zaman tekrar açılabilir).
 - Fotoğrafı sürükleyerek taşıyabilirsiniz; leke ve fırça araçlarındayken `Boşluk` tuşunu
   basılı tutmanız yeter.
+- Yüz bulma ve arka plan ayırma modelleri uygulama açılır açılmaz arka planda yüklenir;
+  *Otomatik hizala* ilk tıklamada model yüklenmesini beklemez.
 - Menüler Türkçedir. *Hakkında* penceresi sürümü ve verinin cihazdan çıkmadığını yazar
   (macOS'ta uygulama menüsünde, diğerlerinde *Yardım* altında).
 - Kendi fotoğraf ve kağıt ön ayarlarınız; son kullanılan değerler hatırlanır. Ayarlar

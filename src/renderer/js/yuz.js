@@ -33,8 +33,9 @@ window.HV.yuz = (() => {
     return kaynak.Human ?? kaynak.default ?? kaynak
   }
 
-  // Human derlemesi 2 MB'in uzerinde; uygulama acilisini yavaslatmamak icin
-  // ancak hizalama istendiginde yuklenir.
+  // Human derlemesi 2 MB'in uzerinde; arayuzun ilk cizimini bekletmemek icin
+  // betik etikete gomulmez, hazirla() cagrilinca eklenir. Arayuz bu cagriyi
+  // acilistan hemen sonra arka planda yapar.
   function betigiYukle () {
     if (window.Human) return Promise.resolve()
 
@@ -46,6 +47,30 @@ window.HV.yuz = (() => {
         reddet(new Error('Human kutuphanesi yuklenemedi.')))
       document.head.append(betik)
     })
+  }
+
+  // Human ornegi tek ve icinde durum tutuyor; iki istek ust uste binince
+  // sonuclar birbirine karisiyor (acilistaki isitma kullanicinin ilk istegiyle
+  // cakisinca maske yanlis olcude donuyordu). Modeli calistiran her is buradan
+  // sirayla gecer. Onceki is hata verse de sira ilerlemeli, bu yuzden iki dalda
+  // da ayni is baslatilir.
+  let sira = Promise.resolve()
+
+  function sirala (is) {
+    const sonuc = sira.then(is, is)
+    sira = sonuc.catch(() => {})
+    return sonuc
+  }
+
+  // Isitmalik goruntu: icerigi onemli degil, amac agin bir kez calismasi.
+  function isitmaTuvali () {
+    const tuval = document.createElement('canvas')
+    tuval.width = 256
+    tuval.height = 256
+    const ctx = tuval.getContext('2d')
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, tuval.width, tuval.height)
+    return tuval
   }
 
   function hazirla () {
@@ -75,13 +100,40 @@ window.HV.yuz = (() => {
         hand: { enabled: false },
         object: { enabled: false },
         gesture: { enabled: false },
-        segmentation: { enabled: false }
+        // Segmentasyonun burada acik olmasi yalnizca modelin load() sirasinda
+        // diskten okunmasini saglar; detect() bu modeli hic kullanmaz, agirligi
+        // algilamaya binmez. Maske arkaplan.js icinde human.segmentation ile
+        // ayrica istenir. Acik olmasaydi model ilk beyazlatmada (ve kafa tepesi
+        // araniyorken hizalamada) yuklenir, kullaniciyi orada bekletirdi.
+        segmentation: {
+          enabled: true,
+          modelPath: window.HV.arkaplan.MODEL,
+          mode: 'default',
+          ratio: 0.5
+        }
       })
 
       await ornek.load()
+
+      // Isitma: ilk gercek algilamada yapilacak shader derlemesi onceden
+      // yapilir, boylece kullanicinin bekledigi an kisalir. Human'in kendi
+      // warmup'i ornek goruntuyu data: adresinden getirdigi icin uygulamanin
+      // guvenlik ilkesine (connect-src 'self') takiliyor ve cozulmeyen bir soz
+      // birakiyor; onun yerine bos bir tuval isletilir. Zorunlu degildir,
+      // basarisiz olursa yalnizca ilk algilama yavas kalir.
+      try {
+        await ornek.detect(isitmaTuvali())
+      } catch {
+        /* isitma zorunlu degil */
+      }
+
       human = ornek
       return ornek
     })()
+
+    // Basarisiz yukleme saklanmaz; aksi halde tek bir hata butun oturum
+    // boyunca surer, kullanici yeniden denese de ayni sozu geri alirdi.
+    hazirlik.catch(() => { hazirlik = null })
 
     return hazirlik
   }
@@ -166,7 +218,7 @@ window.HV.yuz = (() => {
   async function algila (bitmap) {
     const ornek = await hazirla()
     const { tuval, olcek } = kucult(bitmap)
-    const sonuc = await ornek.detect(tuval)
+    const sonuc = await sirala(() => ornek.detect(tuval))
 
     return {
       yuzSayisi: sonuc.face?.length ?? 0,
@@ -175,5 +227,5 @@ window.HV.yuz = (() => {
     }
   }
 
-  return { hazirla, algila, get hazirMi () { return human !== null } }
+  return { hazirla, sirala, algila, get hazirMi () { return human !== null } }
 })()
