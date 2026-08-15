@@ -466,6 +466,113 @@
   overscroll-behavior: contain;
 }
 
+/* --- Basit / Gelismis mod ------------------------------------------------- */
+
+/* Modun tek anahtari govdedeki data-hv-mod. Uzman denetimleri .hv-gelismis
+   ile isaretlenir; basit modda gizlenir, gelismis modda oldugu gibi kalir.
+   Gizleme display uzerinden: gorunmez ama yerinde duran bir denetim sekme
+   sirasinda kalir ve ekran okuyucuya okunur. */
+.hv-govde[data-hv-mod='basit'] .hv-gelismis {
+  display: none;
+}
+
+/* Sihirbaz seridi bunun tersi: yalnizca basit modda cizilir. */
+.hv-govde[data-hv-mod='gelismis'] .hv-sihirbaz {
+  display: none;
+}
+
+/* Uc sutunlu izgarada basit modda tek alan kalir (yalnizca "Adet"); ucte bir
+   genislikte asili durmasin diye satiri kaplar. */
+.hv-govde[data-hv-mod='basit'] .hv-uclu {
+  grid-template-columns: 1fr;
+}
+
+.hv-sihirbaz {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  border-top: 1px solid var(--hv-kenar);
+  background-color: var(--hv-yuzey-ikincil);
+}
+
+/* Ileri her zaman sagda ve genis: adimi ilerleten birincil eylem odur. */
+.hv-sihirbaz > .hv-dugme {
+  justify-content: center;
+}
+
+#btn-sihirbaz-geri {
+  flex: 0 0 auto;
+}
+
+#btn-sihirbaz-ileri {
+  flex: 1;
+}
+
+/* Son adimda ileri dugmesi yok; Geri tek basina asili kalmasin diye seridi
+   doldurur. (Ileri d-none ile duruyor, bu yuzden :only-child ise yaramaz.) */
+.hv-sihirbaz-son #btn-sihirbaz-geri {
+  flex: 1;
+}
+
+/* Mod secme penceresindeki iki buyuk secenek. */
+.hv-mod-secenekleri {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.hv-mod-secenek {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  width: 100%;
+  padding: 0.875rem;
+  text-align: left;
+  border: 1px solid var(--hv-kenar-belirgin);
+  border-radius: var(--hv-yaricap);
+  background-color: var(--hv-yuzey);
+  color: var(--hv-metin);
+}
+
+.hv-mod-secenek:hover {
+  border-color: var(--hv-vurgu);
+  background-color: var(--hv-vurgu-soluk);
+}
+
+.hv-mod-secenek:focus-visible {
+  outline: 0;
+  border-color: var(--hv-vurgu);
+  box-shadow: 0 0 0 3px var(--hv-vurgu-soluk);
+}
+
+.hv-mod-simge {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--hv-yaricap-kucuk);
+  background-color: var(--hv-vurgu-soluk);
+  color: var(--hv-vurgu);
+  font-size: 1.0625rem;
+}
+
+.hv-mod-yazi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.hv-mod-yazi strong {
+  font-size: 0.9375rem;
+}
+
+.hv-mod-yazi small {
+  color: var(--hv-metin-ikincil);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
 /* --- Panel bolumleri ------------------------------------------------------ */
 
 .hv-bolum {

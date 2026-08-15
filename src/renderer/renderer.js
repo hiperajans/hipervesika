@@ -97,7 +97,13 @@ const el = {
   sicaklikDurumu: document.getElementById('sicaklik-durumu'),
   gozDurumu: document.getElementById('goz-durumu'),
   renkDuzeni: document.getElementById('renk-duzeni'),
-  renkDuzeniAciklamasi: document.getElementById('renk-duzeni-aciklamasi')
+  renkDuzeniAciklamasi: document.getElementById('renk-duzeni-aciklamasi'),
+  sihirbazGeri: document.getElementById('btn-sihirbaz-geri'),
+  sihirbazIleri: document.getElementById('btn-sihirbaz-ileri'),
+  sihirbazIleriYazi: document.getElementById('sihirbaz-ileri-yazi'),
+  modModali: document.getElementById('mod-modali'),
+  modBasit: document.getElementById('btn-mod-basit'),
+  modGelismis: document.getElementById('btn-mod-gelismis')
 }
 
 // Rotus kaydiraclari -50..+50 arasinda; motorun bekledigi carpanlara cevrilir.
@@ -148,6 +154,10 @@ const lekeFircasi = new window.HV.LekeFircasi(tuval, {
 let yuklenenGorsel = null
 let olcuDurumu = { genislikMm: 50, yukseklikMm: 60 }
 let dpi = 300
+
+// index.html'deki kaydiracin baslangic degeriyle ayni olmali; basit moda
+// gecilirken kalite buraya dondurulur.
+const VARSAYILAN_JPG_KALITESI = 92
 
 // Segmentasyondan gelen ham maske ve kullanicinin firca duzeltmeleri burada
 // birikir; kenar ayarlari her tazelemede bunun uzerine uygulanir.
@@ -834,7 +844,136 @@ async function gorselYukle (dosya) {
 // adimin altindayken digerine gecince ekran o yukseklikte kaliyordu. Yeni adim
 // her zaman basindan baslar.
 for (const dugme of document.querySelectorAll('.hv-adim[data-bs-toggle="tab"]')) {
-  dugme.addEventListener('shown.bs.tab', () => { el.panelIcerik.scrollTop = 0 })
+  dugme.addEventListener('shown.bs.tab', () => {
+    el.panelIcerik.scrollTop = 0
+    sihirbaziGuncelle()
+  })
+}
+
+// --- Basit / Gelismis mod ----------------------------------------------------
+
+// Basit mod sihirbaz seridini acar ve .hv-gelismis isaretli uzman denetimlerini
+// gizler (gizleme isi CSS'te, bkz. styles.css -> "Basit / Gelismis mod").
+// Gelismis mod her seyi gosterir. Mod ayarda saklanir; ilk acilista sorulur ve
+// sonradan Gorunum menusunden degistirilir.
+//
+// Adim seridi iki modda da tiklanabilir kalir: sihirbaz ek bir yoldur, tek yol
+// degil. Vesikalik isi dogrusal degildir -- arka plan beyazlayinca kadraja
+// donmek gerekebilir ve kilitli bir sihirbaz bunu engellerdi.
+
+const SIHIRBAZ_ADIMLARI = [
+  { kod: 'kadraj', gecis: 'Kadraja geç' },
+  { kod: 'rotus', gecis: 'Rötuşa geç' },
+  { kod: 'cikti', gecis: 'Çıktıya geç' }
+]
+
+let mod = 'gelismis'
+
+function adimDugmesi (kod) {
+  return document.getElementById(`adim-${kod}-dugmesi`)
+}
+
+function acikAdimSirasi () {
+  return SIHIRBAZ_ADIMLARI.findIndex(
+    (adim) => adimDugmesi(adim.kod)?.classList.contains('active')
+  )
+}
+
+function sihirbaziGuncelle () {
+  const sira = acikAdimSirasi()
+  if (sira < 0) return
+
+  const sonraki = SIHIRBAZ_ADIMLARI[sira + 1]
+
+  el.sihirbazGeri.disabled = sira === 0
+  // Son adimda ileri gidilecek yer yok; dugme gizlenir, Geri seridi doldurur.
+  el.sihirbazIleri.classList.toggle('d-none', !sonraki)
+  el.sihirbazIleri.parentElement.classList.toggle('hv-sihirbaz-son', !sonraki)
+  // Yon degil varis yeri yazilir: "Ileri" nereye gidildigini soylemez.
+  if (sonraki) el.sihirbazIleriYazi.textContent = sonraki.gecis
+}
+
+function adimaGec (sira) {
+  const adim = SIHIRBAZ_ADIMLARI[sira]
+  if (adim) adimDugmesi(adim.kod)?.click()
+}
+
+// Basit modda gizli kalan denetimler ciktiyi sessizce degistirmesin: gelismis
+// modda CMYK ya da 150 DPI secip basit moda gecen kullanici, goremedigi bir
+// ayarin etkisini yasamamali. Yalnizca ciktiyi etkileyen degerler sifirlanir;
+// rotus kaydiraclari zaten her fotografta varsayilana doner.
+function basitVarsayilanlariUygula () {
+  el.renkDuzeni.value = 'srgb'
+  renkAciklamasiniGuncelle()
+
+  dpi = olcuMotoru.HEDEF_DPI
+  el.dpiSecimi.value = String(dpi)
+  ciktiBilgisiniGuncelle()
+
+  el.jpgKalitesi.value = String(VARSAYILAN_JPG_KALITESI)
+  el.jpgKalitesiDegeri.textContent = `%${VARSAYILAN_JPG_KALITESI}`
+
+  el.dizmeKenar.value = '0'
+  el.dizmeAralik.value = '0'
+  adediEnFazlayaAyarla()
+
+  // Onizlemedeki sayfa karesi renk duzenine gore uretiliyor.
+  sayfaKaresiniGecersizKil()
+}
+
+function modAta (yeni, { kaydet = true } = {}) {
+  if (yeni !== 'basit' && yeni !== 'gelismis') return
+
+  const degisti = yeni !== mod
+  mod = yeni
+  document.body.dataset.hvMod = mod
+  // Gorunum menusundeki isaret ana surecte tutuluyor.
+  window.hiperVesika.moduBildir(mod)
+
+  if (mod === 'basit') {
+    // Gizlenen bir arac secili kalirsa kullanici hangi araci kullandigini
+    // goremez; kirpmaya donulur.
+    if (!el.aracKirpma.checked) {
+      el.aracKirpma.checked = true
+      aracSec()
+    }
+    if (degisti) basitVarsayilanlariUygula()
+  }
+
+  sihirbaziGuncelle()
+
+  if (kaydet) {
+    kullaniciAyarlari.mod = mod
+    ayarlariKaydet({ hemen: true })
+  }
+}
+
+el.sihirbazIleri.addEventListener('click', () => adimaGec(acikAdimSirasi() + 1))
+el.sihirbazGeri.addEventListener('click', () => adimaGec(acikAdimSirasi() - 1))
+
+// --- Ilk acilistaki mod sorusu -----------------------------------------------
+
+let modPenceresi = null
+
+function moduSor () {
+  modPenceresi = modPenceresi ?? new window.bootstrap.Modal(el.modModali)
+  modPenceresi.show()
+}
+
+for (const [dugme, secilen] of [[el.modBasit, 'basit'], [el.modGelismis, 'gelismis']]) {
+  dugme.addEventListener('click', () => {
+    // Gelismis modu secen kullanici arayuzun tamamiyla karsilasiyor; tur orada
+    // isine yarar. Basit modda sihirbazin kendisi rehberdir, bu yuzden tur
+    // kendiliginden acilmaz -- ama F1 ile her zaman acilabilsin diye yalnizca
+    // "goruldu" isaretlenir. Isaret modAta'nin yazmasindan once konuyor ki
+    // ikisi icin tek bir yazma yetsin.
+    const turBaslasin = secilen === 'gelismis' && !kullaniciAyarlari.tanitimGoruldu
+    if (!turBaslasin) kullaniciAyarlari.tanitimGoruldu = true
+
+    modAta(secilen)
+    modPenceresi?.hide()
+    if (turBaslasin) turuBaslat()
+  })
 }
 
 // --- Fotograf secim penceresi ------------------------------------------------
@@ -1870,6 +2009,8 @@ function diskeYaz () {
 // Tur ilk acilisin bir parcasi; baslangicta kullanilan bos ayar nesnesinde de
 // bulunmali ki tur bittiginde yazilan dosyada kaybolmasin.
 kullaniciAyarlari.tanitimGoruldu = false
+// Mod da ayni sekilde: null "henuz sorulmadi" demek, diske boyle yazilmali.
+kullaniciAyarlari.mod = null
 
 // Kaydirac ve sayi girisleri her tusta yazmasin diye gecikmeli toplanir.
 // On ayar kaydetme/silme gibi tek seferlik islerde beklenmez: kullanici hemen
@@ -1948,7 +2089,8 @@ async function ayarlariYukle () {
       fotografOnayarlari: okunan?.fotografOnayarlari ?? [],
       kagitOnayarlari: okunan?.kagitOnayarlari ?? [],
       sonKullanilan: okunan?.sonKullanilan ?? {},
-      tanitimGoruldu: okunan?.tanitimGoruldu === true
+      tanitimGoruldu: okunan?.tanitimGoruldu === true,
+      mod: okunan?.mod ?? null
     }
   } catch {
     // Ayarlar okunamazsa uygulama varsayilanlarla acilir.
@@ -1958,11 +2100,19 @@ async function ayarlariYukle () {
   kagitOnayarlariniDoldur()
   sonKullanilaniUygula(kullaniciAyarlari.sonKullanilan)
 
+  // Mod, son kullanilan degerler yerine oturduktan sonra uygulanir: basit moda
+  // gecis ciktiyi etkileyen uzman degerlerini sifirliyor, once onlarin okunmus
+  // olmasi gerekiyor. Kayitli mod diske geri yazilmaz (kaydet: false).
+  if (kullaniciAyarlari.mod) modAta(kullaniciAyarlari.mod, { kaydet: false })
+  else window.hiperVesika.moduBildir('gelismis')
+
   // Bu noktadan sonra yapilan her degisiklik diske yazilir.
   ayarlarHazir = true
 
-  // Ilk acilista tanitim turu kendiliginden baslar.
-  if (!kullaniciAyarlari.tanitimGoruldu) turuBaslat()
+  // Ilk acilista once mod sorulur; tur, gelismis modu secen kullaniciya orada
+  // acilir. Modu zaten secilmis bir kurulumda tur eski davranisiyla baslar.
+  if (!kullaniciAyarlari.mod) moduSor()
+  else if (!kullaniciAyarlari.tanitimGoruldu) turuBaslat()
 }
 
 // --- Tanitim turu ------------------------------------------------------------
@@ -2057,10 +2207,17 @@ function turAdiminiGoster () {
   else yerlestir()
 }
 
+// Hedef var mi? Gorunurluk (offsetParent) bakilmaz: tur adimlarinin cogu kapali
+// bir sekmenin icinde durur ve tur onlari sirasi gelince aciyor. Basit modda
+// gizlenen denetimler ise isiklandirilamaz, o yuzden mod uzerinden elenir.
+function turHedefiVarMi (secici) {
+  const oge = document.querySelector(secici)
+  if (!oge) return false
+  return mod !== 'basit' || oge.closest('.hv-gelismis') === null
+}
+
 function turuBaslat () {
-  turAdimlari = tanitimMotoru.gecerliAdimlar(
-    tanitimMotoru.ADIMLAR, (secici) => document.querySelector(secici) !== null
-  )
+  turAdimlari = tanitimMotoru.gecerliAdimlar(tanitimMotoru.ADIMLAR, turHedefiVarMi)
   if (!turAdimlari.length) return
 
   turSirasi = 0
@@ -2299,6 +2456,12 @@ window.hiperVesika.menuKomutu((komut) => {
       break
     case 'tanitim':
       turuBaslat()
+      break
+    case 'mod-basit':
+      modAta('basit')
+      break
+    case 'mod-gelismis':
+      modAta('gelismis')
       break
   }
 })

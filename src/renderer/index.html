@@ -12,7 +12,13 @@
     <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="hv-govde">
+  <!--
+    data-hv-mod arayuzun icinde bulundugu modu tutar ve tek anahtardir:
+    "basit" sihirbaz seridini acar, .hv-gelismis isaretli uzman denetimlerini
+    gizler. Baslangic degeri gelismis: ayar okunana kadar ekranda eksik
+    denetim gorunmez, sonra renderer.js gercek modu yazar.
+  -->
+  <body class="hv-govde" data-hv-mod="gelismis">
     <!-- Üst şerit: kimlik, açık dosya ve dosya açma -->
     <header class="hv-baslik">
       <div class="hv-marka">
@@ -67,20 +73,29 @@
               Kırpma
             </label>
 
-            <input type="radio" class="btn-check" name="arac" id="arac-leke" />
-            <label class="btn hv-secim" for="arac-leke" title="Lekenin üzerine tıklayın">
+            <!--
+              Leke ve fircalar elle rotus araclaridir; karsiliklari olan
+              kaydiraclar basit modda gizlendigi icin bunlar da gizlenir.
+              btn-check girisi zaten gorunmez ama gizlenmezse klavyeyle
+              secilebilir kalirdi; giris ve etiket birlikte isaretlenir.
+            -->
+            <input type="radio" class="btn-check hv-gelismis" name="arac" id="arac-leke" />
+            <label class="btn hv-secim hv-gelismis" for="arac-leke"
+              title="Lekenin üzerine tıklayın">
               <i class="bi bi-bandaid" aria-hidden="true"></i>
               Leke
             </label>
 
-            <input type="radio" class="btn-check" name="arac" id="arac-firca-sil" />
-            <label class="btn hv-secim" for="arac-firca-sil" title="Arka plandan sil">
+            <input type="radio" class="btn-check hv-gelismis" name="arac" id="arac-firca-sil" />
+            <label class="btn hv-secim hv-gelismis" for="arac-firca-sil"
+              title="Arka plandan sil">
               <i class="bi bi-eraser" aria-hidden="true"></i>
               Sil
             </label>
 
-            <input type="radio" class="btn-check" name="arac" id="arac-firca-getir" />
-            <label class="btn hv-secim" for="arac-firca-getir" title="Silineni geri getir">
+            <input type="radio" class="btn-check hv-gelismis" name="arac" id="arac-firca-getir" />
+            <label class="btn hv-secim hv-gelismis" for="arac-firca-getir"
+              title="Silineni geri getir">
               <i class="bi bi-brush" aria-hidden="true"></i>
               Geri getir
             </label>
@@ -208,7 +223,8 @@
                 Yüz ve omuz konumuna göre eğikliği düzeltir, biyometrik kadrajı kurar.
               </p>
 
-              <div class="hv-alan">
+              <!-- Egikligi elle vermek "Otomatik hizala"nin isini tekrarlar. -->
+              <div class="hv-alan hv-gelismis">
                 <label for="donme-acisi" class="hv-etiket">
                   <span>Eğiklik</span>
                   <span id="donme-degeri" class="hv-deger">0,0°</span>
@@ -217,7 +233,8 @@
                   min="-25" max="25" step="0.1" value="0" />
               </div>
 
-              <button id="btn-donmeyi-sifirla" type="button" class="btn hv-dugme hv-dugme-sade w-100">
+              <button id="btn-donmeyi-sifirla" type="button"
+                class="btn hv-dugme hv-dugme-sade w-100 hv-gelismis">
                 <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
                 Döndürmeyi sıfırla
               </button>
@@ -233,7 +250,9 @@
                 <select id="onayar-secimi" class="form-select form-select-sm"></select>
               </div>
 
-              <div class="hv-ikili">
+              <!-- Elle milimetre girmek, kendi olcusunu kaydetmek ve DPI
+                   secmek uzman isleri; basit modda hazir olculer yeter. -->
+              <div class="hv-ikili hv-gelismis">
                 <div class="hv-alan">
                   <label for="genislik-mm" class="hv-etiket">
                     <span>Genişlik <span class="hv-birim">mm</span></span>
@@ -249,11 +268,11 @@
                     min="10" max="300" step="0.5" />
                 </div>
               </div>
-              <div id="olcu-hatasi" class="hv-hata d-none">
+              <div id="olcu-hatasi" class="hv-hata d-none hv-gelismis">
                 Ölçüler 10 ile 300 mm arasında olmalıdır.
               </div>
 
-              <div class="hv-dugme-cifti">
+              <div class="hv-dugme-cifti hv-gelismis">
                 <button id="btn-olcu-kaydet" type="button" class="btn hv-dugme hv-dugme-sade">
                   <i class="bi bi-bookmark-plus" aria-hidden="true"></i>
                   Ölçüyü kaydet
@@ -264,12 +283,14 @@
                 </button>
               </div>
 
-              <div class="hv-alan">
+              <div class="hv-alan hv-gelismis">
                 <label for="dpi-secimi" class="hv-etiket"><span>Baskı çözünürlüğü</span></label>
                 <select id="dpi-secimi" class="form-select form-select-sm"></select>
               </div>
 
-              <dl class="hv-ozet">
+              <!-- Piksel ve DPI sayilari basit modda anlam tasimaz; kotu
+                   cozunurluk zaten asagidaki uyariyla duz Turkce anlatiliyor. -->
+              <dl class="hv-ozet hv-gelismis">
                 <div>
                   <dt>Çıktı boyutu</dt>
                   <dd id="cikti-piksel">—</dd>
@@ -306,7 +327,9 @@
                 Kişiyi arka plandan ayırır ve zemini beyaza çevirir.
               </p>
 
-              <div id="arkaplan-ayarlari" class="d-none">
+              <!-- Maske ince ayari ve fircalar uzman isleri: basit modda
+                   beyazlatma ya calisir ya calismaz, arasi kurcalanmaz. -->
+              <div id="arkaplan-ayarlari" class="d-none hv-gelismis">
                 <div class="hv-alan">
                   <label for="maske-genislet" class="hv-etiket">
                     <span>Maske</span>
@@ -367,7 +390,7 @@
                   min="-50" max="50" step="1" value="0" />
               </div>
 
-              <div class="hv-alan">
+              <div class="hv-alan hv-gelismis">
                 <label for="rotus-doygunluk" class="hv-etiket">
                   <span>Doygunluk</span>
                   <span id="rotus-doygunluk-degeri" class="hv-deger">0</span>
@@ -376,7 +399,7 @@
                   min="-50" max="50" step="1" value="0" />
               </div>
 
-              <div class="hv-alan">
+              <div class="hv-alan hv-gelismis">
                 <label for="rotus-sicaklik" class="hv-etiket">
                   <span>Renk sıcaklığı</span>
                   <span id="rotus-sicaklik-degeri" class="hv-deger">0</span>
@@ -385,19 +408,19 @@
                   min="-50" max="50" step="1" value="0" />
               </div>
 
-              <div class="form-check hv-anahtar">
+              <div class="form-check hv-anahtar hv-gelismis">
                 <input class="form-check-input" type="checkbox" id="rotus-sicaklik-kisi" checked />
                 <label class="form-check-label" for="rotus-sicaklik-kisi">
                   Sıcaklığı yalnızca kişiye uygula
                 </label>
               </div>
-              <p id="sicaklik-durumu" class="hv-ipucu">
+              <p id="sicaklik-durumu" class="hv-ipucu hv-gelismis">
                 Kişi maskesi henüz yok: sıcaklık şimdilik fotoğrafın tamamına uygulanır.
                 Maske için <em>Otomatik hizala</em>'yı ya da
                 <em>Arka planı beyazlat</em>'ı çalıştırın.
               </p>
 
-              <div class="hv-alan">
+              <div class="hv-alan hv-gelismis">
                 <label for="rotus-keskinlik" class="hv-etiket">
                   <span>Keskinlik</span>
                   <span id="rotus-keskinlik-degeri" class="hv-deger">0</span>
@@ -421,7 +444,7 @@
                   min="0" max="100" step="1" value="0" />
               </div>
 
-              <div class="hv-alan">
+              <div class="hv-alan hv-gelismis">
                 <label for="rotus-goz" class="hv-etiket">
                   <span>Göz canlandırma</span>
                   <span id="rotus-goz-degeri" class="hv-deger">0</span>
@@ -430,13 +453,15 @@
                   min="0" max="100" step="1" value="0" />
               </div>
 
-              <p id="goz-durumu" class="hv-ipucu">
+              <p id="goz-durumu" class="hv-ipucu hv-gelismis">
                 Göz canlandırma, göz konumu bilindiğinde çalışır: önce
                 <em>Otomatik hizala</em>'yı çalıştırın.
               </p>
             </section>
 
-            <section class="hv-bolum">
+            <!-- Leke temizleme ustteki Leke aracina bagli; arac basit modda
+                 gizlendigi icin bolumun tamami gizlenir. -->
+            <section class="hv-bolum hv-gelismis">
               <h2 class="hv-bolum-basligi">
                 <i class="bi bi-bandaid" aria-hidden="true"></i> Leke temizleme
               </h2>
@@ -452,7 +477,11 @@
               <p id="leke-durumu" class="hv-ipucu">
                 Üstteki <em>Leke</em> aracıyla lekenin üzerine tıklayın.
               </p>
+            </section>
 
+            <!-- Her iki modda gorunur: gizlenen bolumun icinde kalmamasi icin
+                 kendi bolumunde durur. -->
+            <section class="hv-bolum">
               <button id="btn-rotusu-sifirla" type="button" class="btn hv-dugme hv-dugme-sade w-100">
                 <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
                 Rötuşu sıfırla
@@ -469,7 +498,8 @@
                 <i class="bi bi-download" aria-hidden="true"></i> Tek fotoğraf
               </h2>
 
-              <div class="hv-alan">
+              <!-- CMYK ve gri tonlama matbaa isi; basit modda sRGB kalir. -->
+              <div class="hv-alan hv-gelismis">
                 <label for="renk-duzeni" class="hv-etiket"><span>Renk düzeni</span></label>
                 <select id="renk-duzeni" class="form-select form-select-sm"></select>
                 <p id="renk-duzeni-aciklamasi" class="hv-ipucu"></p>
@@ -486,7 +516,7 @@
                 </div>
               </div>
 
-              <div id="kalite-alani" class="hv-alan">
+              <div id="kalite-alani" class="hv-alan hv-gelismis">
                 <label for="jpg-kalitesi" class="hv-etiket">
                   <span>JPEG kalitesi</span>
                   <span id="jpg-kalitesi-degeri" class="hv-deger">%92</span>
@@ -514,7 +544,7 @@
                 <select id="kagit-onayari" class="form-select form-select-sm"></select>
               </div>
 
-              <div class="hv-ikili">
+              <div class="hv-ikili hv-gelismis">
                 <div class="hv-alan">
                   <label for="kagit-genislik" class="hv-etiket">
                     <span>Genişlik <span class="hv-birim">mm</span></span>
@@ -530,11 +560,11 @@
                     min="50" max="1000" step="1" />
                 </div>
               </div>
-              <div id="kagit-hatasi" class="hv-hata d-none">
+              <div id="kagit-hatasi" class="hv-hata d-none hv-gelismis">
                 Kağıt ölçüleri 50 ile 1000 mm arasında olmalıdır.
               </div>
 
-              <div class="hv-dugme-cifti">
+              <div class="hv-dugme-cifti hv-gelismis">
                 <button id="btn-kagit-kaydet" type="button" class="btn hv-dugme hv-dugme-sade">
                   <i class="bi bi-bookmark-plus" aria-hidden="true"></i>
                   Kağıdı kaydet
@@ -550,15 +580,17 @@
                 Yatay / dikey çevir
               </button>
 
+              <!-- Kenar ve aralik kagit ile olcuden zaten hesaplaniyor; basit
+                   modda yalnizca adet sorulur, grid tek sutuna duser. -->
               <div class="hv-uclu">
-                <div class="hv-alan">
+                <div class="hv-alan hv-gelismis">
                   <label for="dizme-kenar" class="hv-etiket">
                     <span>Kenar <span class="hv-birim">mm</span></span>
                   </label>
                   <input id="dizme-kenar" type="number" class="form-control form-control-sm"
                     min="0" max="50" step="1" value="0" />
                 </div>
-                <div class="hv-alan">
+                <div class="hv-alan hv-gelismis">
                   <label for="dizme-aralik" class="hv-etiket">
                     <span>Aralık <span class="hv-birim">mm</span></span>
                   </label>
@@ -617,6 +649,22 @@
             </section>
           </div>
         </div>
+
+        <!--
+          Sihirbaz seridi yalnizca basit modda gorunur. Adim seridi (yukarida)
+          tiklanabilir kalir: sihirbaz ek bir yoldur, tek yol degil. Vesikalik
+          isi dogrusal degildir; arka plan beyazlayinca kadraja donmek gerekir.
+        -->
+        <div class="hv-sihirbaz">
+          <button id="btn-sihirbaz-geri" type="button" class="btn hv-dugme hv-dugme-sade">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            <span id="sihirbaz-geri-yazi">Geri</span>
+          </button>
+          <button id="btn-sihirbaz-ileri" type="button" class="btn btn-primary btn-sm hv-dugme">
+            <span id="sihirbaz-ileri-yazi">İleri</span>
+            <i class="bi bi-arrow-right" aria-hidden="true"></i>
+          </button>
+        </div>
       </aside>
     </main>
 
@@ -646,6 +694,51 @@
           <button id="btn-tanitim-ileri" type="button" class="btn btn-primary btn-sm hv-dugme">
             İleri
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!--
+      Ilk acilista bir kez sorulan mod penceresi. Kapatma dugmesi ve arka plana
+      tiklayarak cikis yok: cevapsiz kapatilirsa uygulama moda karar veremez ve
+      soru her acilista tekrarlanirdi.
+    -->
+    <div class="modal fade" id="mod-modali" tabindex="-1" aria-hidden="true"
+      data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="mod-modal-basligi">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content hv-pencere">
+          <div class="modal-header">
+            <h6 class="modal-title" id="mod-modal-basligi">Nasıl çalışmak istersiniz?</h6>
+          </div>
+          <div class="modal-body">
+            <p class="hv-ipucu mt-0">
+              Seçiminizi sonradan <em>Görünüm</em> menüsünden değiştirebilirsiniz.
+            </p>
+
+            <div class="hv-mod-secenekleri">
+              <button id="btn-mod-basit" type="button" class="hv-mod-secenek">
+                <span class="hv-mod-simge"><i class="bi bi-signpost-2" aria-hidden="true"></i></span>
+                <span class="hv-mod-yazi">
+                  <strong>Basit</strong>
+                  <small>
+                    Adım adım ilerlersiniz: kadraj, rötuş, çıktı. Yalnızca gereken
+                    ayarlar görünür. İlk kez kullanıyorsanız bunu seçin.
+                  </small>
+                </span>
+              </button>
+
+              <button id="btn-mod-gelismis" type="button" class="hv-mod-secenek">
+                <span class="hv-mod-simge"><i class="bi bi-sliders2" aria-hidden="true"></i></span>
+                <span class="hv-mod-yazi">
+                  <strong>Gelişmiş</strong>
+                  <small>
+                    Bütün ayarlar açık: maske ince ayarı, renk düzeni, DPI, kendi
+                    ölçüleriniz. Fotoğrafçılık bilginiz varsa bunu seçin.
+                  </small>
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

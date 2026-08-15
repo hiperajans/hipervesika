@@ -96,6 +96,20 @@ async function uygulamayiAc (calisma, { ekArgumanlar = [] } = {}) {
   return { uygulama, sayfa, hatalar }
 }
 
+// Ilk acilista once mod sorulur (Basit / Gelismis) ve pencere kapatilamaz.
+// Testler arayuzun tamamiyla calistigi icin varsayilan olarak gelismis secilir;
+// basit modu sinayan testler 'basit' gonderir. Modu zaten secilmis bir profilde
+// pencere acilmaz, islev sessizce doner.
+async function moduSec (sayfa, mod = 'gelismis') {
+  const acik = await sayfa.evaluate(
+    () => document.getElementById('mod-modali')?.classList.contains('show') === true)
+  if (!acik) return
+
+  await sayfa.click(mod === 'basit' ? '#btn-mod-basit' : '#btn-mod-gelismis')
+  await sayfa.waitForSelector('#mod-modali.show', { state: 'hidden' })
+  await sayfa.waitForTimeout(300)
+}
+
 // Ilk acilista tanitim turu cikar ve tiklamalari tutar.
 async function turuKapat (sayfa) {
   const acik = await sayfa.evaluate(() => {
@@ -141,8 +155,9 @@ async function kaydiracAyarla (sayfa, secici, deger, bekleme = 700) {
 
 // Hazir bir uygulama: acar, turu kapatir, istenirse fotograf yukler.
 // Doner: { uygulama, sayfa, hatalar, kapat }
-async function hazirla (calisma, { fotograf = null } = {}) {
+async function hazirla (calisma, { fotograf = null, mod = 'gelismis' } = {}) {
   const { uygulama, sayfa, hatalar } = await uygulamayiAc(calisma)
+  await moduSec(sayfa, mod)
   await turuKapat(sayfa)
   if (fotograf) await fotografYukle(sayfa, fotograf)
 
@@ -160,6 +175,7 @@ module.exports = {
   gercekFotograflar,
   yuzGerekli,
   uygulamayiAc,
+  moduSec,
   turuKapat,
   fotografYukle,
   adima,

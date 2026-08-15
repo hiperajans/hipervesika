@@ -30,6 +30,7 @@ test.before(async () => {
     session.defaultSession.enableNetworkEmulation({ offline: true })
   }, YEREL_ONEKLER)
 
+  await ortam.moduSec(sayfa)
   await ortam.turuKapat(sayfa)
 })
 

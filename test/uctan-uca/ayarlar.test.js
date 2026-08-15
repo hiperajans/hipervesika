@@ -17,9 +17,12 @@ let uygulama, sayfa
 
 test.after(() => calisma.temizle())
 
-async function ac ({ turuKapat = true } = {}) {
+async function ac ({ ilkAcilisiGec = true } = {}) {
   ;({ uygulama, sayfa } = await ortam.uygulamayiAc(calisma))
-  if (turuKapat) await ortam.turuKapat(sayfa)
+  if (ilkAcilisiGec) {
+    await ortam.moduSec(sayfa)
+    await ortam.turuKapat(sayfa)
+  }
 }
 
 const ayarlariOku = () => JSON.parse(fs.readFileSync(AYAR_DOSYASI, 'utf8'))
@@ -38,14 +41,20 @@ const secenekler = (secici) => sayfa.$$eval(
   `${secici} option`, (ogeler) => ogeler.map((o) => `${o.value}:${o.textContent.trim()}`))
 
 test('temiz profilde ayar dosyasi yok ve hazir olcu silinemez', async () => {
-  // Tur ancak bu denetimden sonra kapatilir: kapatmak ayar dosyasini yazar.
-  await ac({ turuKapat: false })
+  // Ilk acilisin mod sorusu ve turu ancak bu denetimden sonra gecilir: her
+  // ikisi de ayar dosyasini yaziyor.
+  await ac({ ilkAcilisiGec: false })
 
   assert.equal(fs.existsSync(AYAR_DOSYASI), false)
   assert.equal(await sayfa.isDisabled('#btn-olcu-sil'), true)
   assert.equal(await sayfa.isDisabled('#btn-kagit-sil'), true)
 
+  await ortam.moduSec(sayfa)
   await ortam.turuKapat(sayfa)
+
+  // Mod secimi ilk yazmayi tetikler; secilen mod diske dusmus olmali ki soru
+  // bir daha sorulmasin.
+  assert.equal(ayarlariOku().mod, 'gelismis')
 })
 
 test('kendi olcusu kaydedilir', async () => {
