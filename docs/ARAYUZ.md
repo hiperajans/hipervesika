@@ -68,6 +68,7 @@ hv-durum-cubugu    durum · sürüm
 | `hv-secim-izgarasi` + `hv-secim-kutusu` | Fotoğraf seçim penceresinin ızgarası ve kutuları |
 | `hv-gelismis` | Basit modda gizlenen uzman denetimi |
 | `hv-sihirbaz` | Panelin altındaki İleri/Geri şeridi; yalnızca basit modda |
+| `hv-bekleme` | Uzun işlem penceresinin gövdesi: döndürücü, ne yapıldığı, ne kadar sürebileceği |
 
 ## Basit ve Gelişmiş mod
 
@@ -190,6 +191,26 @@ yalnızca macOS'ta bulunur; üretim üç platformda da çalışmak zorunda (bkz.
 kural 4). Rasterleme Electron'un tuvalinde yapılır — depoda görüntü işleyen bir bağımlılık
 yok ve eklenmedi — donanım hızlandırma kapatılarak, böylece çıktı makineden makineye
 değişmez.
+
+## Bekleme penceresi
+
+Saniyeler süren işlemlerde (şimdilik yalnızca *Otomatik hizala*) `#islem-modali` açılır:
+döndürücü, hangi aşamada olunduğu (`#islem-yazisi`) ve ne kadar sürebileceği
+(`#islem-alt-yazi`). Kapatma düğmesi ve arka plana tıklayarak çıkış yoktur; iş bitince
+`beklemeKapat()` kapatır.
+
+İki nokta gözden kaçmasın:
+
+- **Pencere işten önce ekrana çıkmalı.** Model çalışırken ana iş parçacığı bloke olur ve
+  çizim sırası bir daha gelmez; `beklemeAc()` bu yüzden `shown.bs.modal` olayını bekleyen
+  bir söz döndürür, çağıran onu `await` eder. Doğrudan `show()` deyip işe başlamak boş bir
+  perdeden başka bir şey göstermez.
+- **Döndürücü bloke iş parçacığında da döner**, çünkü Bootstrap'in `spinner-border`
+  animasyonu `transform` üzerindedir ve kompozitörde çalışır. Animasyonu `width`/`margin`
+  gibi düzen tetikleyen bir özelliğe taşımak bunu bozar.
+
+Panel içindeki durum satırı (`#hizalama-durumu`) kaldırılmadı: pencere kapandıktan sonra
+sonucun okunabildiği yer orası.
 
 ## Kurallar
 

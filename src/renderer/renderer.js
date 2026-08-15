@@ -103,7 +103,10 @@ const el = {
   sihirbazIleriYazi: document.getElementById('sihirbaz-ileri-yazi'),
   modModali: document.getElementById('mod-modali'),
   modBasit: document.getElementById('btn-mod-basit'),
-  modGelismis: document.getElementById('btn-mod-gelismis')
+  modGelismis: document.getElementById('btn-mod-gelismis'),
+  islemModali: document.getElementById('islem-modali'),
+  islemYazisi: document.getElementById('islem-yazisi'),
+  islemAltYazi: document.getElementById('islem-alt-yazi')
 }
 
 // Rotus kaydiraclari -50..+50 arasinda; motorun bekledigi carpanlara cevrilir.
@@ -254,6 +257,46 @@ function aciAta (aci) {
   })}°`
 }
 
+// --- Bekleme penceresi -------------------------------------------------------
+
+// Model calisirken arayuz sessiz kaliyordu: dugme sonuk, durum satiri panelin
+// icinde ve fotograf oldugu gibi duruyor; kullanici bir sey olup olmadigini
+// anlamiyordu. Bekleme penceresi isin surdugunu gosterir ve bu sirada arayuze
+// dokunulmasini engeller.
+let beklemePenceresi = null
+let beklemeAcik = false
+
+function beklemeAc (yazi, altYazi = '') {
+  beklemeYaz(yazi, altYazi)
+  if (beklemeAcik) return Promise.resolve()
+
+  beklemeAcik = true
+  beklemePenceresi = beklemePenceresi ?? new window.bootstrap.Modal(el.islemModali)
+  beklemePenceresi.show()
+
+  // Agir is pencere ekrana cizilmeden baslarsa kullanici hicbir sey gormez:
+  // model calisirken ana is parcacigi bloke oldugu icin cizim sirasi bir daha
+  // gelmez. Bu yuzden gosterim bitene kadar beklenir.
+  return new Promise((cozumle) => {
+    el.islemModali.addEventListener('shown.bs.modal', () => cozumle(), { once: true })
+  })
+}
+
+// Is surerken asama degisebilir; yazi tek basina guncellenir.
+function beklemeYaz (yazi, altYazi = '') {
+  el.islemYazisi.textContent = yazi
+  el.islemAltYazi.textContent = altYazi
+  el.islemAltYazi.classList.toggle('d-none', !altYazi)
+}
+
+function beklemeKapat () {
+  if (!beklemeAcik) return
+  beklemeAcik = false
+  beklemePenceresi?.hide()
+}
+
+// --- Hizalama ----------------------------------------------------------------
+
 function hizalamaDurumu (mesaj, tur = 'bilgi') {
   el.hizalamaDurumu.textContent = mesaj
   el.hizalamaDurumu.classList.toggle('text-danger', tur === 'hata')
@@ -289,9 +332,13 @@ async function otomatikHizala () {
   if (!yuklenenGorsel) return
 
   el.otomatikHizala.disabled = true
+  const modellerHazir = window.HV.yuz.hazirMi
   hizalamaDurumu(
-    window.HV.yuz.hazirMi ? 'Yüz aranıyor…' : 'Modeller yükleniyor, ilk çalıştırma biraz sürebilir…'
+    modellerHazir ? 'Yüz aranıyor…' : 'Modeller yükleniyor, ilk çalıştırma biraz sürebilir…'
   )
+  await beklemeAc('Yüz aranıyor…', modellerHazir
+    ? 'Fotoğrafın büyüklüğüne göre birkaç saniye sürebilir.'
+    : 'Modeller ilk kullanımda yükleniyor, bu ilk sefere özel.')
 
   try {
     const bulgu = await window.HV.yuz.algila(yuklenenGorsel.asil)
@@ -326,6 +373,8 @@ async function otomatikHizala () {
     const solGoz = calismaya(bulgu.yuz.solGoz)
     const sagGoz = calismaya(bulgu.yuz.sagGoz)
 
+    // Kafanin tepesi kisi maskesinden okunuyor; islemin en uzun suren adimi bu.
+    beklemeYaz('Kafanın tepesi ölçülüyor…')
     const tepe = await tepeNoktasiniBul(bulgu.yuz, calismaya) ??
       hizalamaMotoru.tepeNoktasi(cene, alin)
 
@@ -352,6 +401,7 @@ async function otomatikHizala () {
   } catch (hata) {
     hizalamaDurumu(`Hizalama yapılamadı: ${hata.message}`, 'hata')
   } finally {
+    beklemeKapat()
     el.otomatikHizala.disabled = false
   }
 }

@@ -751,6 +751,25 @@
       </div>
     </div>
 
+    <!--
+      Uzun süren işlemler için bekleme penceresi. Kapatma düğmesi ve arka plana
+      tıklayarak çıkış yok: iş bitince kendisi kapanır. Model çalışırken ana iş
+      parçacığı bloke olduğu için pencerenin işten önce ekrana çıkması gerekir;
+      renderer.js gösterimi bekler (bkz. beklemeAc).
+    -->
+    <div class="modal fade" id="islem-modali" tabindex="-1" aria-hidden="true"
+      data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="islem-yazisi">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content hv-pencere">
+          <div class="modal-body hv-bekleme">
+            <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+            <p id="islem-yazisi" class="hv-bekleme-yazi" role="status" aria-live="polite"></p>
+            <p id="islem-alt-yazi" class="hv-ipucu mt-0"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Ön ayar adı sorulan pencere. Electron'da window.prompt çalışmaz. -->
     <div class="modal fade" id="onayar-modali" tabindex="-1" aria-hidden="true"
       aria-labelledby="onayar-modal-basligi">
