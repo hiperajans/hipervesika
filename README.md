@@ -90,9 +90,16 @@ fotoğraf sürükle-bırak → otomatik hizalama → arka plan beyazlatma → r�
 
 **Kullanım kolaylıkları**
 
+- **Basit ve Gelişmiş mod.** İlk açılışta hangisiyle çalışacağınız sorulur, seçim
+  *Görünüm* menüsünden her zaman değiştirilebilir.
+  - *Basit*: adım adım ilerleten bir sihirbaz (kadraj → rötuş → çıktı) ve yalnızca gereken
+    ayarlar. İlk kez kullananlar için.
+  - *Gelişmiş*: bütün ayarlar açık — maske ince ayarı, fırçalar, renk düzeni, DPI, kendi
+    ölçüleriniz.
+  - Adım şeridi iki modda da tıklanabilir kalır; sihirbaz ek bir yoldur, tek yol değil.
 - İlk açılışta rehberli tanıtım turu (`F1` ile her zaman tekrar açılabilir).
-- Menüler Türkçedir. *Hakkında* penceresi sürümü, çalışma zamanı bilgisini ve verinin
-  cihazdan çıkmadığını yazar (macOS'ta uygulama menüsünde, diğerlerinde *Yardım* altında).
+- Menüler Türkçedir. *Hakkında* penceresi sürümü ve verinin cihazdan çıkmadığını yazar
+  (macOS'ta uygulama menüsünde, diğerlerinde *Yardım* altında).
 - Kendi fotoğraf ve kağıt ön ayarlarınız; son kullanılan değerler hatırlanır. Ayarlar
   işletim sisteminin kullanıcı verisi klasöründe JSON olarak tutulur.
 - Sürükle-bırak, dosya seçme ve panodan yapıştırma ile fotoğraf alma; JPG, PNG ve WebP

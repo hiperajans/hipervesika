@@ -463,6 +463,37 @@ baskı çıkardı).
 kalmalıdır. Sabitlenmiş ölçü isteyen Noritsu, Fujifilm gibi laboratuvar makineleri için
 doğru yol zaten sürücüden basmak değil, PDF ya da görüntü dosyasını vermektir.
 
+### Basit / Gelişmiş mod ve sihirbaz
+
+Arayüz elliye yakın denetime ulaşınca iki ayrı sorun ayrıştı: **akış** ("bu adımı bitirdim,
+şimdi ne yapacağım?") ve **yoğunluk** ("bu kaydıraç ne demek?"). Sihirbaz gezinmesi
+birincisini çözer, ikincisine dokunmaz — kullanıcıyı karmaşık ekranın etrafından değil
+içinden geçirir. Bu yüzden ikisi tek anahtar altında birleştirildi: **basit mod** hem
+sihirbaz şeridini açar hem uzman denetimlerini gizler.
+
+Ölçülen ve karara giren noktalar:
+
+- **Sihirbaz tıklama sayısını artırmaz.** Kullanıcı zaten `2` ve `3` sekmelerine tıklıyordu;
+  İleri/Geri de iki tıklama. Kazanç hedefin büyük, sabit yerde ve varış yerini yazıyor
+  olması. Bu yüzden sık kullananı yavaşlatmıyor.
+- **Başa karşılama ekranı konmadı.** Fotoğraf bırakılınca kullanıcı zaten 1. adımda ve
+  araçlar açılıyor; oraya bir "İleri" koymak iş yapmayan fazladan tıklama olurdu.
+- **Adım şeridi kilitlenmedi.** Vesikalık işi doğrusal değildir; arka plan beyazlayınca
+  saç kenarı için kadraja, sayfa görünümünde adet tutmayınca ölçüye dönmek gerekir.
+- **Rötuş adımı çoğu fotoğrafta atlanır.** Zorunlu istasyon gibi görünmesin diye basit modda
+  yalnızca dört denetim bırakıldı (arka plan, parlaklık, kontrast, cilt yumuşatma);
+  kullanıcı hiçbir şey yapmadan geçebilmeli.
+- **Otomatik başlangıç bilinçli olarak ertelendi.** Fotoğraf yüklenince hizalama ve
+  beyazlatmanın kendiliğinden çalışması ayrı bir iş olarak duruyor.
+
+Modun tek anahtarı gövdedeki `data-hv-mod`; gizlemeyi CSS yapar. Ayrıntı ve sınıf sözleşmesi
+[`ARAYUZ.md`](./ARAYUZ.md) → "Basit ve Gelişmiş mod".
+
+Bu iş sırasında ayarlarda gerçek bir hata çıktı: eşzamanlı iki yazma aynı geçici dosyayı
+kullanıyor, yeniden adlandırılan dosyada bozuk JSON kalıyor ve okuma varsayılana düşerek
+kullanıcının bütün ön ayarlarını siliyordu. Yazmalar artık sıraya alınıyor
+(`src/main/ayarlar.js`).
+
 ## Riskler
 
 | Risk | Faz | Etki |
@@ -477,7 +508,8 @@ doğru yol zaten sürücüden basmak değil, PDF ya da görüntü dosyasını ve
 Bunlar ilgili faza gelindiğinde netleşmeli:
 
 1. HEIC desteklenecek mi? (iPhone fotoğraflarının varsayılan formatı, ek dönüştürme gerekir)
-2. Rötuş ne kadar ileri gitsin — temel ayarlar ve leke temizleme yeterli mi, yoksa cilt
-   yumuşatma gibi güzelleştirme de olacak mı?
-3. Arayüz yalnızca Türkçe mi olacak, çok dil desteği planlanıyor mu?
-4. Farklı ülkelerin biyometrik kuralları (yüz oranı, göz hattı) ön ayar olarak gelecek mi?
+2. Arayüz yalnızca Türkçe mi olacak, çok dil desteği planlanıyor mu?
+3. Farklı ülkelerin biyometrik kuralları (yüz oranı, göz hattı) ön ayar olarak gelecek mi?
+
+Kapananlar: rötuşun ne kadar ileri gideceği ("Cilt yumuşatma ve göz canlandırma" bölümüne
+bakınız — cilt yumuşatma, göz canlandırma ve leke temizleme yapıldı).

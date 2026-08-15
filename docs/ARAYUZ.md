@@ -62,15 +62,58 @@ hv-durum-cubugu    durum · sürüm
 | `hv-ozet` | Ad-değer özet listesi (çıktı boyutu, kaynak çözünürlük) |
 | `hv-fotograf-araci` | Sayfa görünümünde gizlenen araçlar |
 | `hv-secim-izgarasi` + `hv-secim-kutusu` | Fotoğraf seçim penceresinin ızgarası ve kutuları |
+| `hv-gelismis` | Basit modda gizlenen uzman denetimi |
+| `hv-sihirbaz` | Panelin altındaki İleri/Geri şeridi; yalnızca basit modda |
+
+## Basit ve Gelişmiş mod
+
+Arayüz iki modda çalışır. Modun tek anahtarı gövdedeki **`data-hv-mod`** özniteliğidir;
+gizleme işini CSS yapar, renderer yalnızca özniteliği yazar.
+
+```css
+.hv-govde[data-hv-mod='basit'] .hv-gelismis   { display: none }
+.hv-govde[data-hv-mod='gelismis'] .hv-sihirbaz { display: none }
+```
+
+- **Basit**: panelin altında sihirbaz şeridi çıkar, `hv-gelismis` işaretli denetimler
+  gizlenir. Kalanlar: otomatik hizalama, hazır ölçüler, arka plan anahtarı, parlaklık,
+  kontrast, cilt yumuşatma, biçim, kağıt, adet, kesim kılavuzu ve baskı.
+- **Gelişmiş**: her şey açık; şu ana kadarki arayüzün aynısı.
+
+Mod `ayarlar.json` içindeki `mod` alanında durur (`'basit' | 'gelismis' | null`). **null**
+"kullanıcıya henüz sorulmadı" demektir: ilk açılışta `#mod-modali` bu yüzden açılır ve
+kapatma düğmesi yoktur — cevapsız kapatılsa soru her açılışta tekrarlanırdı. Seçim
+sonradan **Görünüm → Basit / Gelişmiş mod**'dan değiştirilir; menüdeki işaret ana süreçte
+tutulur ve arayüz her değişiklikte `moduBildir` ile haber verir.
+
+İki kural:
+
+- **Adım şeridi iki modda da tıklanabilir kalır.** Sihirbaz ek bir yoldur, tek yol değil.
+  Vesikalık işi doğrusal değildir — arka plan beyazlayınca kadraja dönmek gerekebilir.
+- **İleri düğmesi yön değil varış yeri yazar** ("Rötuşa geç"). "İleri" nereye gidildiğini
+  söylemez. Son adımda düğme kalkar, `hv-sihirbaz-son` ile Geri şeridi doldurur.
+
+Basit moda geçilirken çıktıyı etkileyen uzman değerleri varsayılana döner (renk düzeni,
+DPI, JPEG kalitesi, kenar/aralık): kullanıcı göremediği bir ayarın etkisini yaşamamalı.
+Rötuş kaydıraçları zaten her fotoğrafta sıfırlandığı için listede değildir.
+
+Yeni bir uzman denetimi eklerken `hv-gelismis` sınıfını vermek yeterlidir. Denetim bir
+bölümün tamamıysa `hv-bolum`'a verilir; ama o bölümde her iki modda da duran bir düğme
+varsa (örneğin *Rötuşu sıfırla*) düğme kendi bölümüne çıkarılır.
 
 ## Tanıtım turu
 
 `src/renderer/js/tanitim.js` uygulamanın gerçek arayüzünü ışıklandırarak yedi adımda
-anlatır. İlk açılışta kendiliğinden başlar, sonra **Yardım → Tanıtım turu** (F1) ile
-tekrar açılır; görülüp görülmediği `ayarlar.json` içindeki `tanitimGoruldu` alanında durur.
+anlatır. İlk açılışta **gelişmiş mod seçilirse** kendiliğinden başlar — basit modda
+sihirbazın kendisi rehber olduğu için tur açılmaz. Her iki durumda da **Yardım → Tanıtım
+turu** (F1) ile açılır; görülüp görülmediği `ayarlar.json` içindeki `tanitimGoruldu`
+alanında durur.
 
 - Adım listesi (`ADIMLAR`) hedefi CSS seçiciyle verir. **Hedefi bulunamayan adım sessizce
-  düşürülür** — arayüz değişirse tur kırılmaz, kısalır.
+  düşürülür** — arayüz değişirse tur kırılmaz, kısalır. Basit modda gizli kalan hedefler
+  (`.hv-gelismis` içindekiler) de aynı yoldan düşürülür. Eleme görünürlüğe (`offsetParent`)
+  değil moda bakar: adımların çoğu kapalı bir sekmenin içindedir ve tur onları sırası
+  gelince açar.
 - Adım bir panel sekmesine aitse (`panel: 'kadraj' | 'rotus' | 'cikti'`) tur sekmeyi
   kendisi açar; tur bitince başlangıçtaki sekmeye geri döner.
 - Kart yerleştirme hesabı (`kartKonumu`) saftır ve test edilir: tercih edilen yön sığmazsa
