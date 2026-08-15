@@ -5,15 +5,20 @@ name: Yayın paketleri
 #
 #   GitHub -> Actions -> "Yayın paketleri" -> Run workflow
 #
-# Uc kosucuda paralel derler, sonra dosyalari tek bir on yayina (pre-release)
-# yukler. Yapilandirma electron-builder.yml icinde.
+# Uc kosucuda paralel derler, sonra dosyalari tek bir yayina yukler.
+# Yapilandirma electron-builder.yml icinde.
 on:
   workflow_dispatch:
     inputs:
       etiket:
-        description: 'Sürüm etiketi. Boş bırakılırsa package.json sürümünden üretilir (v0.1.0 gibi).'
+        description: 'Sürüm etiketi. Boş bırakılırsa package.json sürümünden üretilir (v1.0.0 gibi).'
         required: false
         type: string
+      on_yayin:
+        description: 'Ön sürüm (pre-release) olarak işaretlensin. Kararlı sürümlerde kapalı bırakın.'
+        required: false
+        type: boolean
+        default: false
       mevcudu_degistir:
         description: 'Aynı etiketli yayın zaten varsa silinip yeniden oluşturulsun.'
         required: false
@@ -81,7 +86,7 @@ jobs:
           retention-days: 7
 
   yayinla:
-    name: Ön yayını oluştur
+    name: Yayını oluştur
     needs: paketle
     runs-on: ubuntu-latest
 
@@ -109,11 +114,12 @@ jobs:
       - name: Dosyaları listele
         run: ls -lh paketler
 
-      - name: Ön yayını oluştur
+      - name: Yayını oluştur
         env:
           GH_TOKEN: ${{ github.token }}
           ETIKET: ${{ steps.etiket.outputs.deger }}
           DEGISTIR: ${{ inputs.mevcudu_degistir }}
+          ON_YAYIN: ${{ inputs.on_yayin }}
         run: |
           set -euo pipefail
 
@@ -127,8 +133,21 @@ jobs:
             fi
           fi
 
-          cat > notlar.md <<'NOTLAR'
+          # Girisi ilk paragraf ayirir; gerisi iki durumda da ayni.
+          if [ "$ON_YAYIN" = "true" ]; then
+            cat > notlar.md <<'NOTLAR'
           Bu bir **ön sürümdür**: denemek içindir, kararlı sürüm değildir.
+          NOTLAR
+          else
+            cat > notlar.md <<'NOTLAR'
+          Vesikalık fotoğraf hazırlama ve baskı kağıdına dizme uygulaması. Bir portre
+          fotoğrafını biyometrik ölçülere göre hizalar, arka planını beyazlatır, rötuşlar ve
+          istenen fiziksel ölçüde çıktı üretir — tek fotoğraf olarak ya da bir baskı kağıdına
+          dizilmiş halde.
+          NOTLAR
+          fi
+
+          cat >> notlar.md <<'NOTLAR'
 
           ### Hangi dosyayı indirmeliyim?
 
@@ -153,18 +172,24 @@ jobs:
           - **Linux** — indirdikten sonra çalıştırma izni verin:
             `chmod +x hiper-vesika-*.AppImage`
 
-          ### Neler çalışıyor
+          ### Neler var
 
           Fotoğraf alma, otomatik hizalama, arka plan beyazlatma, rötuş, dışa aktarma,
-          baskı kağıdına dizme ve yazdırma. Tüm görüntü işleme bilgisayarınızda yapılır:
-          fotoğraflar hiçbir sunucuya gönderilmez, uygulama internet bağlantısı kurmaz.
+          baskı kağıdına dizme ve yazdırma. Arayüz iki modda kullanılabilir: adım adım
+          ilerleten **Basit** ve her ayarın açık olduğu **Gelişmiş**; ilk açılışta hangisiyle
+          çalışacağınız sorulur, seçim *Görünüm* menüsünden her zaman değiştirilebilir.
+
+          Tüm görüntü işleme bilgisayarınızda yapılır: fotoğraflar hiçbir sunucuya
+          gönderilmez, uygulama internet bağlantısı kurmaz.
           NOTLAR
 
           printf '\n---\n\nDerleme: `%s`\n' "${GITHUB_SHA:0:7}" >> notlar.md
 
-          gh release create "$ETIKET" \
-            --title "Hiper Vesika $ETIKET" \
-            --notes-file notlar.md \
-            --prerelease \
-            --target "$GITHUB_SHA" \
-            paketler/*
+          bayraklar=(--title "Hiper Vesika $ETIKET" --notes-file notlar.md --target "$GITHUB_SHA")
+          # `[ ... ] && ...` yazilamaz: kosul tutmayinca birlesik komut sifirdan
+          # farkli doner ve `set -e` betigi orada keser.
+          if [ "$ON_YAYIN" = "true" ]; then
+            bayraklar+=(--prerelease)
+          fi
+
+          gh release create "$ETIKET" "${bayraklar[@]}" paketler/*

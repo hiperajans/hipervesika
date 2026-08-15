@@ -10,14 +10,13 @@ Masaüstü uygulamasıdır (Electron); Windows, macOS ve Linux üzerinde çalı�
 alan terimleri Türkçedir. Tüm görüntü işleme cihazda yapılır: uygulama hiçbir ağ bağlantısı
 kurmaz, fotoğraflar hiçbir sunucuya gönderilmez.
 
-> **Durum:** Etkin geliştirme aşamasında (sürüm 0.2.0). Fotoğraf alma, hizalama, arka plan
-> beyazlatma, rötuş, dışa aktarma, dizme, baskı ve ön ayarlar çalışır durumdadır.
-> Arayüz iki modda kullanılabilir: adım adım ilerleten **Basit** ve her ayarın açık olduğu
-> **Gelişmiş**.
-> Kurulabilir paketler üretiliyor: macOS (Intel + Apple Silicon `.dmg`), Windows (kurulum
-> programı) ve Linux (`AppImage`). Hazır paketler
-> [Releases](https://github.com/hiperajans/hipervesika/releases) altında ön sürüm olarak
-> yayımlanır. Paketler henüz imzalı değil; ilk açılışta işletim sistemi bir kez uyarır.
+> **Durum:** Sürüm 1.0.0. Fotoğraf alma, hizalama, arka plan beyazlatma, rötuş, dışa
+> aktarma, dizme, baskı ve ön ayarlar çalışır durumdadır. Arayüz iki modda kullanılabilir:
+> adım adım ilerleten **Basit** ve her ayarın açık olduğu **Gelişmiş**.
+> Kurulabilir paketler: macOS (Intel + Apple Silicon `.dmg`), Windows (kurulum programı) ve
+> Linux (`AppImage`) — [Releases](https://github.com/hiperajans/hipervesika/releases)
+> altında. Paketler henüz imzalı değil; ilk açılışta işletim sistemi bir kez uyarır.
+> Mağaza sürümleri (Microsoft Store, Mac App Store) hazırlanıyor.
 > Yol haritası: [`docs/FAZLAR.md`](./docs/FAZLAR.md).
 
 ## Akış
