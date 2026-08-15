@@ -1,6 +1,6 @@
 {
   "name": "hiper-vesika",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Vesikalık fotoğraf düzenleme ve baskı dizme uygulaması",
   "main": "src/main/index.js",
   "//desktopName": "Linux'ta pencerenin app_id degeri; bkz. electron-builder.yml -> linux.syncDesktopName",
