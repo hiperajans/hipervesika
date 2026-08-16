@@ -7,10 +7,15 @@
 // Hesap kismi saf oldugu icin Node'da test edilir.
 
 ;(function (kok) {
+  // Fotograf kagidi olculeri once, ofis kagitlari sonra; ikisi de kullaniliyor.
+  // A5 ile 15 × 21 cm neredeyse ayni (148 vs 150 mm): biri fotograf kagidinin
+  // olcusu, digeri ofis kagidinin yarisi. Ikisi de listede duruyor cunku
+  // yazicinin kaset olcusu hangisiyse cikti da o olmali.
   const KAGIT_ONAYARLARI = [
     { kod: '10x15', ad: '10 × 15 cm', genislik: 100, yukseklik: 150 },
     { kod: '13x18', ad: '13 × 18 cm', genislik: 130, yukseklik: 180 },
     { kod: '15x21', ad: '15 × 21 cm', genislik: 150, yukseklik: 210 },
+    { kod: 'a5', ad: 'A5 (14,8 × 21 cm)', genislik: 148, yukseklik: 210 },
     { kod: 'a4', ad: 'A4 (21 × 29,7 cm)', genislik: 210, yukseklik: 297 }
   ]
 

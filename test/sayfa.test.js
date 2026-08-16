@@ -203,9 +203,33 @@ test('sayfa dosya adi olcuyu ve adedi tasir', () => {
 })
 
 test('on ayarlarin olculeri gecerli', () => {
-  assert.equal(sayfa.KAGIT_ONAYARLARI.length, 4)
+  assert.equal(sayfa.KAGIT_ONAYARLARI.length, 5)
   for (const onayar of sayfa.KAGIT_ONAYARLARI) {
     assert.ok(sayfa.kagitGecerliMi(onayar.genislik), `${onayar.kod} genislik`)
     assert.ok(sayfa.kagitGecerliMi(onayar.yukseklik), `${onayar.kod} yukseklik`)
+  }
+
+  const kodlar = sayfa.KAGIT_ONAYARLARI.map((o) => o.kod)
+  assert.equal(new Set(kodlar).size, kodlar.length, 'kodlar benzersiz olmali')
+})
+
+test('A5 ISO olcusunde ve 15x21 ile karismiyor', () => {
+  assert.deepEqual(kagit('a5'), { genislik: 148, yukseklik: 210 })
+  // Yakin ama ayni degil; ikisi ayri kaset olcusu.
+  assert.deepEqual(kagit('15x21'), { genislik: 150, yukseklik: 210 })
+})
+
+test('A5 kagida 50x60 vesikalik dizilebiliyor', () => {
+  const yerlesim = sayfa.enIyiYerlesim({ kagitMm: kagit('a5'), fotoMm: VESIKALIK })
+
+  // 148 x 210 mm: dik dizilim 2 x 3 = 6 verir, yatik dizilim 2 x 4 = 8.
+  // Vesikaliklar kagittan kesilerek ayrildigi icin cok cikan secilir.
+  assert.equal(yerlesim.sigmiyor, false)
+  assert.equal(yerlesim.dondurulmus, true)
+  assert.equal(yerlesim.adet, 8)
+  for (const konum of yerlesim.konumlar) {
+    assert.ok(konum.x >= -0.001 && konum.y >= -0.001)
+    assert.ok(konum.x + yerlesim.fotoMm.genislik <= 148.001)
+    assert.ok(konum.y + yerlesim.fotoMm.yukseklik <= 210.001)
   }
 })

@@ -81,7 +81,7 @@ fotoğraf sürükle-bırak → otomatik hizalama → arka plan beyazlatma → r�
 
 **Dizme ve baskı**
 
-- Hazır kağıt ölçüleri: 10 × 15, 13 × 18, 15 × 21 cm ve A4; kendi ölçünüzü de girip
+- Hazır kağıt ölçüleri: 10 × 15, 13 × 18, 15 × 21 cm, A5 ve A4; kendi ölçünüzü de girip
   kaydedebilirsiniz. Yatay/dikey seçilebilir.
 - Kaç adet sığdığı, kenar boşlukları ve aradaki boşluklar kağıt ile fotoğraf ölçüsünden
   otomatik hesaplanır; adet ve boşluklar elle değiştirilebilir, sığmayan durumda uyarılır.
