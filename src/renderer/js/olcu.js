@@ -22,10 +22,27 @@
   const HEDEF_DPI = 300
   const DUSUK_DPI = 200
 
+  // Hazir fotograf olculeri. `kadraj`, otomatik hizalamanin kullanacagi
+  // yerlesim profilinin adidir (bkz. hizalama.js -> KADRAJLAR): biyometrik
+  // olcularde bas kadraji doldurur, Turkiye'de alisilmis vesikalikta ise
+  // daha kucuk kalir ve omuzlar gorunur.
   const FOTOGRAF_ONAYARLARI = [
-    { kod: 'tr-biyometrik', ad: 'Türkiye biyometrik', genislikMm: 50, yukseklikMm: 60 },
-    { kod: 'icao', ad: 'ICAO / Schengen', genislikMm: 35, yukseklikMm: 45 },
-    { kod: 'abd', ad: 'ABD (2×2 inç)', genislikMm: 51, yukseklikMm: 51 }
+    {
+      kod: 'tr-biyometrik',
+      ad: 'Türkiye biyometrik',
+      genislikMm: 50,
+      yukseklikMm: 60,
+      kadraj: 'biyometrik'
+    },
+    {
+      kod: 'tr-vesikalik',
+      ad: 'Türkiye vesikalık',
+      genislikMm: 45,
+      yukseklikMm: 60,
+      kadraj: 'vesikalik'
+    },
+    { kod: 'icao', ad: 'ICAO / Schengen', genislikMm: 35, yukseklikMm: 45, kadraj: 'biyometrik' },
+    { kod: 'abd', ad: 'ABD (2×2 inç)', genislikMm: 51, yukseklikMm: 51, kadraj: 'biyometrik' }
   ]
 
   const DPI_SECENEKLERI = [150, 300, 600]

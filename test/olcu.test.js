@@ -6,6 +6,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 
 const olcu = require('../src/renderer/js/olcu.js')
+const hizalama = require('../src/renderer/js/hizalama.js')
 
 const yakin = (a, b, tolerans = 0.001) =>
   assert.ok(Math.abs(a - b) <= tolerans, `${a} ile ${b} arasindaki fark ${tolerans} degerini asiyor`)
@@ -150,11 +151,30 @@ test('orana uydurma gorselden buyuk cerceve uretmez', () => {
 })
 
 test('on ayarlar tanimli ve tutarli', () => {
-  assert.equal(olcu.FOTOGRAF_ONAYARLARI.length, 3)
+  assert.equal(olcu.FOTOGRAF_ONAYARLARI.length, 4)
   for (const onayar of olcu.FOTOGRAF_ONAYARLARI) {
     assert.ok(olcu.olcuGecerliMi(onayar.genislikMm), `${onayar.kod} genislik`)
     assert.ok(olcu.olcuGecerliMi(onayar.yukseklikMm), `${onayar.kod} yukseklik`)
   }
-  const tr = olcu.FOTOGRAF_ONAYARLARI.find((o) => o.kod === 'tr-biyometrik')
-  assert.deepEqual([tr.genislikMm, tr.yukseklikMm], [50, 60])
+
+  const bul = (kod) => olcu.FOTOGRAF_ONAYARLARI.find((o) => o.kod === kod)
+  assert.deepEqual(
+    [bul('tr-biyometrik').genislikMm, bul('tr-biyometrik').yukseklikMm], [50, 60]
+  )
+  // Turkiye'de alisilmis vesikalik olcusu.
+  assert.deepEqual(
+    [bul('tr-vesikalik').genislikMm, bul('tr-vesikalik').yukseklikMm], [45, 60]
+  )
+})
+
+test('her on ayarin kadraj profili hizalamada tanimli', () => {
+  for (const onayar of olcu.FOTOGRAF_ONAYARLARI) {
+    assert.ok(
+      hizalama.KADRAJLAR[onayar.kadraj],
+      `${onayar.kod} tanimsiz kadraj kullaniyor: ${onayar.kadraj}`
+    )
+  }
+  // Iki Turkiye olcusu farkli kadrajla kurulur; fark yalnizca olcude degil.
+  const kadraji = (kod) => olcu.FOTOGRAF_ONAYARLARI.find((o) => o.kod === kod).kadraj
+  assert.notEqual(kadraji('tr-biyometrik'), kadraji('tr-vesikalik'))
 })

@@ -140,23 +140,66 @@ test('kaynaga tasima calismaya tasimanin tersidir', () => {
   }
 })
 
-test('otomatik cerceve yuz oranini ve goz hattini uygular', () => {
-  const calisma = { genislik: 2000, yukseklik: 2000 }
-  const cene = { x: 1000, y: 1200 }
-  const tepe = { x: 1000, y: 900 } // 300 birim yuz yuksekligi
-  const gozMerkezi = { x: 1000, y: 1050 }
+// Ortak yuz: 300 birim yuz yuksekligi (cene-tepe), ortada.
+const ornekYuz = {
+  calisma: { genislik: 2000, yukseklik: 2000 },
+  cene: { x: 1000, y: 1200 },
+  tepe: { x: 1000, y: 900 },
+  gozMerkezi: { x: 1000, y: 1050 }
+}
 
-  const cerceve = hizalama.otomatikCerceve({ cene, tepe, gozMerkezi, calisma, oran: 50 / 60 })
+test('otomatik cerceve yuz oranini ve goz hattini uygular', () => {
+  const kadraj = hizalama.kadrajBul('biyometrik')
+  const cerceve = hizalama.otomatikCerceve({ ...ornekYuz, oran: 50 / 60, kadraj: 'biyometrik' })
 
   // Yuz, kadrajin %75'i olmali: 300 / 0.75 = 400
-  yakin(cerceve.yukseklik, 400)
-  yakin(cerceve.genislik, 400 * (50 / 60))
+  yakin(cerceve.yukseklik, 300 / kadraj.yuzOrani)
+  yakin(cerceve.genislik, (300 / kadraj.yuzOrani) * (50 / 60))
 
   // Goz hatti kadrajin ustunden %45'te olmali.
-  yakin((gozMerkezi.y - cerceve.y) / cerceve.yukseklik, hizalama.GOZ_HATTI_USTTEN)
+  yakin(
+    (ornekYuz.gozMerkezi.y - cerceve.y) / cerceve.yukseklik, kadraj.gozHattiUstten
+  )
 
   // Yatayda yuz merkezlenmis olmali.
-  yakin(cerceve.x + cerceve.genislik / 2, gozMerkezi.x)
+  yakin(cerceve.x + cerceve.genislik / 2, ornekYuz.gozMerkezi.x)
+})
+
+test('kadraj verilmezse biyometrik kullanilir', () => {
+  assert.deepEqual(
+    hizalama.otomatikCerceve({ ...ornekYuz, oran: 45 / 60 }),
+    hizalama.otomatikCerceve({ ...ornekYuz, oran: 45 / 60, kadraj: 'biyometrik' })
+  )
+  // Taninmayan ad da varsayilana duser; hizalama hic calismamazlik etmemeli.
+  assert.deepEqual(
+    hizalama.otomatikCerceve({ ...ornekYuz, oran: 45 / 60, kadraj: 'yok-boyle' }),
+    hizalama.otomatikCerceve({ ...ornekYuz, oran: 45 / 60, kadraj: 'biyometrik' })
+  )
+})
+
+test('klasik vesikalik kadraji basi daha kucuk kurar', () => {
+  const oran = 45 / 60
+  const biyometrik = hizalama.otomatikCerceve({ ...ornekYuz, oran, kadraj: 'biyometrik' })
+  const vesikalik = hizalama.otomatikCerceve({ ...ornekYuz, oran, kadraj: 'vesikalik' })
+
+  // Ayni yuz, daha genis kadraj: bas fotografta daha kucuk kalir.
+  assert.ok(vesikalik.yukseklik > biyometrik.yukseklik,
+    `vesikalik ${vesikalik.yukseklik}, biyometrik ${biyometrik.yukseklik}`)
+
+  const yuzOrani = (cerceve) => 300 / cerceve.yukseklik
+  yakin(yuzOrani(vesikalik), hizalama.KADRAJLAR.vesikalik.yuzOrani)
+  yakin(yuzOrani(biyometrik), hizalama.KADRAJLAR.biyometrik.yuzOrani)
+
+  // Goz hatti da yukari kayar: kafanin ustunde bosluk kalir.
+  const gozHatti = (cerceve) =>
+    (ornekYuz.gozMerkezi.y - cerceve.y) / cerceve.yukseklik
+  yakin(gozHatti(vesikalik), hizalama.KADRAJLAR.vesikalik.gozHattiUstten)
+  assert.ok(gozHatti(vesikalik) < gozHatti(biyometrik))
+
+  // Olculen orneklerde tepe ile cene arasi goz hattinda ikiye bolunuyordu;
+  // profil bunu koruyor: tepe ustunde kalan bosluk %5 civari olmali.
+  const tepeBoslugu = (ornekYuz.tepe.y - vesikalik.y) / vesikalik.yukseklik
+  yakin(tepeBoslugu, 0.05, 0.02)
 })
 
 test('otomatik cerceve goruntu sinirlarini asmaz', () => {

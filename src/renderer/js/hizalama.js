@@ -10,10 +10,41 @@
     ? require('./olcu.js')
     : kok.HV.olcu
 
-  // Biyometrik yerlesim olculeri. ICAO oneride yuz yuksekligi (cene-tepe)
-  // fotografin %70-80'i, goz hatti alttan %50-60 arasinda olur; ortalari alindi.
-  const YUZ_ORANI = 0.75
-  const GOZ_HATTI_USTTEN = 0.45
+  // Kadraj profilleri. Her biri iki sayidan ibaret: yuz yuksekliginin
+  // (cene-tepe) fotografa orani ve goz hattinin ustten yeri. Hangi on ayarin
+  // hangi profili kullandigi olcu.js icinde yazar.
+  const KADRAJLAR = {
+    // ICAO onerisi: yuz yuksekligi fotografin %70-80'i, goz hatti alttan
+    // %50-60 arasinda; ortalari alindi. Pasaport ve kimlik basvurulari boyle
+    // ister, bas kadraji doldurur.
+    biyometrik: {
+      yuzOrani: 0.75,
+      gozHattiUstten: 0.45,
+      aciklama: 'Biyometrik kadraj: baş fotoğrafı doldurur, omuzlar az görünür. ' +
+        'Pasaport, kimlik ve ehliyet başvuruları böyle ister.'
+    },
+    // Turkiye'de "vesikalik" denince alisilmis kesim: bas daha kucuk, omuz ve
+    // gogus gorunur, kafanin ustunde bosluk kalir. Okul, is basvurusu ve
+    // ozluk dosyalarinda istenen fotograf budur.
+    //
+    // Sayilar ornek bir vesikalik uzerinden olculdu: kafanin tepesi %5, goz
+    // hatti %31, cene %57 -> yuz yuksekligi fotografin %52'si. Goz hatti
+    // beklendigi gibi tepe ile cenenin tam ortasina denk geliyor.
+    vesikalik: {
+      yuzOrani: 0.52,
+      gozHattiUstten: 0.31,
+      aciklama: 'Klasik vesikalık kadrajı: baş daha küçük, omuz ve göğüs görünür. ' +
+        'Okul, iş başvurusu ve özlük dosyaları için alışılmış kesim.'
+    }
+  }
+
+  const VARSAYILAN_KADRAJ = 'biyometrik'
+
+  // Taninmayan ad varsayilana duser: on ayar profilsiz de olabilir (kullanicinin
+  // kendi olcusu) ve bilinmeyen bir deger yuzunden hizalama hic calismamamali.
+  function kadrajBul (ad) {
+    return KADRAJLAR[ad] ?? KADRAJLAR[VARSAYILAN_KADRAJ]
+  }
 
   // Facemesh'in en ust noktasi (alin ortasi) sac cizgisinin biraz altinda kalir;
   // biyometrik olcunun istedigi tepe noktasi icin cene-alin vektoru uzatilir.
@@ -120,11 +151,13 @@
     }
   }
 
-  // Yuz olculerine gore biyometrik kadraj. Noktalar calisma uzayinda beklenir.
-  function otomatikCerceve ({ cene, tepe, gozMerkezi, calisma, oran }) {
+  // Yuz olculerine gore kadraj. Noktalar calisma uzayinda beklenir; kadraj,
+  // KADRAJLAR icindeki bir profilin adidir (secilen on ayardan gelir).
+  function otomatikCerceve ({ cene, tepe, gozMerkezi, calisma, oran, kadraj }) {
+    const { yuzOrani, gozHattiUstten } = kadrajBul(kadraj)
     const yuzYuksekligi = Math.hypot(tepe.x - cene.x, tepe.y - cene.y)
 
-    let yukseklik = yuzYuksekligi / YUZ_ORANI
+    let yukseklik = yuzYuksekligi / yuzOrani
     let genislik = yukseklik * oran
 
     // Kadraj goruntuden buyuk cikarsa sigacak sekilde kucultulur.
@@ -140,7 +173,7 @@
     return olcu.sinirlaraTasi(
       {
         x: gozMerkezi.x - genislik / 2,
-        y: gozMerkezi.y - yukseklik * GOZ_HATTI_USTTEN,
+        y: gozMerkezi.y - yukseklik * gozHattiUstten,
         genislik,
         yukseklik
       },
@@ -156,8 +189,9 @@
   }
 
   const hizalama = {
-    YUZ_ORANI,
-    GOZ_HATTI_USTTEN,
+    KADRAJLAR,
+    VARSAYILAN_KADRAJ,
+    kadrajBul,
     TEPE_CARPANI,
     EN_BUYUK_DONME_DERECE,
     dereceye,

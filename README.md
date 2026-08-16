@@ -31,9 +31,13 @@ fotoğraf sürükle-bırak → otomatik hizalama → arka plan beyazlatma → r�
 
 **Ölçü ve kadraj**
 
-- Hazır fotoğraf ölçüleri: Türkiye biyometrik (50 × 60 mm), ICAO / Schengen (35 × 45 mm),
-  ABD (51 × 51 mm). Kullanıcı kendi ölçüsünü milimetre olarak girebilir ve adlandırıp
-  kaydedebilir.
+- Hazır fotoğraf ölçüleri: Türkiye biyometrik (50 × 60 mm), Türkiye vesikalık
+  (45 × 60 mm), ICAO / Schengen (35 × 45 mm), ABD (51 × 51 mm). Kullanıcı kendi ölçüsünü
+  milimetre olarak girebilir ve adlandırıp kaydedebilir.
+- Seçilen ölçü yalnızca boyutu değil **kadrajı** da belirler: biyometrikte baş fotoğrafı
+  doldurur (pasaport, kimlik), klasik Türkiye vesikalığında baş küçük kalır, omuz ve göğüs
+  görünür (okul, iş başvurusu, özlük dosyası). Ölçüyü değiştirmek kadrajı yeniden kurar;
+  yüz ikinci kez aranmaz.
 - Seçilen ölçünün oranına kilitli kırpma çerçevesi; çerçeve taşınıp ölçeklendirilebilir,
   oran bozulmaz ve fotoğraf sınırlarının dışına taşmaz.
 - Çıkacak gerçek çözünürlük gösterilir, baskı için düşük kaldığında uyarılır.
@@ -43,9 +47,10 @@ fotoğraf sürükle-bırak → otomatik hizalama → arka plan beyazlatma → r�
 
 - Yüz ve gövde tanıma ([Human](https://github.com/vladmandic/human)) ile eğiklik düzeltme:
   iki göz arasındaki açı yataya getirilir, omuz farkı bilgi olarak gösterilir.
-- Biyometrik yerleşim: yüz yüksekliği ve göz hattı standartların beklediği aralığa
-  oturacak şekilde kadraj kurulur. Kafanın tepesi, yüz noktalarından kestirilmek yerine
-  kişi maskesinden okunur; böylece saç hacmi kadrajın dışında kalmaz.
+- Yerleşim seçilen ölçünün kadraj profiline göre kurulur: biyometrikte yüz yüksekliği
+  fotoğrafın %75'i ve göz hattı üstten %45'te, klasik vesikalıkta %52 ve %31. Kafanın
+  tepesi, yüz noktalarından kestirilmek yerine kişi maskesinden okunur; böylece saç hacmi
+  kadrajın dışında kalmaz.
 - Otomatik sonuç her zaman elle değiştirilebilir; yüz bulunamadığında kullanıcı
   bilgilendirilir.
 

@@ -20,6 +20,7 @@ const el = {
   durum: document.getElementById('durum'),
   sistemBilgisi: document.getElementById('sistem-bilgisi'),
   onayarSecimi: document.getElementById('onayar-secimi'),
+  onayarAciklamasi: document.getElementById('onayar-aciklamasi'),
   genislikMm: document.getElementById('genislik-mm'),
   yukseklikMm: document.getElementById('yukseklik-mm'),
   olcuHatasi: document.getElementById('olcu-hatasi'),
@@ -154,7 +155,13 @@ const lekeFircasi = new window.HV.LekeFircasi(tuval, {
 })
 
 let yuklenenGorsel = null
-let olcuDurumu = { genislikMm: 50, yukseklikMm: 60 }
+// Olcunun yaninda kadraj profili de tutulur: otomatik hizalamanin basi ne
+// kadar buyuk kuracagi secilen on ayardan gelir (bkz. js/hizalama.js).
+let olcuDurumu = {
+  genislikMm: 50,
+  yukseklikMm: 60,
+  kadraj: hizalamaMotoru.VARSAYILAN_KADRAJ
+}
 let dpi = 300
 
 // index.html'deki kaydiracin baslangic degeriyle ayni olmali; basit moda
@@ -305,7 +312,8 @@ function hizalamaDurumu (mesaj, tur = 'bilgi') {
 // Kafanin gercek tepesi kisi maskesinden okunur; yuz noktalarindan kestirilen
 // tepe sac hacmini hesaba katmadigi icin kadraj kafanin ustunu kesiyordu.
 // Maske ayrica arka plan beyazlatmada yeniden kullanilir, ikinci kez uretilmez.
-async function tepeNoktasiniBul (yuz, calismaya) {
+// Sonuc kaynak goruntunun koordinatindadir.
+async function tepeNoktasiniBul (yuz) {
   try {
     if (!hamMaske) {
       const aday = await window.HV.arkaplan.maskeCikar(yuklenenGorsel.asil)
@@ -320,11 +328,44 @@ async function tepeNoktasiniBul (yuz, calismaya) {
       gorselGenislik: yuklenenGorsel.asil.width
     })
 
-    return tepeY === null ? null : calismaya({ x: merkezX, y: tepeY })
+    return tepeY === null ? null : { x: merkezX, y: tepeY }
   } catch {
     // Maske alinamazsa kestirime dusulur; hizalama yine de calisir.
     return null
   }
+}
+
+// Otomatik hizalamanin buldugu noktalar KAYNAK goruntu koordinatinda saklanir.
+// Kadraj profili degisince (ornegin biyometrikten klasik vesikaliga gecilince)
+// kadraj bunlardan yeniden kurulur; yuz ikinci kez aranmaz.
+let sonHizalama = null
+
+// Saklanan noktalardan kadraji kurar. Donme acisi degismis olabilecegi icin
+// noktalar her seferinde calisma uzayina yeniden tasinir.
+function kadrajiKur () {
+  if (!sonHizalama || !yuklenenGorsel) return false
+
+  const gorselOlcusu = {
+    genislik: yuklenenGorsel.asil.width,
+    yukseklik: yuklenenGorsel.asil.height
+  }
+  const calisma = yuklenenGorsel.calisma
+  const calismaya = (nokta) =>
+    hizalamaMotoru.calismayaTasi(nokta, gorselOlcusu, calisma, yuklenenGorsel.aci)
+
+  const solGoz = calismaya(sonHizalama.solGoz)
+  const sagGoz = calismaya(sonHizalama.sagGoz)
+
+  kirpma.cerceveAta(hizalamaMotoru.otomatikCerceve({
+    cene: calismaya(sonHizalama.cene),
+    tepe: calismaya(sonHizalama.tepe),
+    gozMerkezi: { x: (solGoz.x + sagGoz.x) / 2, y: (solGoz.y + sagGoz.y) / 2 },
+    calisma,
+    oran: olcuMotoru.oran(olcuDurumu.genislikMm, olcuDurumu.yukseklikMm),
+    kadraj: olcuDurumu.kadraj
+  }))
+
+  return true
 }
 
 async function otomatikHizala () {
@@ -355,35 +396,22 @@ async function otomatikHizala () {
     const aci = hizalamaMotoru.egiklikAcisi(bulgu.yuz.solGoz, bulgu.yuz.sagGoz)
     aciAta(aci)
 
-    const gorselOlcusu = {
-      genislik: yuklenenGorsel.asil.width,
-      yukseklik: yuklenenGorsel.asil.height
-    }
-    const calisma = yuklenenGorsel.calisma
-    const calismaya = (nokta) =>
-      hizalamaMotoru.calismayaTasi(nokta, gorselOlcusu, calisma, aci)
-
     // Goz canlandirma icin goz konumlari kaynak koordinatinda saklanir.
     yuklenenGorsel.gozler = { sol: bulgu.yuz.solGoz, sag: bulgu.yuz.sagGoz }
     gozDurumunuGuncelle()
 
-    const cene = calismaya(bulgu.yuz.cene)
-    const alin = calismaya(bulgu.yuz.alin)
-    const solGoz = calismaya(bulgu.yuz.solGoz)
-    const sagGoz = calismaya(bulgu.yuz.sagGoz)
-
     // Kafanin tepesi kisi maskesinden okunuyor; islemin en uzun suren adimi bu.
     beklemeYaz('Kafanın tepesi ölçülüyor…')
-    const tepe = await tepeNoktasiniBul(bulgu.yuz, calismaya) ??
-      hizalamaMotoru.tepeNoktasi(cene, alin)
+    const tepe = await tepeNoktasiniBul(bulgu.yuz) ??
+      hizalamaMotoru.tepeNoktasi(bulgu.yuz.cene, bulgu.yuz.alin)
 
-    kirpma.cerceveAta(hizalamaMotoru.otomatikCerceve({
-      cene,
+    sonHizalama = {
+      cene: bulgu.yuz.cene,
       tepe,
-      gozMerkezi: { x: (solGoz.x + sagGoz.x) / 2, y: (solGoz.y + sagGoz.y) / 2 },
-      calisma,
-      oran: olcuMotoru.oran(olcuDurumu.genislikMm, olcuDurumu.yukseklikMm)
-    }))
+      solGoz: bulgu.yuz.solGoz,
+      sagGoz: bulgu.yuz.sagGoz
+    }
+    kadrajiKur()
 
     const parcalar = [`Eğiklik ${bicimliDerece(aci)} düzeltildi`]
     if (bulgu.yuzSayisi > 1) {
@@ -768,6 +796,12 @@ function dpiSecenekleriniDoldur () {
   }
 }
 
+// Secili olcunun hangi kadrajla hizalanacagini yazar. Iki hazir olcu ayni
+// yuksekligi (60 mm) paylastigi icin fark yalnizca burada gorunur.
+function kadrajAciklamasiniGuncelle () {
+  el.onayarAciklamasi.textContent = hizalamaMotoru.kadrajBul(olcuDurumu.kadraj).aciklama
+}
+
 function olcuHatasiGoster (goster) {
   el.olcuHatasi.classList.toggle('d-none', !goster)
   el.genislikMm.classList.toggle('is-invalid', goster)
@@ -785,8 +819,24 @@ function olculeriUygula () {
   }
 
   olcuHatasiGoster(false)
-  olcuDurumu = { genislikMm: genislik, yukseklikMm: yukseklik }
+  // Kadraj secili on ayardan gelir; elle olcu girildiginde (secim "ozel"e
+  // duser) ya da kullanicinin kendi olcusunde varsayilan biyometrik kadraj
+  // kullanilir.
+  const oncekiKadraj = olcuDurumu.kadraj
+  olcuDurumu = {
+    genislikMm: genislik,
+    yukseklikMm: yukseklik,
+    kadraj: fotoOnayariBul(el.onayarSecimi.value)?.kadraj ?? hizalamaMotoru.VARSAYILAN_KADRAJ
+  }
+  kadrajAciklamasiniGuncelle()
   kirpma.oranAta(olcuMotoru.oran(genislik, yukseklik))
+
+  // Profil degistiyse kadraj yeniden kurulur: biyometrik ile klasik vesikalik
+  // arasindaki fark yalnizca olcude degil, basin buyuklugundedir. Ayni profil
+  // icinde olcu degistirmek kirpmaya dokunmaz; kullanicinin elle kurdugu
+  // kadraj bozulmamali.
+  if (olcuDurumu.kadraj !== oncekiKadraj) kadrajiKur()
+
   ciktiBilgisiniGuncelle()
 
   // Vesikalik olcusu degisince sayfaya sigan adet de degisir.
@@ -857,6 +907,7 @@ async function gorselYukle (dosya) {
     kirpma.calismaAta(gorsel.calisma)
 
     // Yeni fotografta onceki hizalama ve maske gecerli degil.
+    sonHizalama = null
     el.donmeAcisi.value = '0'
     el.donmeDegeri.textContent = '0,0°'
     maskeyiAta(null)
@@ -875,7 +926,9 @@ async function gorselYukle (dosya) {
 
     gecmis.temizle()
     durumuKaydet()
-    hizalamaDurumu('Yüz ve omuz konumuna göre eğikliği düzeltir, biyometrik kadrajı kurar.')
+    hizalamaDurumu(
+      'Yüz ve omuz konumuna göre eğikliği düzeltir, seçilen ölçünün kadrajını kurar.'
+    )
 
     const { width, height } = gorsel.asil
     el.gorselBilgisi.textContent =

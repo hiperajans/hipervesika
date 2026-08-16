@@ -36,6 +36,7 @@ Atlanan testler çıktıda `﹣` ile ve sebebiyle birlikte görünür.
 | `panel.test.js` | Adımlar arası geçiş, panelin başa sarması, tanıtım turu |
 | `ayarlar.test.js` | Kullanıcı ön ayarları, son kullanılan değerler, bozuk ayar dosyası |
 | `baski.test.js` | Menü kısayolları, PDF ölçü doğruluğu, sayfa kaydetme, geri al/yinele |
+| `olcu.test.js` | Hazır vesikalık ölçüleri ve kadraj profilinin arayüze bağlanması |
 | `yakinlik.test.js` | Arayüz ölçeği kısayolları, Görünüm menüsü, ölçeğin baskıya sızmaması |
 | `cikti.test.js` | JPG/PNG dışa aktarma, DPI bilgisi, renk düzeni, CMYK PDF |
 | `cevrimdisi.test.js` | Ağ kapalıyken tam iş akışı ve "hiç uzak istek yok" denetimi |

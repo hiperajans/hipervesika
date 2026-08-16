@@ -549,6 +549,32 @@ Mağazalara (Microsoft Store, Mac App Store) ve GitHub'a yayın öncesi yapılan
   1024×1024 (Mac App Store uygulama simgesi). Ayrı klasörde duruyorlar çünkü
   `build/icons/*.png` Linux simge seti olarak taranıyor.
 
+### Kadraj profilleri: biyometrik ve klasik vesikalık
+
+Uygulama tek bir kadraj biliyordu: ICAO'nun istediği biyometrik yerleşim (yüz yüksekliği
+fotoğrafın %75'i, göz hattı üstten %45). Oysa Türkiye'de "vesikalık" denince çoğu zaman
+başka bir kesim isteniyor — baş daha küçük, omuz ve göğüs görünür, kafanın üstünde boşluk
+kalır. Okul, iş başvurusu ve özlük dosyalarında istenen fotoğraf budur ve alışılmış ölçüsü
+**45 × 60 mm**.
+
+Kadraj artık ön ayarın bir özelliği:
+
+- `hizalama.js` → `KADRAJLAR` iki profil tutar. `biyometrik` %75 / %45; `vesikalik`
+  %52 / %31. İkinci profilin sayıları örnek bir vesikalık üzerinden ölçüldü (kafanın
+  tepesi %5, göz hattı %31, çene %57) ve göz hattının tepe ile çenenin tam ortasına
+  denk gelmesiyle doğrulandı.
+- `olcu.js` → her hazır ölçü hangi profili kullandığını yazar. Yeni ölçü:
+  `tr-vesikalik`, 45 × 60 mm, `vesikalik` kadrajı. Kullanıcının kendi ölçüsü ve elle
+  girilen milimetreler biyometrik kadraja düşer.
+- Ölçü değiştirildiğinde **profil de değiştiyse** kadraj yeniden kurulur: otomatik
+  hizalamanın bulduğu noktalar kaynak koordinatında saklanır, yüz ikinci kez aranmaz.
+  Aynı profil içinde ölçü değiştirmek kırpmaya dokunmaz; kullanıcının elle kurduğu kadraj
+  bozulmamalı.
+
+Kaynak fotoğraf zaten dar kırpılmışsa çerçeve fotoğrafın kenarına dayanır ve baş
+istenenden biraz büyük kalır — bu, `sinirlaraTasi` ile bilinçli olarak kabul edilen
+davranış; alternatifi kadrajın dışına boş alan koymak olurdu.
+
 ### Arayüz ölçeği kısayolu ve klavye dizeni
 
 *Görünüm* menüsündeki yakınlaştırma öğeleri Electron'un hazır `zoomIn` / `zoomOut`

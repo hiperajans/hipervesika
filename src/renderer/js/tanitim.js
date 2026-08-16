@@ -38,8 +38,9 @@
       hedef: '#btn-otomatik-hizala',
       tercih: 'sol',
       baslik: 'Otomatik hizalama',
-      metin: 'Yüzü bulur, omuz hattına göre eğikliği düzeltir ve biyometrik ' +
-        'kadrajı kurar. Kadrajı sonradan köşelerinden tutup değiştirebilirsiniz.'
+      metin: 'Yüzü bulur, omuz hattına göre eğikliği düzeltir ve seçtiğiniz ' +
+        'ölçünün kadrajını kurar. Kadrajı sonradan köşelerinden tutup ' +
+        'değiştirebilirsiniz.'
     },
     {
       kod: 'olcu',
@@ -48,7 +49,9 @@
       tercih: 'sol',
       baslik: 'Vesikalık ölçüsü',
       metin: 'Hazır ölçülerden seçin ya da milimetre olarak kendiniz girin. ' +
-        'Sık kullandığınız ölçüyü "Ölçüyü kaydet" ile listeye ekleyebilirsiniz.'
+        'Ölçü yalnızca boyutu değil kadrajı da belirler: biyometrikte baş ' +
+        'fotoğrafı doldurur, klasik vesikalıkta omuzlar görünür. Sık ' +
+        'kullandığınız ölçüyü "Ölçüyü kaydet" ile listeye ekleyebilirsiniz.'
     },
     {
       kod: 'rotus',
