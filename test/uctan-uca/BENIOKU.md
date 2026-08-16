@@ -36,6 +36,7 @@ Atlanan testler çıktıda `﹣` ile ve sebebiyle birlikte görünür.
 | `panel.test.js` | Adımlar arası geçiş, panelin başa sarması, tanıtım turu |
 | `ayarlar.test.js` | Kullanıcı ön ayarları, son kullanılan değerler, bozuk ayar dosyası |
 | `baski.test.js` | Menü kısayolları, PDF ölçü doğruluğu, sayfa kaydetme, geri al/yinele |
+| `acilis.test.js` | Açılış penceresi: uygulama hazırlık bitene kadar görünmüyor |
 | `olcu.test.js` | Hazır vesikalık ölçüleri ve kadraj profilinin arayüze bağlanması |
 | `yakinlik.test.js` | Arayüz ölçeği kısayolları, Görünüm menüsü, ölçeğin baskıya sızmaması |
 | `cikti.test.js` | JPG/PNG dışa aktarma, DPI bilgisi, renk düzeni, CMYK PDF |
@@ -46,6 +47,9 @@ Atlanan testler çıktıda `﹣` ile ve sebebiyle birlikte görünür.
 
 - Her test kendi `--user-data-dir` klasöründe çalışır; kullanıcının gerçek
   ayarlarına dokunulmaz.
+- **Açılış penceresi varsayılan olarak kapalıdır** (`HV_ACILIS=0`): her dosyada
+  modellerin yüklenmesini beklemek süiti dakikalarca uzatırdı. `acilis.test.js`
+  onu `ortam.uygulamayiAc(calisma, { acilis: true })` ile açıkça ister.
 - Kaydetme pencereleri `dialog.showSaveDialog` değiştirilerek yönlendirilir,
   dosyalar geçici klasöre yazılır.
 - **Gerçek yazıcıya iş gönderilmez.** Yazıcı tanımlı bir makinede baskı testi

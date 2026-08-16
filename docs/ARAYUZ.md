@@ -192,6 +192,32 @@ kural 4). Rasterleme Electron'un tuvalinde yapılır — depoda görüntü işle
 yok ve eklenmedi — donanım hızlandırma kapatılarak, böylece çıktı makineden makineye
 değişmez.
 
+## Açılış penceresi
+
+`acilis.html` + `acilis.css` + `acilis.js`. Çerçevesiz, 560 × 262, ortalanmış, taşınabilir
+(`-webkit-app-region: drag`). Ana arayüzün 27 KB'lik katmanını yüklemez; tek işi ilk karede
+ekranda olmak.
+
+**Fikir.** Pencerenin kendisi kesime hazır bir baskı sayfası: dört köşesinde uygulamanın
+dizme görünümündeki **kesim kılavuzunun** aynısı olan L işaretleri var. Marka işareti
+solda büyük (132 px), yazı bloğu sağda, künye altta — baskı işinde fotoğrafın ve fişinin
+duruşu. Süslemeyle değil, ürünün kendi görsel diliyle kurulmuş bir kare.
+
+**Renk.** Tek istisna burada: çalışma arayüzü nötr gri + mavi vurgudur (fotoğrafın renkleri
+arayüzle yarışmasın diye), açılış ise markanın göründüğü tek yerdir ve simgenin kehribarını
+(`#f59e0b`) kullanır. Kehribar yalnızca ilerleme rayında görünür; sayfanın geri kalanı
+sessiz kalır.
+
+**Ne yazar.** Tek satır: *Açılıyor, lütfen bekleyiniz…* Hangi modelin yüklendiği kullanıcıyı
+ilgilendirmez. 12 saniye sonra satır *İlk açılış biraz uzun sürebilir, hazırlık sürüyor…*
+olur — ölçüldü: ilk açılış ~23 sn (ekran kartının gölgelendirici önbelleği boş), sonrakiler
+~8 sn; ilk seferde sessiz kalmak takılma izlenimi veriyordu. Bir adım tamamlanamazsa yazı
+bunu söyler, ray kırmızıya döner ve uygulama yine de açılır.
+
+**İlerleme gerçektir.** Ray, `js/acilis.js` içindeki aşama listesinden hesaplanır: biten
+aşama tam, süren aşama yarım sayılır. Yarım adım, ilk model yüklenirken rayın kımıldamasını
+sağlar. Sahte (zamanlayıcıya bağlı) bir ilerleme çubuğu yoktur.
+
 ## Bekleme penceresi
 
 Saniyeler süren işlemlerde — *Otomatik hizala* ve *Arka planı beyazlat* — `#islem-modali`

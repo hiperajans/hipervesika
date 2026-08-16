@@ -359,6 +359,92 @@ function olcegiKur () {
   })
 }
 
+// --- Acilis penceresi --------------------------------------------------------
+
+// Yuz bulma ve arka plan ayirma modelleri 11 MB ve ilk calistirmada shader
+// derliyorlar; bu is bitmeden acilan arayuzde "Otomatik hizala" saniyelerce
+// bekletiyordu. Bu yuzden once cercevesiz bir acilis penceresi gosterilir,
+// modeller ana pencerede (gizliyken) yuklenir ve uygulama hazir olunca ekrana
+// gelir.
+//
+// Modelleri arayuz yukler cunku TensorFlow WebGL istiyor; ana surecin isi
+// yalnizca iki pencereyi sirayla gostermek.
+const ACILIS = process.env.HV_ACILIS !== '0'
+
+// Yukleme beklenmedik bicimde uzarsa (ya da hic bitmezse) kullanici acilis
+// penceresine bakakalmamali: uygulama bu surenin sonunda kendiliginden acilir.
+// Olculdu: ilk acilis ~23 sn (ekran kartinin golgelendirici onbellegi bos),
+// sonraki acilislar ~8 sn. Sinir, ilk acilisi kesmeyecek kadar uzak.
+const ACILIS_EN_FAZLA_BEKLEME = 45000
+
+let acilisPenceresi = null
+let acilisZamanlayicisi = null
+
+function acilisPenceresiOlustur () {
+  const pencere = new BrowserWindow({
+    width: 560,
+    height: 262,
+    show: false,
+    frame: false,
+    resizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    center: true,
+    backgroundColor: '#eef0f4',
+    title: 'Hiper Vesika',
+    webPreferences: {
+      preload: path.join(__dirname, '..', 'preload', 'index.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      devTools: GELISTIRICI
+    }
+  })
+
+  pencere.once('ready-to-show', () => pencere.show())
+  pencere.loadURL(
+    `${ARAYUZ_KAYNAGI}/acilis.html?surum=${encodeURIComponent(app.getVersion())}`
+  )
+
+  return pencere
+}
+
+// Uygulamayi ekrana getirir ve acilis penceresini kapatir. Birden fazla kez
+// cagrilabilir (hem arayuzun haberi hem de sure asimi buraya duser).
+function uygulamayiGoster (pencere) {
+  clearTimeout(acilisZamanlayicisi)
+  acilisZamanlayicisi = null
+
+  if (!pencere || pencere.isDestroyed()) return
+
+  if (!pencere.isVisible()) pencere.show()
+  pencere.focus()
+
+  if (acilisPenceresi && !acilisPenceresi.isDestroyed()) acilisPenceresi.close()
+  acilisPenceresi = null
+}
+
+function acilisiKur (pencere) {
+  // Asama bildirimi arayuzden geliyor; ana surec onu yalnizca acilis
+  // penceresine tasir. Icerik metne cevrilmeden anahtar olarak kullanildigi
+  // icin dogrulama orada (js/acilis.js -> bildirimGecerliMi), burada yalnizca
+  // sekli denetlenir.
+  ipcMain.on('acilis:asama', (olay, mesaj) => {
+    if (typeof mesaj?.kod !== 'string' || typeof mesaj?.durum !== 'string') return
+    if (acilisPenceresi && !acilisPenceresi.isDestroyed()) {
+      acilisPenceresi.webContents.send('acilis:durum', mesaj)
+    }
+  })
+
+  ipcMain.on('acilis:bitti', () => uygulamayiGoster(pencere))
+
+  acilisZamanlayicisi = setTimeout(
+    () => uygulamayiGoster(pencere), ACILIS_EN_FAZLA_BEKLEME
+  )
+}
+
 // --- Menu --------------------------------------------------------------------
 
 // Kisayollar menude tanimlanir; platform ayrimini CmdOrCtrl yapar.
@@ -545,12 +631,18 @@ function createWindow () {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      devTools: GELISTIRICI
+      devTools: GELISTIRICI,
+      // Pencere acilis boyunca gizli duruyor ve modelleri o yukluyor; Chromium
+      // gorunmeyen pencerede zamanlayicilari kistigi icin yukleme surunurdu.
+      backgroundThrottling: false
     }
   })
 
-  // Pencereyi boyanmadan gostermek beyaz bir parlamaya yol aciyor.
-  window.once('ready-to-show', () => window.show())
+  // Pencereyi boyanmadan gostermek beyaz bir parlamaya yol aciyor. Acilis
+  // penceresi varsa gosterme kararini o verir (bkz. uygulamayiGoster).
+  window.once('ready-to-show', () => {
+    if (!acilisPenceresi) window.show()
+  })
 
   // Arayuz uygulamanin icinden disari gezinemez; harici baglantilar
   // kullanicinin varsayilan tarayicisinda acilir.
@@ -581,9 +673,15 @@ app.whenReady().then(() => {
   moduKur()
   hakkindaKur()
   menuyuKur()
-  createWindow()
 
-  // macOS'ta Dock'tan tiklaninca pencere yeniden acilir.
+  // Acilis penceresi once acilir: ana pencere modeller yuklenirken gizli
+  // durur ve is bitince (ya da sure asiminda) ekrana gelir.
+  if (ACILIS) acilisPenceresi = acilisPenceresiOlustur()
+  const pencere = createWindow()
+  if (ACILIS) acilisiKur(pencere)
+
+  // macOS'ta Dock'tan tiklaninca pencere yeniden acilir. Acilis penceresi
+  // yalnizca uygulamanin ilk acilisina aittir; burada tekrarlanmaz.
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

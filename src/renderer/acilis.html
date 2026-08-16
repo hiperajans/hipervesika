@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="tr" data-bs-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'"
+    />
+    <title>Hiper Vesika</title>
+    <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="acilis.css" />
+  </head>
+
+  <!--
+    Pencere cercevesizdir; sayfanin kendisi kesime hazir bir baski sayfasi gibi
+    durur. Kosedeki L isaretleri uygulamanin dizme gorunumundeki kesim
+    kilavuzunun aynisidir (bkz. docs/ARAYUZ.md -> Acilis penceresi).
+  -->
+  <body class="hv-acilis">
+    <main class="hv-sayfa">
+      <span class="hv-kesim hv-kesim-su" aria-hidden="true"></span>
+      <span class="hv-kesim hv-kesim-sagu" aria-hidden="true"></span>
+      <span class="hv-kesim hv-kesim-sa" aria-hidden="true"></span>
+      <span class="hv-kesim hv-kesim-saga" aria-hidden="true"></span>
+
+      <img src="simge.svg" alt="" width="132" height="132" class="hv-isaret" />
+
+      <div class="hv-govde">
+        <h1 class="hv-ad">Hiper Vesika</h1>
+        <p class="hv-tanim">Vesikalık hazırlama ve dizdirme</p>
+
+        <!-- Durum satiri ile ray birlikte okunur: biri ne olduğunu, digeri ne
+             kadar kaldigini soyler. Ilerleme gercek: hazirlik ilerledikce
+             doluyor, sonuna gelince uygulama aciliyor. -->
+        <p id="durum" class="hv-durum" aria-live="polite">Açılıyor, lütfen bekleyiniz…</p>
+        <div class="hv-ray">
+          <span id="ilerleme" class="hv-ray-dolgu"></span>
+        </div>
+      </div>
+
+      <footer class="hv-alt">
+        <span id="surum" class="hv-alt-yazi"></span>
+        <span class="hv-alt-yazi">© Hiper Ajans · Bütün hakları saklıdır</span>
+      </footer>
+    </main>
+
+    <script src="js/acilis.js"></script>
+    <script src="acilis.js"></script>
+  </body>
+</html>

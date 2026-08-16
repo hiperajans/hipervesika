@@ -27,6 +27,17 @@ contextBridge.exposeInMainWorld('hiperVesika', {
   ayarlariOku: () => ipcRenderer.invoke('ayarlar:oku'),
   ayarlariYaz: (ayarlar) => ipcRenderer.invoke('ayarlar:yaz', ayarlar),
 
+  // --- Acilis penceresi ---
+  // Ana pencere: modellerin yuklenme durumunu bildirir, sonunda "bitti" der.
+  // Uygulama penceresi bu haberden sonra gorunur.
+  acilisAsamasi: (kod, durum) => ipcRenderer.send('acilis:asama', { kod, durum }),
+  acilisBitti: () => ipcRenderer.send('acilis:bitti'),
+
+  // Acilis penceresi: gelen durumu dinler.
+  acilisDurumu: (geriCagri) => {
+    ipcRenderer.on('acilis:durum', (olay, mesaj) => geriCagri(mesaj))
+  },
+
   // Arayuz olcegini bir basamak degistirir ya da gercek boyuta dondurur
   // ('buyut' | 'kucult' | 'sifirla'). Gorunum menusundeki ogelerle ayni is.
   arayuzOlcegi: (komut) => ipcRenderer.send('olcek:degistir', komut),

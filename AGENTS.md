@@ -138,6 +138,10 @@ Geliştirici araçları kapalıdır (`webPreferences.devTools: false`) ve *Gör�
 görünmez; kullanıcıya sunulan uygulamada işi yok. Gerekirse açılır:
 `HV_GELISTIRICI=1 npm start`.
 
+Açılışta modeller bir tanıtım penceresinde yüklenir; hazırlık bitince uygulama görünür
+(bkz. [`docs/ARAYUZ.md`](./docs/ARAYUZ.md) → "Açılış penceresi"). Geliştirirken beklememek
+için kapatılabilir: `HV_ACILIS=0 npm start`.
+
 `src/renderer/js/` altındaki modüller DOM'a ve Electron'a dokunmadan yazılır ki hem arayüzde
 hem Node'da (testte) çalışsınlar. Ölçüler milimetre tutulur; piksele yalnızca çizim, dışa
 aktarma ve baskı anında çevrilir.

@@ -1,0 +1,179 @@
+/* Acilis penceresi.
+   styles.css'ten ayri durur: bu pencere uygulamanin bilesenlerinden hicbirini
+   kullanmaz, karsiliginda ana arayuzun 27 KB'lik katmanini da yuklemez —
+   acilis penceresinin tek isi ilk karede ekranda olmak.
+   Renkler ana arayuzle ayni olcekten alinir; tek fark vurgu rengidir
+   (bkz. docs/ARAYUZ.md -> Acilis penceresi). */
+
+:root {
+  --hv-zemin: #eef0f4;
+  --hv-yuzey: #ffffff;
+  --hv-kenar: #e2e5ec;
+  --hv-kenar-belirgin: #cfd4de;
+
+  --hv-metin: #182031;
+  --hv-metin-ikincil: #5b6577;
+  --hv-metin-soluk: #8b94a4;
+
+  /* Simgenin kehribari. Calisma arayuzu notr kalir ki fotografin renkleriyle
+     yarismasin; acilis ise markanin gorundugu tek yer, rengi oradan alir. */
+  --hv-marka: #f59e0b;
+  --hv-marka-koyu: #e08a05;
+
+  --hv-tehlike: #c0392f;
+}
+
+/* Cercevesiz pencere: sayfa pencerenin tamamidir ve suruklenerek tasinir. */
+.hv-acilis {
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--hv-zemin);
+  color: var(--hv-metin);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-app-region: drag;
+  user-select: none;
+  cursor: default;
+}
+
+/* Isaret solda, yazi sagda, alt satir ikisinin altinda: baski isinde fotograf
+   ile fisinin durusu. Ust satir esner, boylece pencere yuksekligi degisse de
+   blok ortali kalir. */
+.hv-sayfa {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 1fr auto;
+  align-items: center;
+  column-gap: 30px;
+  row-gap: 18px;
+  height: 100%;
+  padding: 32px 34px 20px;
+  background-color: var(--hv-yuzey);
+  border: 1px solid var(--hv-kenar);
+  animation: hv-yerlesme 260ms cubic-bezier(0.32, 0.72, 0.35, 1) both;
+}
+
+@keyframes hv-yerlesme {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* --- Kesim isaretleri ------------------------------------------------------
+   Dizme gorunumundeki kesim kilavuzunun aynisi: sayfa kesilmeyi bekleyen bir
+   baski gibi dursun. Isaretler kenardan iceride, cunku gercek kesim payi da
+   oyle birakilir. */
+
+.hv-kesim {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 0 solid var(--hv-kenar-belirgin);
+}
+
+.hv-kesim-su {
+  top: 13px;
+  left: 13px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+
+.hv-kesim-sagu {
+  top: 13px;
+  right: 13px;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+
+.hv-kesim-sa {
+  bottom: 13px;
+  left: 13px;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+
+.hv-kesim-saga {
+  bottom: 13px;
+  right: 13px;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+}
+
+/* --- Kimlik ---------------------------------------------------------------- */
+
+.hv-isaret {
+  align-self: center;
+}
+
+.hv-govde {
+  min-width: 0;
+}
+
+.hv-ad {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+/* Tanim soluk, durum satiri daha koyu: sirasi gelen bilgi one cikmali. */
+.hv-tanim {
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
+  color: var(--hv-metin-soluk);
+}
+
+/* --- Durum ve ilerleme -----------------------------------------------------
+   Durum satiri ile ray birlikte okunur; bu yuzden ray hemen altinda ve ayni
+   hizada durur. Ikisini de sayfanin alt kenarina "margin-top: auto" itiyor. */
+
+.hv-durum {
+  margin: 26px 0 9px;
+  font-size: 0.8125rem;
+  color: var(--hv-metin-ikincil);
+}
+
+.hv-ray {
+  height: 2px;
+  background-color: var(--hv-zemin);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.hv-ray-dolgu {
+  display: block;
+  width: 0;
+  height: 100%;
+  background-color: var(--hv-marka);
+  transition: width 450ms cubic-bezier(0.32, 0.72, 0.35, 1);
+}
+
+.hv-ray-dolgu[data-hata="var"] {
+  background-color: var(--hv-tehlike);
+}
+
+.hv-alt {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--hv-metin-soluk);
+}
+
+.hv-alt-yazi {
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hv-sayfa {
+    animation: none;
+  }
+
+  .hv-ray-dolgu {
+    transition: none;
+  }
+}

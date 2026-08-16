@@ -549,6 +549,33 @@ Mağazalara (Microsoft Store, Mac App Store) ve GitHub'a yayın öncesi yapılan
   1024×1024 (Mac App Store uygulama simgesi). Ayrı klasörde duruyorlar çünkü
   `build/icons/*.png` Linux simge seti olarak taranıyor.
 
+### Açılış penceresi
+
+Modeller (yüz bulma + arka plan ayırma, toplam 11 MB) arayüz açıldıktan sonra arka planda
+yükleniyordu. Ölçüldüğünde bu iş **ilk açılışta ~23 saniye**, sonraki açılışlarda ~8 saniye
+sürüyor — yani kullanıcı çoğu zaman hazır olmayan bir uygulamaya bakıyor ve *Otomatik
+hizala*'ya bastığında bekliyordu.
+
+Artık önce çerçevesiz bir açılış penceresi çıkar, hazırlık orada yapılır ve bitince
+uygulama görünür:
+
+- Modelleri **arayüz** yükler (TensorFlow WebGL istiyor); ana pencere bu sırada gizlidir ve
+  `backgroundThrottling: false` ile açılır — görünmeyen pencerede Chromium zamanlayıcıları
+  kısıyor. Ölçüm, gizli pencerenin yüklemeyi yavaşlatmadığını gösterdi (23,0 sn / 22,8 sn).
+- Ana pencere aşamaları `acilis:asama` ile bildirir, ana süreç bunu açılış penceresine
+  taşır, `acilis:bitti` gelince uygulamayı gösterir ve açılışı kapatır. Aşama kodları
+  `src/renderer/js/acilis.js` içinde ortaktır.
+- **Uygulama her durumda açılır.** Bir model yüklenemezse hata bildirilir ve akış devam
+  eder; hiç haber gelmezse 45 saniyelik güvenlik süresi pencereyi kapatır. Sınır, ilk
+  açılışı kesmeyecek kadar uzak tutuldu.
+- `HV_ACILIS=0` açılış penceresini kapatır. Uçtan uca testler bunu kullanır: her test
+  dosyasında modellerin yüklenmesini beklemek süiti dakikalarca uzatırdı. Açılışı sınayan
+  `test/uctan-uca/acilis.test.js` ise onu açıkça ister.
+- Arayüz, hazırlık bitince `document.body.dataset.hvHazir = 'evet'` yazar; testler
+  zamanlayıcı yerine bunu bekler.
+
+Tasarım kararları [`ARAYUZ.md`](./ARAYUZ.md) → "Açılış penceresi" içinde.
+
 ### Kadraj profilleri: biyometrik ve klasik vesikalık
 
 Uygulama tek bir kadraj biliyordu: ICAO'nun istediği biyometrik yerleşim (yüz yüksekliği

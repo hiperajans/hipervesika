@@ -2624,20 +2624,33 @@ window.hiperVesika.menuKomutu((komut) => {
 // --- Baslangic ---------------------------------------------------------------
 
 // Yuz, govde ve segmentasyon modelleri toplam 11 MB; ilk kullanimda yuklenince
-// "Otomatik hizala" dugmesi saniyelerce bekletiyordu. Arayuz yerine oturur
-// oturmaz arka planda yuklenirler, kullanici dugmeye bastiginda is bitmis olur.
-// Basarisiz olursa ses cikarilmaz: dugmeye basildiginda ayni yukleme yeniden
-// denenir ve hata orada bildirilir.
-function modelleriOnyukle () {
-  const yukle = () => window.HV.yuz.hazirla()
-    // Segmentasyon ayrica isitilir: modeli okumak yetmiyor, ilk calistirma da
-    // pahali. Sirayla yapilir ki iki is ekran kartinda yarismasin.
-    .then(() => window.HV.arkaplan.isit())
-    .catch(() => {})
+// "Otomatik hizala" dugmesi saniyelerce bekletiyordu. Bu yuzden acilis
+// penceresi ekranda dururken burada yuklenirler ve is bitince uygulama
+// gorunur (bkz. src/main/index.js -> Acilis penceresi).
+//
+// Segmentasyon ayrica isitilir: modeli okumak yetmiyor, ilk calistirma da
+// pahali. Sirayla yapilir ki iki is ekran kartinda yarismasin.
+const ACILIS_ISLERI = {
+  yuz: () => window.HV.yuz.hazirla(),
+  arkaplan: () => window.HV.arkaplan.isit()
+}
 
-  // Bosta beklenir ki yukleme ilk cizimle ve fotograf acmayla yarismasin.
-  if (window.requestIdleCallback) window.requestIdleCallback(yukle, { timeout: 4000 })
-  else setTimeout(yukle, 1500)
+// Bir asama basarisiz olursa acilis durmaz, yalnizca bildirilir: model,
+// dugmeye basildiginda yeniden denenir ve hata orada anlatilir.
+async function modelleriYukle () {
+  for (const kod of window.HV.acilis.ASAMALAR) {
+    window.hiperVesika.acilisAsamasi(kod, 'yukleniyor')
+    try {
+      await ACILIS_ISLERI[kod]()
+      window.hiperVesika.acilisAsamasi(kod, 'hazir')
+    } catch {
+      window.hiperVesika.acilisAsamasi(kod, 'hata')
+    }
+  }
+
+  window.hiperVesika.acilisBitti()
+  // Hazirligin bittigi disaridan da gorulsun; uctan uca testler bunu bekler.
+  document.body.dataset.hvHazir = 'evet'
 }
 
 onayarlariDoldur()
@@ -2657,7 +2670,7 @@ kisayollariYaz()
 
 ayarlariYukle()
 yazicilariDenetle()
-modelleriOnyukle()
+modelleriYukle()
 
 // Durum cubugunun sag ucunda calisilan isletim sistemi yazar. Surum numaralari
 // (Electron/Chromium/Node) kullaniciya bir sey anlatmiyordu; uygulamanin kendi

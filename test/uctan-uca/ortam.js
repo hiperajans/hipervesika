@@ -76,14 +76,29 @@ class Calisma {
 
 // --- Uygulama ----------------------------------------------------------------
 
-async function uygulamayiAc (calisma, { ekArgumanlar = [] } = {}) {
+// Acilis penceresi acikken ilk pencere odur; ana arayuz index.html yukleyendir.
+async function anaPencere (uygulama) {
+  const uygun = (pencere) => pencere.url().includes('index.html')
+  return uygulama.windows().find(uygun) ??
+    await uygulama.waitForEvent('window', { predicate: uygun, timeout: 60000 })
+}
+
+function acilisPenceresi (uygulama) {
+  return uygulama.windows().find((pencere) => pencere.url().includes('acilis.html')) ?? null
+}
+
+// Acilis penceresi testlerde varsayilan olarak kapalidir (HV_ACILIS=0): her
+// test dosyasinda modellerin yuklenmesini beklemek suiti dakikalarca uzatirdi.
+// Acilisi sinayan test onu acikca ister.
+async function uygulamayiAc (calisma, { ekArgumanlar = [], acilis = false } = {}) {
   const uygulama = await electron.launch({
     args: ['.', `--user-data-dir=${calisma.profil}`, ...ekArgumanlar],
     cwd: DEPO,
-    executablePath: require(path.join(DEPO, 'node_modules', 'electron'))
+    executablePath: require(path.join(DEPO, 'node_modules', 'electron')),
+    env: { ...process.env, HV_ACILIS: acilis ? '1' : '0' }
   })
 
-  const sayfa = await uygulama.firstWindow()
+  const sayfa = acilis ? await anaPencere(uygulama) : await uygulama.firstWindow()
   const hatalar = []
   sayfa.on('pageerror', (hata) => hatalar.push(hata.message))
 
@@ -155,8 +170,8 @@ async function kaydiracAyarla (sayfa, secici, deger, bekleme = 700) {
 
 // Hazir bir uygulama: acar, turu kapatir, istenirse fotograf yukler.
 // Doner: { uygulama, sayfa, hatalar, kapat }
-async function hazirla (calisma, { fotograf = null, mod = 'gelismis' } = {}) {
-  const { uygulama, sayfa, hatalar } = await uygulamayiAc(calisma)
+async function hazirla (calisma, { fotograf = null, mod = 'gelismis', acilis = false } = {}) {
+  const { uygulama, sayfa, hatalar } = await uygulamayiAc(calisma, { acilis })
   await moduSec(sayfa, mod)
   await turuKapat(sayfa)
   if (fotograf) await fotografYukle(sayfa, fotograf)
@@ -175,6 +190,8 @@ module.exports = {
   gercekFotograflar,
   yuzGerekli,
   uygulamayiAc,
+  anaPencere,
+  acilisPenceresi,
   moduSec,
   turuKapat,
   fotografYukle,
