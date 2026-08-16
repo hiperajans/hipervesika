@@ -632,12 +632,50 @@
               </h2>
 
               <!--
-                Yazıcı, kopya, kağıt ve kalite ayarları sistemin yazdırma
-                panelinde seçilir; uygulama bunları kendi tarafında tutmaz.
+                İki baskı yolu var. Varsayılan yol sistemin yazdırma panelinden
+                geçer: yazıcı, kopya ve kalite orada seçilir. Ghostscript kurulu
+                ya da paketle geldiyse iş doğrudan yazıcıya gönderilebilir;
+                panel açılmaz ve ölçek %100'de sabit kalır.
               -->
+              <div class="form-check form-switch hv-anahtar">
+                <input class="form-check-input" type="checkbox" role="switch" id="dogrudan-baski" disabled />
+                <label class="form-check-label" for="dogrudan-baski">Doğrudan yazıcıya gönder</label>
+              </div>
+
+              <div id="dogrudan-ayarlari" class="d-none">
+                <div class="hv-alan">
+                  <label for="yazici-secimi" class="hv-etiket"><span>Yazıcı</span></label>
+                  <select id="yazici-secimi" class="form-select form-select-sm"></select>
+                </div>
+
+                <div class="hv-ikili">
+                  <div class="hv-alan">
+                    <label for="kopya-sayisi" class="hv-etiket"><span>Kopya</span></label>
+                    <input id="kopya-sayisi" type="number" class="form-control form-control-sm"
+                      min="1" max="99" step="1" value="1" />
+                  </div>
+                  <div class="hv-alan hv-gelismis">
+                    <label for="baski-cozunurlugu" class="hv-etiket"><span>Baskı çözünürlüğü</span></label>
+                    <select id="baski-cozunurlugu" class="form-select form-select-sm"></select>
+                  </div>
+                </div>
+
+                <!-- Aygıt seçimi yalnızca sürücüsüz ağ yazıcıları için gerekir;
+                     Windows'ta tek seçenek olduğu için gizli kalır. -->
+                <div id="baski-aygiti-alani" class="hv-alan hv-gelismis d-none">
+                  <label for="baski-aygiti" class="hv-etiket"><span>Baskı dili</span></label>
+                  <select id="baski-aygiti" class="form-select form-select-sm"></select>
+                </div>
+
+                <div class="form-check hv-anahtar hv-gelismis">
+                  <input class="form-check-input" type="checkbox" id="kenarliksiz" />
+                  <label class="form-check-label" for="kenarliksiz">Kenarlıksız baskı</label>
+                </div>
+              </div>
+
               <button id="btn-sayfayi-bas" type="button" class="btn btn-primary btn-sm hv-dugme w-100">
                 <i class="bi bi-printer" aria-hidden="true"></i>
-                Sayfayı yazdır…
+                <span id="baski-dugme-yazisi">Sayfayı yazdır…</span>
               </button>
               <div class="hv-dugme-cifti hv-dugme-cifti-esit">
                 <button id="btn-sayfayi-pdf" type="button" class="btn hv-dugme hv-dugme-sade">

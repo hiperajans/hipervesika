@@ -549,6 +549,44 @@ Mağazalara (Microsoft Store, Mac App Store) ve GitHub'a yayın öncesi yapılan
   1024×1024 (Mac App Store uygulama simgesi). Ayrı klasörde duruyorlar çünkü
   `build/icons/*.png` Linux simge seti olarak taranıyor.
 
+### Ghostscript ile doğrudan baskı
+
+Baskı sistemin yazdırma panelinden geçiyordu. Doğru bir varsayılan ama iki eksiği var:
+kullanıcı her baskıda panelden geçiyor ve panelde *kağıda sığdır* seçili kalırsa
+vesikalığın ölçüsü bozuluyor — ürünün temel vaadi orada kayboluyor.
+
+Ghostscript varsa sayfa doğrudan yazıcıya gönderilebiliyor: panel açılmıyor, ölçek
+sabitleniyor ve rasterleştirme çözünürlüğünü uygulama veriyor.
+
+- **Aynı PDF.** Doğrudan baskı, *Sayfayı PDF olarak kaydet*'in ürettiği belgenin aynısını
+  kullanır (`sayfaPdfiUret`). Ölçü doğruluğu tek yerden gelir; CMYK seçiliyse kendi
+  DeviceCMYK yazıcımız devrededir.
+- **Windows:** `-sDEVICE=mswinpr2 -sOutputFile=%printer%<ad>` ile iş sürücüye gider —
+  sürücüsü kurulu her yazıcı (PostScript, PCL, foto) çalışır. `-dFIXEDMEDIA` +
+  `-dDEVICEWIDTH/HEIGHTPOINTS` ölçüyü dayatır, `-dPDFFitPage` verilmez.
+- **macOS / Linux:** iş CUPS'a (`lp`) verilir; CUPS zaten Ghostscript kullandığı için
+  araya ikinci bir çevrim konmaz. Sürücüsü olmayan ağ yazıcıları için `ps2write` ya da
+  `pxlcolor` ile PostScript/PCL üretilip öyle gönderilir. Ölçü `media=Custom.<G>x<Y>mm`
+  ile bildirilir, `fit-to-page=false` açıkça kapatılır.
+- **İkili arama sırası:** paketle gelen kopya → `PATH` → bilinen kurulum klasörleri.
+  Bulunamazsa özellik kapalı kalır ve mevcut baskı yolu aynen çalışır; hiçbir şey
+  bozulmaz.
+- **Kenarlıksız** bir sürücü yeteneğidir. Anahtar CUPS'a `page-border=none` geçirir, ama
+  gerçekten kenarlıksız çıkması için yazıcının sürücüsünde kenarlıksız kağıdın seçili
+  olması gerekir; arayüz bunu söyler.
+- Geçici PDF `app.getPath('temp')` altına yazılır ve iş bitince **her durumda** silinir:
+  vesikalık kişisel veridir.
+
+**Lisans.** Ghostscript AGPL ile dağıtılıyor. Uygulamayla birlikte paketlemek ürünün de
+AGPL olmasını ya da Artifex'ten ticari lisans alınmasını gerektirir; Microsoft Store ve
+Mac App Store AGPL ikili taşıyan paketleri kabul etmiyor. Bu yüzden `vendor/ghostscript/`
+klasörü depoda tutulmuyor, `npm run ghostscript` ile paketleme makinesinde hazırlanıyor ve
+betik her çalıştığında uyarıyı yazıyor. Klasör yoksa paket yine üretilir — özellik o zaman
+yalnızca Ghostscript kurulu makinelerde açılır.
+
+**Ölçüldü:** ürettiğimiz 100 × 150 mm PDF, Ghostscript 10.01.2 ile 300 DPI'da
+1181 × 1772 piksele rasterleniyor — milimetre karşılığı tam.
+
 ### Açılış penceresi
 
 Modeller (yüz bulma + arka plan ayırma, toplam 11 MB) arayüz açıldıktan sonra arka planda

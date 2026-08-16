@@ -16,6 +16,7 @@
     "paket:win": "npm run vendor && electron-builder --win --x64 --publish never",
     "paket:linux": "npm run vendor && electron-builder --linux --x64 --publish never",
     "simge": "electron scripts/simge-uret.js",
+    "ghostscript": "node scripts/ghostscript.js",
     "vendor": "node scripts/vendor.js",
     "postinstall": "node scripts/vendor.js"
   },

@@ -12,6 +12,7 @@ const baski = require('./baski.js')
 const ayarlar = require('./ayarlar.js')
 const pdf = require('./pdf.js')
 const yakinlik = require('./yakinlik.js')
+const ghostscript = require('./ghostscript.js')
 
 app.setName('Hiper Vesika')
 
@@ -262,46 +263,107 @@ function baskiyiKur () {
     const pencere = BrowserWindow.fromWebContents(olay.sender)
 
     try {
-      // CMYK istendiginde sayfa Chromium'dan gecmez: printToPDF her zaman RGB
-      // uretir, bu yuzden PDF'i dogrudan CMYK orneklerinden yaziyoruz.
-      if (istek?.cmyk) {
-        const kagitMm = baski.sayfaOlcusu(istek.kagitMm)
-        const belge = pdf.cmykSayfaPdf({
-          baytlar: istek.cmyk.baytlar,
-          genislik: istek.cmyk.genislik,
-          yukseklik: istek.cmyk.yukseklik,
-          kagitMm
-        })
-
-        return await kaydetmeyiSor(pencere, {
-          baytlar: belge,
-          varsayilanAd: istek?.varsayilanAd,
-          tur: 'pdf',
-          baslik: 'Sayfayı PDF olarak kaydet'
-        })
-      }
-
-      const belge = await baskiSayfasindaCalis(istek, (baskiPenceresi, kagitMm) =>
-        baskiPenceresi.webContents.printToPDF({
-          printBackground: true,
-          // Sayfa olcusu CSS'teki @page'ten alinir; ikisi ayni degeri yazar.
-          preferCSSPageSize: true,
-          margins: { top: 0, bottom: 0, left: 0, right: 0 },
-          pageSize: {
-            width: baski.inc(kagitMm.genislik),
-            height: baski.inc(kagitMm.yukseklik)
-          }
-        })
-      )
-
       return await kaydetmeyiSor(pencere, {
-        baytlar: belge,
+        baytlar: await sayfaPdfiUret(istek),
         varsayilanAd: istek?.varsayilanAd,
         tur: 'pdf',
         baslik: 'Sayfayı PDF olarak kaydet'
       })
     } catch (hata) {
       return { kaydedildi: false, hata: hata.message }
+    }
+  })
+}
+
+// Basilacak/kaydedilecek sayfanin PDF'i. Kaydetme ile dogrudan baski ayni
+// belgeyi kullanir; olcu dogrulugu tek bir yerde saglanir.
+async function sayfaPdfiUret (istek) {
+  // CMYK istendiginde sayfa Chromium'dan gecmez: printToPDF her zaman RGB
+  // uretir, bu yuzden PDF'i dogrudan CMYK orneklerinden yaziyoruz.
+  if (istek?.cmyk) {
+    return pdf.cmykSayfaPdf({
+      baytlar: istek.cmyk.baytlar,
+      genislik: istek.cmyk.genislik,
+      yukseklik: istek.cmyk.yukseklik,
+      kagitMm: baski.sayfaOlcusu(istek.kagitMm)
+    })
+  }
+
+  return baskiSayfasindaCalis(istek, (baskiPenceresi, kagitMm) =>
+    baskiPenceresi.webContents.printToPDF({
+      printBackground: true,
+      // Sayfa olcusu CSS'teki @page'ten alinir; ikisi ayni degeri yazar.
+      preferCSSPageSize: true,
+      margins: { top: 0, bottom: 0, left: 0, right: 0 },
+      pageSize: {
+        width: baski.inc(kagitMm.genislik),
+        height: baski.inc(kagitMm.yukseklik)
+      }
+    })
+  )
+}
+
+// --- Ghostscript ile dogrudan baski ------------------------------------------
+
+// Paketle gelen kopyanin kokü. Gelistirmede depo icindeki vendor/ klasoru,
+// pakette uygulamanin kaynaklar klasoru (electron-builder extraResources).
+function ghostscriptKoku () {
+  return app.isPackaged
+    ? process.resourcesPath
+    : path.join(__dirname, '..', '..', 'vendor')
+}
+
+let ghostscriptDurumu = null
+
+function ghostscriptiKur () {
+  // Durum bir kez okunur: ikili dosyayi aramak ve surumunu sormak diske
+  // gitmek demek, arayuz bunu her sorusunda tekrarlamasin.
+  ipcMain.handle('ghostscript:durum', async () => {
+    ghostscriptDurumu ??= {
+      ...(await ghostscript.durum({ paketKoku: ghostscriptKoku() })),
+      // Rasterlestirme cozunurlugu de baski isinin bir parcasi; arayuz listeyi
+      // ikinci kez yazmasin diye buradan gider.
+      cozunurlukler: baski.BASKI_COZUNURLUKLERI,
+      varsayilanCozunurluk: baski.VARSAYILAN_BASKI_DPI
+    }
+    return ghostscriptDurumu
+  })
+
+  ipcMain.handle('sayfa:dogrudan-bas', async (olay, istek) => {
+    try {
+      const durum = ghostscriptDurumu ??
+        await ghostscript.durum({ paketKoku: ghostscriptKoku() })
+      ghostscriptDurumu = durum
+
+      if (!durum.var) {
+        return { basildi: false, hata: 'Ghostscript bulunamadı.' }
+      }
+
+      // Arayuzden gelen hicbir degere guvenilmez; olcu ve kopya sinirlari
+      // baski.js'teki dogrulayicilardan gecer.
+      const yazici = typeof istek?.yazici === 'string' ? istek.yazici.trim() : ''
+      if (!yazici || yazici.length > 200) {
+        return { basildi: false, hata: 'Yazıcı seçilmedi.' }
+      }
+
+      const aygit = ghostscript.aygitGecerliMi(istek?.aygit) ? istek.aygit : 'otomatik'
+      const kagitMm = baski.sayfaOlcusu(istek?.kagitMm)
+
+      await ghostscript.bas({
+        gsYolu: durum.yol,
+        pdf: await sayfaPdfiUret(istek),
+        yazici,
+        kopya: baski.kopyaSayisi(istek?.kopya),
+        dpi: baski.baskiCozunurlugu(istek?.baskiDpi),
+        kagitMm,
+        aygit,
+        kenarliksiz: istek?.kenarliksiz === true,
+        geciciKlasor: app.getPath('temp')
+      })
+
+      return { basildi: true }
+    } catch (hata) {
+      return { basildi: false, hata: hata.message }
     }
   })
 }
@@ -669,6 +731,7 @@ app.whenReady().then(() => {
   kaydetmeyiKur()
   baskiyiKur()
   ayarlariKur()
+  ghostscriptiKur()
   olcegiKur()
   moduKur()
   hakkindaKur()

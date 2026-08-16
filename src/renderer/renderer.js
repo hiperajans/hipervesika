@@ -76,6 +76,15 @@ const el = {
   kesimKilavuzu: document.getElementById('kesim-kilavuzu'),
   dizmeDurumu: document.getElementById('dizme-durumu'),
   sayfayiBas: document.getElementById('btn-sayfayi-bas'),
+  baskiDugmeYazisi: document.getElementById('baski-dugme-yazisi'),
+  dogrudanBaski: document.getElementById('dogrudan-baski'),
+  dogrudanAyarlari: document.getElementById('dogrudan-ayarlari'),
+  yaziciSecimi: document.getElementById('yazici-secimi'),
+  kopyaSayisi: document.getElementById('kopya-sayisi'),
+  baskiCozunurlugu: document.getElementById('baski-cozunurlugu'),
+  baskiAygitiAlani: document.getElementById('baski-aygiti-alani'),
+  baskiAygiti: document.getElementById('baski-aygiti'),
+  kenarliksiz: document.getElementById('kenarliksiz'),
   sayfayiPdf: document.getElementById('btn-sayfayi-pdf'),
   sayfayiKaydet: document.getElementById('btn-sayfayi-kaydet'),
   baskiDurumu: document.getElementById('baski-durumu'),
@@ -1881,6 +1890,26 @@ async function sayfayiGoruntuKaydet () {
   }
 }
 
+// Ana surece gonderilecek PDF govdesi. PDF kaydetme ile dogrudan baski ayni
+// belgeyi kullanir; olcu dogrulugu tek yerden gelir.
+async function sayfaPdfIstegi (sayfa) {
+  const istek = { kagitMm: sayfa.kagitMm }
+
+  if (renkDuzeniniOku() === 'cmyk') {
+    // Sayfa piksel piksel CMYK'ye cevrilir; PDF'i ana surec yazar.
+    istek.cmyk = {
+      baytlar: window.HV.renk.cmykBaytlari(sayfa.tuval),
+      genislik: sayfa.tuval.width,
+      yukseklik: sayfa.tuval.height
+    }
+  } else {
+    // PDF'e kayipsiz PNG gomulur; olcu tasiyicisi PDF'in kendisidir.
+    istek.baytlar = await sayfaBaytlari(sayfa.tuval, 'png')
+  }
+
+  return istek
+}
+
 async function sayfayiPdfKaydet () {
   const sayfa = baskiSayfasiUret()
   if (!sayfa) return
@@ -1891,22 +1920,10 @@ async function sayfayiPdfKaydet () {
   try {
     const duzen = renkDuzeniniOku()
     const istek = {
-      kagitMm: sayfa.kagitMm,
+      ...(await sayfaPdfIstegi(sayfa)),
       varsayilanAd: window.HV.sayfa.sayfaDosyaAdi(
         sayfa.kagitMm, sayfa.yerlesim.adet, dpi, 'pdf'
       )
-    }
-
-    if (duzen === 'cmyk') {
-      // Sayfa piksel piksel CMYK'ye cevrilir; PDF'i ana surec yazar.
-      istek.cmyk = {
-        baytlar: window.HV.renk.cmykBaytlari(sayfa.tuval),
-        genislik: sayfa.tuval.width,
-        yukseklik: sayfa.tuval.height
-      }
-    } else {
-      // PDF'e kayipsiz PNG gomulur; olcu tasiyicisi PDF'in kendisidir.
-      istek.baytlar = await sayfaBaytlari(sayfa.tuval, 'png')
     }
 
     const sonuc = await window.hiperVesika.sayfayiPdfKaydet(istek)
@@ -1927,7 +1944,96 @@ async function sayfayiPdfKaydet () {
   }
 }
 
+// --- Ghostscript ile dogrudan baski ------------------------------------------
+
+// Ozellik yalnizca Ghostscript bulunduysa acilir; bulunamazsa anahtar kapali
+// kalir ve uygulama eskisi gibi sistemin yazdirma panelinden basar.
+let ghostscript = { var: false, aygitlar: [], cozunurlukler: [] }
+
+function dogrudanBaskiAcikMi () {
+  return ghostscript.var && el.dogrudanBaski.checked
+}
+
+function baskiYolunuGuncelle () {
+  const acik = dogrudanBaskiAcikMi()
+  el.dogrudanAyarlari.classList.toggle('d-none', !acik)
+  el.baskiDugmeYazisi.textContent = acik ? 'Yazıcıya gönder' : 'Sayfayı yazdır…'
+}
+
+function yazicilariDoldur (yazicilar) {
+  el.yaziciSecimi.replaceChildren()
+  for (const yazici of yazicilar) {
+    secenekEkle(el.yaziciSecimi, yazici.ad, yazici.gorunenAd)
+  }
+
+  const varsayilan = yazicilar.find((yazici) => yazici.varsayilan)
+  if (varsayilan) el.yaziciSecimi.value = varsayilan.ad
+}
+
+function ghostscriptAyarlariniDoldur () {
+  for (const nokta of ghostscript.cozunurlukler ?? []) {
+    secenekEkle(el.baskiCozunurlugu, String(nokta), `${nokta} DPI`)
+  }
+  el.baskiCozunurlugu.value = String(ghostscript.varsayilanCozunurluk ?? 600)
+
+  for (const aygit of ghostscript.aygitlar ?? []) {
+    secenekEkle(el.baskiAygiti, aygit.kod, aygit.ad)
+  }
+  // Tek secenek varsa (Windows) secim kutusu bir sey anlatmaz.
+  el.baskiAygitiAlani.classList.toggle('d-none', (ghostscript.aygitlar ?? []).length < 2)
+}
+
+async function ghostscriptiDenetle () {
+  ghostscript = await window.hiperVesika.ghostscriptDurumu()
+
+  el.dogrudanBaski.disabled = !ghostscript.var
+  ghostscriptAyarlariniDoldur()
+  baskiYolunuGuncelle()
+}
+
+async function sayfayiDogrudanBas () {
+  const sayfa = baskiSayfasiUret()
+  if (!sayfa) return
+
+  const yazici = el.yaziciSecimi.value
+  if (!yazici) {
+    baskiDurumu('Önce bir yazıcı seçin.', 'hata')
+    return
+  }
+
+  const kopya = Math.min(99, Math.max(1, Number.parseInt(el.kopyaSayisi.value, 10) || 1))
+  baskiDugmeleri(false)
+  baskiDurumu(`${el.yaziciSecimi.selectedOptions[0]?.textContent} yazıcısına gönderiliyor…`)
+
+  try {
+    const sonuc = await window.hiperVesika.sayfayiDogrudanBas({
+      ...(await sayfaPdfIstegi(sayfa)),
+      yazici,
+      kopya,
+      baskiDpi: Number.parseInt(el.baskiCozunurlugu.value, 10),
+      aygit: el.baskiAygiti.value || 'otomatik',
+      kenarliksiz: el.kenarliksiz.checked
+    })
+
+    if (sonuc.basildi) {
+      baskiDurumu(
+        `Yazıcıya gönderildi: ${sayfa.kagitMm.genislik}×${sayfa.kagitMm.yukseklik} mm sayfa, ` +
+        `${sayfa.yerlesim.adet} adet, ${kopya} kopya.`,
+        'basari'
+      )
+    } else {
+      baskiDurumu(`Baskı yapılamadı: ${sonuc.hata}`, 'hata')
+    }
+  } catch (hata) {
+    baskiDurumu(`Sayfa hazırlanamadı: ${hata.message}`, 'hata')
+  } finally {
+    baskiDugmeleri(true)
+  }
+}
+
 async function sayfayiBas () {
+  if (dogrudanBaskiAcikMi()) return sayfayiDogrudanBas()
+
   const sayfa = baskiSayfasiUret()
   if (!sayfa) return
 
@@ -1960,15 +2066,23 @@ async function sayfayiBas () {
   }
 }
 
-// Yazici yoksa kullanici bunu yazdirma panelini acmadan once bilsin.
+// Yazici yoksa kullanici bunu yazdirma panelini acmadan once bilsin. Liste
+// ayrica dogrudan baskinin yazici secimini doldurur.
 async function yazicilariDenetle () {
   const { yazicilar, hata } = await window.hiperVesika.yaziciListesi()
+
   if (hata || !yazicilar.length) {
+    el.dogrudanBaski.checked = false
+    el.dogrudanBaski.disabled = true
+    baskiYolunuGuncelle()
     baskiDurumu(
       'Tanımlı yazıcı yok. Sistem ayarlarından bir yazıcı ekleyin veya sayfayı ' +
       'PDF olarak kaydedip başka bir bilgisayarda bastırın.'
     )
+    return
   }
+
+  yazicilariDoldur(yazicilar)
 }
 
 // process.platform degerlerinin kullaniciya gosterilen karsiliklari. Taninmayan
@@ -2146,6 +2260,12 @@ function sonKullanilaniTopla () {
     kagitOnayar: el.kagitOnayari.value,
     kagitGenislik: Number.parseFloat(el.kagitGenislik.value),
     kagitYukseklik: Number.parseFloat(el.kagitYukseklik.value),
+    dogrudanBaski: el.dogrudanBaski.checked,
+    yazici: el.yaziciSecimi.value,
+    kopya: Number.parseInt(el.kopyaSayisi.value, 10) || 1,
+    baskiDpi: Number.parseInt(el.baskiCozunurlugu.value, 10) || 0,
+    baskiAygiti: el.baskiAygiti.value,
+    kenarliksiz: el.kenarliksiz.checked,
     kenarMm: Number.parseFloat(el.dizmeKenar.value) || 0,
     aralikMm: Number.parseFloat(el.dizmeAralik.value) || 0,
     kesimKilavuzu: el.kesimKilavuzu.checked
@@ -2196,6 +2316,31 @@ function sonKullanilaniUygula (son) {
     el.kagitYukseklik.value = String(kagitYukseklik)
     el.kagitOnayari.value = kagitOnayariBul(son.kagitOnayar) ? son.kagitOnayar : 'ozel'
   }
+
+  // Baski secenekleri: listeler bu noktada dolu (bkz. acilisiTamamla). Kayitli
+  // yazici artik yoksa varsayilan secili kalir; olmayan bir yaziciya is
+  // gondermeye calismak yerine kullanici yenisini secer.
+  if (son.yazici && [...el.yaziciSecimi.options].some((o) => o.value === son.yazici)) {
+    el.yaziciSecimi.value = son.yazici
+  }
+  if (Number.isFinite(son.kopya) && son.kopya >= 1 && son.kopya <= 99) {
+    el.kopyaSayisi.value = String(Math.trunc(son.kopya))
+  }
+  if (
+    Number.isFinite(son.baskiDpi) &&
+    [...el.baskiCozunurlugu.options].some((o) => o.value === String(son.baskiDpi))
+  ) {
+    el.baskiCozunurlugu.value = String(son.baskiDpi)
+  }
+  if (son.baskiAygiti && [...el.baskiAygiti.options].some((o) => o.value === son.baskiAygiti)) {
+    el.baskiAygiti.value = son.baskiAygiti
+  }
+  if (typeof son.kenarliksiz === 'boolean') el.kenarliksiz.checked = son.kenarliksiz
+  // Ghostscript yoksa anahtar kapali kalir; kayitli deger onu acmamali.
+  if (son.dogrudanBaski === true && !el.dogrudanBaski.disabled) {
+    el.dogrudanBaski.checked = true
+  }
+  baskiYolunuGuncelle()
 
   if (Number.isFinite(son.kenarMm)) el.dizmeKenar.value = String(son.kenarMm)
   if (Number.isFinite(son.aralikMm)) el.dizmeAralik.value = String(son.aralikMm)
@@ -2581,6 +2726,22 @@ el.sayfayiBas.addEventListener('click', () => sayfayiBas())
 el.sayfayiPdf.addEventListener('click', () => sayfayiPdfKaydet())
 el.sayfayiKaydet.addEventListener('click', () => sayfayiGoruntuKaydet())
 
+el.dogrudanBaski.addEventListener('change', () => {
+  baskiYolunuGuncelle()
+  baskiDurumu(dogrudanBaskiAcikMi()
+    ? 'İş seçilen yazıcıya doğrudan gider; yazdırma paneli açılmaz. ' +
+      'Yazıcının kağıt ölçüsü sürücüde de aynı seçilmelidir.'
+    : 'Sayfa kağıt ölçüsünde hazırlanır; yazıcı ve kalite ayarları ' +
+      'sistemin yazdırma panelinde seçilir.')
+  ayarlariKaydet()
+})
+
+for (const denetim of [
+  el.yaziciSecimi, el.kopyaSayisi, el.baskiCozunurlugu, el.baskiAygiti, el.kenarliksiz
+]) {
+  denetim.addEventListener('change', () => ayarlariKaydet())
+}
+
 // --- Menu komutlari ----------------------------------------------------------
 
 // Kisayollarin tamami Electron menusunde tanimli; tek istisna arayuz olcegi
@@ -2668,9 +2829,20 @@ araclariEtkinlestir(false)
 gecmisDugmeleriniGuncelle()
 kisayollariYaz()
 
-ayarlariYukle()
-yazicilariDenetle()
-modelleriYukle()
+// Sira onemli: baski secenekleri once doldurulur, cunku kayitli yazici ve
+// cozunurluk ancak listeler hazirken secilebilir. Hazirlik ne olursa olsun
+// baslar; acilis penceresi ona bakiyor.
+async function acilisiTamamla () {
+  try {
+    await ghostscriptiDenetle()
+    await yazicilariDenetle()
+    await ayarlariYukle()
+  } finally {
+    modelleriYukle()
+  }
+}
+
+acilisiTamamla()
 
 // Durum cubugunun sag ucunda calisilan isletim sistemi yazar. Surum numaralari
 // (Electron/Chromium/Node) kullaniciya bir sey anlatmiyordu; uygulamanin kendi
