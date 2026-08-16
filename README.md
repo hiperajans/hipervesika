@@ -105,6 +105,9 @@ fotoğraf sürükle-bırak → otomatik hizalama → arka plan beyazlatma → r�
   *Otomatik hizala* ilk tıklamada model yüklenmesini beklemez.
 - Menüler Türkçedir. *Hakkında* penceresi sürümü ve verinin cihazdan çıkmadığını yazar
   (macOS'ta uygulama menüsünde, diğerlerinde *Yardım* altında).
+- Arayüzün tamamı `Ctrl/Cmd` + `+` ve `-` ile %67 – %200 arasında ölçeklenir (*Görünüm*
+  menüsünde de var). Fotoğrafın ve sayfa önizlemesinin kendi yakınlığı bundan ayrıdır;
+  onlar tuvalin köşesindeki düğmelerle ve fare tekerleğiyle değişir.
 - Kendi fotoğraf ve kağıt ön ayarlarınız; son kullanılan değerler hatırlanır. Ayarlar
   işletim sisteminin kullanıcı verisi klasöründe JSON olarak tutulur.
 - Sürükle-bırak, dosya seçme ve panodan yapıştırma ile fotoğraf alma; JPG, PNG ve WebP
@@ -147,6 +150,9 @@ zorunludur; dosyalar sonradan tazelenmek istenirse `npm run vendor` yeterlidir.
 | `Ctrl/Cmd + P` | Sayfayı yazdır |
 | `Ctrl/Cmd + Z` | Geri al |
 | `Ctrl/Cmd + Shift + Z` | Yinele |
+| `Ctrl/Cmd + +` | Arayüzü büyüt |
+| `Ctrl/Cmd + -` | Arayüzü küçült |
+| `Ctrl/Cmd + 0` | Arayüzü gerçek boyuta döndür |
 | `Boşluk` + sürükle | Fotoğrafı taşı (leke ve fırça araçlarında da) |
 | `F1` | Tanıtım turu |
 

@@ -1258,6 +1258,21 @@ el.sigdir.addEventListener('click', () => {
   }
 })
 
+// Yukaridaki denetimler fotografi ve sayfayi buyutur; Ctrl/Cmd ile + - 0 ise
+// arayuzun tamamini olcekler ve isi ana surec yapar (Gorunum menusundeki
+// ogelerin aynisi). Kisayol burada okunur cunku menu hizlandiricisi fiziksel
+// tusa gore eslesiyor ve Turkce Q klavyede '+' Shift+4 ile yazildigi icin hic
+// tetiklenmiyordu; ayrintisi js/kisayol.js icinde.
+window.addEventListener('keydown', (olay) => {
+  const komut = window.HV.kisayol.yakinlikKomutu(olay, {
+    mac: window.hiperVesika.platform === 'darwin'
+  })
+  if (!komut) return
+
+  olay.preventDefault()
+  window.hiperVesika.arayuzOlcegi(komut)
+})
+
 // --- Olcu denetimleri --------------------------------------------------------
 
 el.onayarSecimi.addEventListener('change', () => {
@@ -2515,8 +2530,10 @@ el.sayfayiKaydet.addEventListener('click', () => sayfayiGoruntuKaydet())
 
 // --- Menu komutlari ----------------------------------------------------------
 
-// Kisayollar Electron menusunde tanimli; tarayici tarafinda ikinci bir
-// keydown dinleyicisi yok, boylece tek tusa iki islem baglanmiyor.
+// Kisayollarin tamami Electron menusunde tanimli; tek istisna arayuz olcegi
+// (Ctrl/Cmd ile + - 0), cunku onun hizlandiricisi klavye dizenine takiliyor.
+// Ayni tusa iki islem baglanmaz: menudeki o uc ogenin hizlandiricisi sisteme
+// kaydedilmiyor.
 window.hiperVesika.menuKomutu((komut) => {
   switch (komut) {
     case 'ac':

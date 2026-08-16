@@ -549,6 +549,32 @@ Mağazalara (Microsoft Store, Mac App Store) ve GitHub'a yayın öncesi yapılan
   1024×1024 (Mac App Store uygulama simgesi). Ayrı klasörde duruyorlar çünkü
   `build/icons/*.png` Linux simge seti olarak taranıyor.
 
+### Arayüz ölçeği kısayolu ve klavye dizeni
+
+*Görünüm* menüsündeki yakınlaştırma öğeleri Electron'un hazır `zoomIn` / `zoomOut`
+rolleriyle duruyordu ve kısayolları hiç çalışmıyordu. Sebep klavye dizeni:
+`CmdOrCtrl+Plus` hızlandırıcısı fiziksel tuşa göre eşleşiyor, Türkçe Q klavyede ise `+`
+`Shift+4` ile yazılıyor. Kullanıcı menüde yazan kısayola basıyor, hiçbir şey olmuyordu.
+
+Çözüm, kısayolu hızlandırıcıdan alıp **üretilen karaktere** bakan bir yola taşımak oldu:
+
+- `src/renderer/js/kisayol.js` tuş olayını komuta çevirir (`+` `=` → büyüt, `-` `_` →
+  küçült, `0` → gerçek boyut). Hangi tuşa basıldığı değil, hangi karakterin üretildiği
+  önemli; böylece kısayol her dizende ve sayı adasında çalışır. AltGr (Windows'ta
+  Ctrl+Alt) elenir, denetim tuşu macOS'ta Cmd, diğerlerinde Ctrl'dür.
+- Komut `olcek:degistir` ile ana sürece gider; ölçek `src/main/yakinlik.js` içindeki
+  merdivene (%67 – %200) oturur. Menü öğeleri de aynı işlevi çağırır.
+- Menüdeki üç öğe kısayolu **gösterir ama sisteme kaydettirmez**
+  (`registerAccelerator: false`), böylece tek tuşa iki işlem bağlanmaz. macOS bu seçeneği
+  yok sayar; orada tuşu menü yakalarsa olay arayüze hiç ulaşmaz, sonuç yine tek olur.
+
+**Baskı ayrı bir kaynağa taşındı.** Chromium yakınlık değerini kaynak (origin) başına
+tutuyor: baskı penceresi de `app://hv` altında açıldığı için arayüzde seçilen ölçek
+basılan sayfaya da geçerdi — ve baskı penceresi ölçeği sıfırlasa bu kez arayüzünki
+bozulurdu. Baskı penceresi artık `app://baski` kaynağını kullanıyor; ölçüsü arayüzden
+bağımsız. Uçtan uca testte arayüz %200'e çıkarılıp PDF üretiliyor ve 100 × 150 mm sayfa
+hâlâ 0,2 mm toleransla doğru ölçüde çıkıyor.
+
 ## Riskler
 
 | Risk | Faz | Etki |

@@ -11,6 +11,7 @@ const {
 const baski = require('./baski.js')
 const ayarlar = require('./ayarlar.js')
 const pdf = require('./pdf.js')
+const yakinlik = require('./yakinlik.js')
 
 app.setName('Hiper Vesika')
 
@@ -52,6 +53,14 @@ function dockSimgesi () {
   const gorsel = nativeImage.createFromPath(yol)
   return gorsel.isEmpty() ? null : gorsel
 }
+
+// Arayuz ile baski penceresi ayri kaynaklarda (origin) acilir. Sebebi
+// Chromium'un yakinlik degerini kaynak basina tutmasi: ikisi de 'hv' olsaydi
+// kullanicinin arayuzde sectigi olcek basilan sayfaya da gecerdi (ve baski
+// penceresi olcegi sifirlasa bu kez arayuzunki bozulurdu). Baski her zaman
+// %100'den cikar. Yol cozumu icin ana bilgisayar adinin bir onemi yok.
+const ARAYUZ_KAYNAGI = 'app://hv'
+const BASKI_KAYNAGI = 'app://baski'
 
 // Baski penceresine gecici olarak sunulan icerikler. Diske yazmamak icin
 // bellekte tutulur ve is bitince silinir.
@@ -171,7 +180,7 @@ async function baskiSayfasindaCalis (istek, gorev) {
 
   const gorselAnahtari = geciciEkle(baytlar, 'image/png')
   const sayfaAnahtari = geciciEkle(
-    Buffer.from(baski.baskiSayfasiHtml(kagitMm, `app://hv/${gorselAnahtari}`), 'utf8'),
+    Buffer.from(baski.baskiSayfasiHtml(kagitMm, `${BASKI_KAYNAGI}/${gorselAnahtari}`), 'utf8'),
     'text/html; charset=utf-8'
   )
 
@@ -184,7 +193,10 @@ async function baskiSayfasindaCalis (istek, gorev) {
 
   try {
     // did-finish-load, sayfanin load olayidir: goruntu de yuklenmis olur.
-    await pencere.loadURL(`app://hv/${sayfaAnahtari}`)
+    await pencere.loadURL(`${BASKI_KAYNAGI}/${sayfaAnahtari}`)
+    // Ayri kaynak zaten %100 ile acilir; yine de acikca yaziliyor, cunku
+    // olcegin 1 olmamasi dogrudan yanlis olcude baski demek.
+    pencere.webContents.setZoomFactor(1)
     return await gorev(pencere, kagitMm)
   } finally {
     geciciIcerikler.delete(gorselAnahtari)
@@ -312,6 +324,41 @@ function ayarlariKur () {
   })
 }
 
+// --- Arayuz olcegi -----------------------------------------------------------
+
+// Olcegi bir basamak degistirir ya da gercek boyuta dondurur.
+function yakinligiUygula (webContents, komut) {
+  if (!webContents || webContents.isDestroyed()) return null
+
+  const yeni = yakinlik.yeniOlcek(webContents.getZoomFactor(), komut)
+  webContents.setZoomFactor(yeni)
+  return yeni
+}
+
+function yakinlikKomutu (komut) {
+  return () => {
+    const pencere = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+    yakinligiUygula(pencere?.webContents, komut)
+  }
+}
+
+// Kisayol menu hizlandiricisina birakilmadi: 'CmdOrCtrl+Plus' fiziksel tusa
+// gore eslesiyor ve Turkce Q klavyede '+' Shift+4 ile yazildigi icin hic
+// tetiklenmiyordu. Tus, uretilen karaktere gore arayuzde okunur
+// (src/renderer/js/kisayol.js) ve komut olarak buraya gelir.
+//
+// Ayni tusa iki islem baglanmaz: menu ogelerine registerAccelerator: false
+// verildigi icin Windows ve Linux'ta hizlandirici sisteme kaydedilmez, is
+// arayuze kalir. macOS bu secenegi yok sayar; orada tusu menu yakalarsa olay
+// arayuze hic ulasmaz ve isi menu ogesinin kendisi yapar.
+function olcegiKur () {
+  ipcMain.on('olcek:degistir', (olay, komut) => {
+    // Arayuzden gelen degere guvenilmez.
+    if (!yakinlik.komutGecerliMi(komut)) return
+    yakinligiUygula(olay.sender, komut)
+  })
+}
+
 // --- Menu --------------------------------------------------------------------
 
 // Kisayollar menude tanimlanir; platform ayrimini CmdOrCtrl yapar.
@@ -435,9 +482,28 @@ function menuyuKur () {
           click: komut('mod-gelismis')
         },
         { type: 'separator' },
-        { role: 'resetZoom', label: 'Gerçek boyut' },
-        { role: 'zoomIn', label: 'Yakınlaştır' },
-        { role: 'zoomOut', label: 'Uzaklaştır' },
+        // Hazir zoom rolleri kullanilmiyor: hizlandiricilari klavye dizenine
+        // takiliyor (bkz. olcegiKur). Kisayol yine de menude yaziyor ki
+        // kullanici nereden bulacagini bilsin; registerAccelerator: false
+        // gostermeye devam eder, sisteme kaydettirmez.
+        {
+          label: 'Gerçek boyut',
+          accelerator: 'CmdOrCtrl+0',
+          registerAccelerator: false,
+          click: yakinlikKomutu('sifirla')
+        },
+        {
+          label: 'Yakınlaştır',
+          accelerator: 'CmdOrCtrl+Plus',
+          registerAccelerator: false,
+          click: yakinlikKomutu('buyut')
+        },
+        {
+          label: 'Uzaklaştır',
+          accelerator: 'CmdOrCtrl+-',
+          registerAccelerator: false,
+          click: yakinlikKomutu('kucult')
+        },
         { type: 'separator' },
         { role: 'togglefullscreen', label: 'Tam ekran' },
         ...(GELISTIRICI
@@ -494,7 +560,7 @@ function createWindow () {
   })
   window.webContents.on('will-navigate', (event) => event.preventDefault())
 
-  window.loadURL('app://hv/index.html')
+  window.loadURL(`${ARAYUZ_KAYNAGI}/index.html`)
 
   return window
 }
@@ -511,6 +577,7 @@ app.whenReady().then(() => {
   kaydetmeyiKur()
   baskiyiKur()
   ayarlariKur()
+  olcegiKur()
   moduKur()
   hakkindaKur()
   menuyuKur()

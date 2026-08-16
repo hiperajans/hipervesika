@@ -213,6 +213,18 @@ açılır: döndürücü, hangi aşamada olunduğu (`#islem-yazisi`) ve ne kadar
 Panel içindeki durum satırları (`#hizalama-durumu`, `#arkaplan-durumu`) kaldırılmadı:
 pencere kapandıktan sonra sonucun okunabildiği yer orası.
 
+## Arayüz ölçeği
+
+*Görünüm* menüsündeki **Yakınlaştır / Uzaklaştır / Gerçek boyut** ve `Ctrl/Cmd` ile
+`+` `-` `0` kısayolları Chromium'un sayfa ölçeğini değiştirir: arayüzün tamamı büyür.
+Tuvalin köşesindeki yakınlık düğmeleri bundan ayrıdır, onlar fotoğrafı ve sayfa
+önizlemesini büyütür.
+
+Ölçek `src/main/yakinlik.js` içindeki merdivene oturur: **%67 – %200**. Alt sınır
+pencerenin en küçük genişliğinden (960 px) gelir; daha küçük ölçekte panel ile tuval yan
+yana sığmaz. Yerleşim esnek ölçülerle kurulduğu için bu aralıkta bozulmaz — sabit piksel
+genişlik eklendiğinde ilk bozulan yer burasıdır (bkz. Kurallar, madde 4).
+
 ## Kurallar
 
 1. **Kimlikler mantığa aittir.** `renderer.js` öğeleri `id` ile bulur; tasarım değişikliği
