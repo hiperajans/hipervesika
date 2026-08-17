@@ -40,6 +40,42 @@ function yuzGerekli () {
     : 'gerçek fotoğraf yok (HV_FOTOGRAFLAR ayarlanmamış); yüz ve arka plan testleri atlandı'
 }
 
+// --- ICC profili -------------------------------------------------------------
+
+// Sistemde kurulu bir CMYK profili. Depoya profil konmuyor (baskasinin telifli
+// verisi olabilir); bulunamazsa ilgili testler atlanir.
+const PROFIL_KLASORLERI = [
+  path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'spool', 'drivers', 'color'),
+  '/System/Library/ColorSync/Profiles',
+  '/Library/ColorSync/Profiles',
+  '/usr/share/color/icc',
+  '/usr/share/color/icc/colord'
+]
+
+function cmykProfili () {
+  for (const klasor of PROFIL_KLASORLERI) {
+    let dosyalar = []
+    try {
+      dosyalar = fs.readdirSync(klasor).filter((ad) => /\.(icc|icm)$/i.test(ad))
+    } catch {
+      continue
+    }
+
+    for (const ad of dosyalar.slice(0, 40)) {
+      const yol = path.join(klasor, ad)
+      try {
+        // Renk uzayi profil basliginda 16. bayttan itibaren yazar.
+        const bas = Buffer.alloc(20)
+        const dosya = fs.openSync(yol, 'r')
+        fs.readSync(dosya, bas, 0, 20, 0)
+        fs.closeSync(dosya)
+        if (bas.toString('latin1', 16, 20) === 'CMYK') return yol
+      } catch { /* okunamayan dosya */ }
+    }
+  }
+  return null
+}
+
 // --- Gecici dosyalar ---------------------------------------------------------
 
 class Calisma {
@@ -189,6 +225,7 @@ module.exports = {
   Calisma,
   gercekFotograflar,
   yuzGerekli,
+  cmykProfili,
   uygulamayiAc,
   anaPencere,
   acilisPenceresi,

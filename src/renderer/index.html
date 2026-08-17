@@ -514,6 +514,26 @@
                 <p id="renk-duzeni-aciklamasi" class="hv-ipucu"></p>
               </div>
 
+              <!--
+                CMYK ayrımı için ICC profili. Uygulamanın kendi çevrimi
+                profilsizdir; profil seçilirse ayrım Little CMS ile ona göre
+                yapılır. Yalnızca CMYK seçiliyken görünür.
+              -->
+              <div id="icc-alani" class="hv-alan hv-gelismis d-none">
+                <span class="hv-etiket"><span>CMYK profili</span></span>
+                <div class="hv-dugme-cifti hv-dugme-cifti-esit">
+                  <button id="btn-icc-sec" type="button" class="btn hv-dugme hv-dugme-sade">
+                    <i class="bi bi-palette" aria-hidden="true"></i>
+                    Profil seç…
+                  </button>
+                  <button id="btn-icc-kaldir" type="button" class="btn hv-dugme hv-dugme-tehlike">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                    Kaldır
+                  </button>
+                </div>
+                <p id="icc-durumu" class="hv-ipucu"></p>
+              </div>
+
 
               <div class="hv-alan">
                 <span class="hv-etiket"><span>Biçim</span></span>

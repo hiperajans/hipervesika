@@ -75,7 +75,11 @@ fotoğraf sürükle-bırak → otomatik hizalama → arka plan beyazlatma → r�
 - Tek fotoğraf: JPG (kalite ayarlı) veya PNG. Dosya başlığına DPI bilgisi yazılır, böylece
   baskı alan yazılımlar fiziksel ölçüyü doğru okur.
 - Renk düzeni: sRGB, gri tonlama veya CMYK (CMYK yalnızca PDF çıktısında gerçek
-  `DeviceCMYK` olarak yazılır; çevrim ICC profili kullanmaz).
+  `DeviceCMYK` olarak yazılır).
+- **CMYK için ICC profili.** Matbaanızın ya da kağıdınızın ICC profilini seçerseniz ayrım
+  Little CMS ile o profile göre yapılır. Fark ten tonlarında görünür: profilsiz aygıt
+  çevrimi tene siyah karıştırır (ölçüldü: %8), profilli ayrım karıştırmaz. Profil
+  seçilmezse eski profilsiz çevrim kullanılır.
 - Kaynak fotoğraf hiç bozulmadan saklanır: hizalama, rötuş ve kırpma parametre olarak
   tutulur ve dışa aktarmada tam çözünürlüklü görüntüye tek seferde uygulanır.
 

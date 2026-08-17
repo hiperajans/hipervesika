@@ -34,11 +34,18 @@ directories:
 #
 # build/icons pencerenin simgesi icin calisma zamaninda okunuyor
 # (src/main/index.js -> pencereSimgesi).
+# lcms-wasm ana surecte CMYK ayrimi icin kullaniliyor (bkz. src/main/icc.js);
+# node_modules disarida kaldigi icin yalnizca gereken dosyalari geri aliyoruz.
+# Paketin kendi bagimliligi (tape) yalnizca testlerinde kullaniliyor, girmiyor.
 files:
   - src/**/*
   - build/icons/**/*
   - package.json
   - '!node_modules/**/*'
+  - node_modules/lcms-wasm/package.json
+  - node_modules/lcms-wasm/dist/lcms.js
+  - node_modules/lcms-wasm/dist/lcms.wasm
+  - node_modules/lcms-wasm/lib/**/*
 
 asar: true
 

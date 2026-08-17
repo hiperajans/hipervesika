@@ -14,6 +14,7 @@ const ayarlar = require('./ayarlar.js')
 const pdf = require('./pdf.js')
 const yakinlik = require('./yakinlik.js')
 const dogrudanBaski = require('./dogrudan-baski.js')
+const icc = require('./icc.js')
 
 app.setName('Hiper Vesika')
 
@@ -281,6 +282,25 @@ function baskiyiKur () {
 async function sayfaPdfiUret (istek) {
   // CMYK istendiginde sayfa Chromium'dan gecmez: printToPDF her zaman RGB
   // uretir, bu yuzden PDF'i dogrudan CMYK orneklerinden yaziyoruz.
+  //
+  // ICC profili verildiyse ayrimi Little CMS yapar; verilmediyse arayuzun
+  // profilsiz aygit cevrimi kullanilir.
+  if (istek?.rgb && istek?.iccYolu) {
+    const kagitMm = baski.sayfaOlcusu(istek.kagitMm)
+    const { genislik, yukseklik } = istek.rgb
+
+    return pdf.cmykSayfaPdf({
+      baytlar: await icc.cmykeCevir({
+        rgb: istek.rgb.baytlar,
+        piksel: genislik * yukseklik,
+        profilBaytlari: await fs.readFile(iccProfiliniDogrula(istek.iccYolu))
+      }),
+      genislik,
+      yukseklik,
+      kagitMm
+    })
+  }
+
   if (istek?.cmyk) {
     return pdf.cmykSayfaPdf({
       baytlar: istek.cmyk.baytlar,
@@ -364,6 +384,53 @@ function sessizBas (istek, dogrulanmis) {
       }
     )
   }))
+}
+
+// --- ICC profili -------------------------------------------------------------
+
+// Yol yalnizca kendi actigimiz pencereden gelir; yine de dogrulanir (ana surec
+// arayuze guvenmez).
+function iccProfiliniDogrula (yol) {
+  if (typeof yol !== 'string' || !yol || yol.length > 500) {
+    throw new Error('ICC profili geçersiz.')
+  }
+  if (!/\.(icc|icm)$/i.test(yol) || !fsSenkron.existsSync(yol)) {
+    throw new Error('ICC profili bulunamadı.')
+  }
+  return yol
+}
+
+function icciKur () {
+  ipcMain.handle('icc:sec', async (olay) => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(
+      BrowserWindow.fromWebContents(olay.sender),
+      {
+        title: 'CMYK profili seç',
+        properties: ['openFile'],
+        filters: [{ name: 'ICC profili', extensions: ['icc', 'icm'] }]
+      }
+    )
+
+    if (canceled || !filePaths?.length) return { secildi: false }
+
+    try {
+      const yol = iccProfiliniDogrula(filePaths[0])
+      const bilgi = await icc.profilBilgisi(await fs.readFile(yol))
+
+      // RGB profili secen kullaniciya sebebi soylenir; sessizce kabul edip
+      // ayrimi bozmaktansa.
+      if (!icc.cmykMi(bilgi.uzay)) {
+        return {
+          secildi: false,
+          hata: `Bu profil ${bilgi.uzay} uzayında; CMYK ayrımı için CMYK profili gerekir.`
+        }
+      }
+
+      return { secildi: true, yol, ad: bilgi.ad || path.basename(yol) }
+    } catch (hata) {
+      return { secildi: false, hata: hata.message }
+    }
+  })
 }
 
 function dogrudanBaskiyiKur () {
@@ -781,6 +848,7 @@ app.whenReady().then(() => {
   kaydetmeyiKur()
   baskiyiKur()
   ayarlariKur()
+  icciKur()
   dogrudanBaskiyiKur()
   olcegiKur()
   moduKur()

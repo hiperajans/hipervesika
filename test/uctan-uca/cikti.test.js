@@ -147,3 +147,66 @@ test('CMYK PDF gercekten DeviceCMYK olarak yaziliyor', async () => {
   await ortam.adima(sayfa, 'cikti')
   await sayfa.selectOption('#renk-duzeni', 'srgb')
 })
+
+// ICC profili yalnizca CMYK'de anlamli; profil secildiginde ayrimi Little CMS
+// yapar ve sonuc profilsiz cevrimden farkli olmali (bkz. test/icc.test.js).
+test('ICC profili secilince CMYK ayrimi degisiyor', async (t) => {
+  const profil = ortam.cmykProfili()
+  if (!profil) return t.skip('sistemde CMYK profili bulunamadı')
+
+  await sayfa.selectOption('#renk-duzeni', 'cmyk')
+  await sayfa.waitForTimeout(300)
+
+  const gorunurMu = () => sayfa.evaluate(
+    () => !document.getElementById('icc-alani').classList.contains('d-none'))
+  assert.equal(await gorunurMu(), true)
+  assert.match(await sayfa.textContent('#icc-durumu'), /profilsiz/i)
+
+  await sayfa.click('label[for="gorunum-sayfa"]')
+  await sayfa.waitForTimeout(600)
+
+  const ornekler = async (ad) => {
+    const yol = calisma.cikti(ad)
+    await ortam.kaydetmeyiYonlendir(uygulama, yol)
+    await sayfa.click('#btn-sayfayi-pdf')
+    await sayfa.waitForFunction(
+      () => /kaydedildi|kaydedilemedi|hazırlanamadı/i.test(
+        document.getElementById('baski-durumu').textContent), null, { timeout: 180000 })
+
+    const belge = fs.readFileSync(yol)
+    const metin = belge.toString('latin1')
+    assert.match(metin, /\/ColorSpace \/DeviceCMYK/)
+
+    const bas = metin.indexOf('stream\n', metin.indexOf('/DeviceCMYK')) + 'stream\n'.length
+    return zlib.inflateSync(belge.subarray(bas, metin.indexOf('\nendstream', bas)))
+  }
+
+  const profilsiz = await ornekler('cmyk-profilsiz.pdf')
+
+  // Profil secme penceresi test dosyasina yonlendirilir.
+  await uygulama.evaluate(async ({ dialog }, yol) => {
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [yol] })
+  }, profil)
+  await sayfa.click('#btn-icc-sec')
+  await sayfa.waitForFunction(
+    () => /ayrım bu profile göre/i.test(document.getElementById('icc-durumu').textContent),
+    null, { timeout: 30000 })
+
+  const profilli = await ornekler('cmyk-profilli.pdf')
+
+  assert.equal(profilli.length, profilsiz.length, 'ölçü değişmemeli')
+  assert.notDeepEqual(
+    Array.from(profilli.subarray(0, 4096)),
+    Array.from(profilsiz.subarray(0, 4096)),
+    'profilli ayrım profilsizle aynı çıktı'
+  )
+
+  await sayfa.click('#btn-icc-kaldir')
+  await sayfa.waitForTimeout(300)
+  assert.match(await sayfa.textContent('#icc-durumu'), /profilsiz/i)
+
+  await sayfa.click('label[for="gorunum-foto"]')
+  await sayfa.waitForTimeout(500)
+  await ortam.adima(sayfa, 'cikti')
+  await sayfa.selectOption('#renk-duzeni', 'srgb')
+})

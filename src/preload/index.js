@@ -31,6 +31,10 @@ contextBridge.exposeInMainWorld('hiperVesika', {
   // Kagit turu ve kalite Windows'ta surucunun kendi penceresinde ayarlanir.
   yaziciTercihleriniAc: (yazici) => ipcRenderer.invoke('yazici:tercihler', yazici),
 
+  // CMYK ayriminda kullanilacak ICC profilini sectirir; profilin CMYK olup
+  // olmadigini ana surec denetler.
+  iccProfiliSec: () => ipcRenderer.invoke('icc:sec'),
+
   // Kullanici ayarlari (kendi on ayarlari ve son kullanilan degerler).
   ayarlariOku: () => ipcRenderer.invoke('ayarlar:oku'),
   ayarlariYaz: (ayarlar) => ipcRenderer.invoke('ayarlar:yaz', ayarlar),

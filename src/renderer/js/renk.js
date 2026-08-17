@@ -96,6 +96,24 @@
     return tuval
   }
 
+  // ICC ayrimi icin ham RGB ucluleri: piksel basina 3 bayt. Cevrimi ana surec
+  // Little CMS ile yapar (bkz. src/main/icc.js); burada yalnizca alfa atilir.
+  function rgbBaytlari (tuval) {
+    const ctx = tuval.getContext('2d')
+    const veri = ctx.getImageData(0, 0, tuval.width, tuval.height).data
+    const cikti = new Uint8Array((veri.length / 4) * 3)
+
+    for (let kaynak = 0, hedef = 0; kaynak < veri.length; kaynak += 4, hedef += 3) {
+      // Saydam piksel kagit beyazi sayilir; sayfada zemin zaten beyaz.
+      const alfa = veri[kaynak + 3]
+      cikti[hedef] = alfa === 0 ? 255 : veri[kaynak]
+      cikti[hedef + 1] = alfa === 0 ? 255 : veri[kaynak + 1]
+      cikti[hedef + 2] = alfa === 0 ? 255 : veri[kaynak + 2]
+    }
+
+    return cikti
+  }
+
   // PDF'e gomulecek DeviceCMYK ornekleri: piksel basina 4 bayt.
   function cmykBaytlari (tuval) {
     const ctx = tuval.getContext('2d')
@@ -127,6 +145,7 @@
     cmyktenRgb,
     griyeCevir,
     duzeniUygula,
+    rgbBaytlari,
     cmykBaytlari
   }
 

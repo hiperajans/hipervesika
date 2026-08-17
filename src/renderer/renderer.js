@@ -117,6 +117,10 @@ const el = {
   gozDurumu: document.getElementById('goz-durumu'),
   renkDuzeni: document.getElementById('renk-duzeni'),
   renkDuzeniAciklamasi: document.getElementById('renk-duzeni-aciklamasi'),
+  iccAlani: document.getElementById('icc-alani'),
+  iccSec: document.getElementById('btn-icc-sec'),
+  iccKaldir: document.getElementById('btn-icc-kaldir'),
+  iccDurumu: document.getElementById('icc-durumu'),
   sihirbazGeri: document.getElementById('btn-sihirbaz-geri'),
   sihirbazIleri: document.getElementById('btn-sihirbaz-ileri'),
   sihirbazIleriYazi: document.getElementById('sihirbaz-ileri-yazi'),
@@ -610,6 +614,48 @@ function renkDuzeniniOku () {
 
 function renkAciklamasiniGuncelle () {
   el.renkDuzeniAciklamasi.textContent = window.HV.renk.duzenBul(renkDuzeniniOku()).aciklama
+  iccDurumunuGuncelle()
+}
+
+// --- CMYK icin ICC profili ---------------------------------------------------
+
+// Uygulamanin kendi RGB -> CMYK cevrimi profilsizdir; olculdu (SWOP): ten
+// rengine %8 siyah karistiriyor. Profil secilirse ayrimi ana surecteki Little
+// CMS yapar ve o karisma olmaz.
+let iccProfili = null
+
+function iccDurumunuGuncelle () {
+  const kullanilabilir = renkDuzeniniOku() === 'cmyk'
+  el.iccAlani.classList.toggle('d-none', !kullanilabilir)
+  if (!kullanilabilir) return
+
+  el.iccKaldir.disabled = !iccProfili
+  el.iccDurumu.textContent = iccProfili
+    ? `${iccProfili.ad} — ayrım bu profile göre yapılacak.`
+    : 'Profil seçilmezse ayrım profilsiz yapılır (aygıt çevrimi). ' +
+      'Matbaanızın ya da kağıdınızın profilini seçmek ten tonlarını düzeltir.'
+}
+
+async function iccProfiliSec () {
+  const sonuc = await window.hiperVesika.iccProfiliSec()
+
+  if (sonuc.hata) {
+    el.iccDurumu.textContent = sonuc.hata
+    return
+  }
+  if (!sonuc.secildi) return
+
+  iccProfili = { yol: sonuc.yol, ad: sonuc.ad }
+  kullaniciAyarlari.iccProfili = iccProfili
+  iccDurumunuGuncelle()
+  ayarlariKaydet({ hemen: true })
+}
+
+function iccProfiliniKaldir () {
+  iccProfili = null
+  kullaniciAyarlari.iccProfili = null
+  iccDurumunuGuncelle()
+  ayarlariKaydet({ hemen: true })
 }
 
 function lekeDurumunuGuncelle () {
@@ -1912,14 +1958,19 @@ async function sayfayiGoruntuKaydet () {
 // belgeyi kullanir; olcu dogrulugu tek yerden gelir.
 async function sayfaPdfIstegi (sayfa) {
   const istek = { kagitMm: sayfa.kagitMm }
+  const olcu = { genislik: sayfa.tuval.width, yukseklik: sayfa.tuval.height }
 
   if (renkDuzeniniOku() === 'cmyk') {
-    // Sayfa piksel piksel CMYK'ye cevrilir; PDF'i ana surec yazar.
-    istek.cmyk = {
-      baytlar: window.HV.renk.cmykBaytlari(sayfa.tuval),
-      genislik: sayfa.tuval.width,
-      yukseklik: sayfa.tuval.height
+    // ICC profili secilmisse ham RGB gonderilir; ayrimi ana surecteki Little
+    // CMS profile gore yapar. Profil yoksa profilsiz aygit cevrimi burada.
+    if (iccProfili) {
+      istek.rgb = { baytlar: window.HV.renk.rgbBaytlari(sayfa.tuval), ...olcu }
+      istek.iccYolu = iccProfili.yol
+      return istek
     }
+
+    // Sayfa piksel piksel CMYK'ye cevrilir; PDF'i ana surec yazar.
+    istek.cmyk = { baytlar: window.HV.renk.cmykBaytlari(sayfa.tuval), ...olcu }
     return istek
   }
 
@@ -2575,6 +2626,7 @@ async function ayarlariYukle () {
       fotografOnayarlari: okunan?.fotografOnayarlari ?? [],
       kagitOnayarlari: okunan?.kagitOnayarlari ?? [],
       kalibrasyonlar: okunan?.kalibrasyonlar ?? [],
+      iccProfili: okunan?.iccProfili ?? null,
       sonKullanilan: okunan?.sonKullanilan ?? {},
       tanitimGoruldu: okunan?.tanitimGoruldu === true,
       mod: okunan?.mod ?? null
@@ -2590,6 +2642,11 @@ async function ayarlariYukle () {
   // Mod, son kullanilan degerler yerine oturduktan sonra uygulanir: basit moda
   // gecis ciktiyi etkileyen uzman degerlerini sifirliyor, once onlarin okunmus
   // olmasi gerekiyor. Kayitli mod diske geri yazilmaz (kaydet: false).
+  // ICC profili son kullanilanlarda degil kendi alaninda duruyor (yol uzun
+  // olabilir); okunan deger arayuzun durumuna aktarilir.
+  iccProfili = kullaniciAyarlari.iccProfili ?? null
+  iccDurumunuGuncelle()
+
   if (kullaniciAyarlari.mod) modAta(kullaniciAyarlari.mod, { kaydet: false })
   else window.hiperVesika.moduBildir('gelismis')
 
@@ -2939,6 +2996,8 @@ for (const denetim of [
 }
 
 el.yaziciTercihleri.addEventListener('click', () => yaziciTercihleriniAc())
+el.iccSec.addEventListener('click', () => iccProfiliSec())
+el.iccKaldir.addEventListener('click', () => iccProfiliniKaldir())
 
 // --- Menu komutlari ----------------------------------------------------------
 

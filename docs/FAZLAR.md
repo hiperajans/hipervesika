@@ -587,13 +587,47 @@ Ghostscript'i fork etmek de çözüm değil: fork da AGPL kalır. Yerine bakıld
 izin verici lisanslı bir baskı yığını taşıdığımız görüldü — Electron'un içindeki Chromium
 (PDFium, Skia) ve işletim sisteminin CUPS'u. Paket 40 MB küçüldü, harici ikili kalmadı.
 
-Kaybedilen tek şey **ICC profilli CMYK ayrımı** oldu (uygulamanın kendi çevrimi profilsiz
-kalıyor, bkz. `js/renk.js`). Karşılığı Little CMS'tir (lcms2, MIT); gerektiğinde WASM
-olarak eklenebilir.
+Geçici olarak kaybedilen tek şey **ICC profilli CMYK ayrımı** oldu; hemen ardından Little
+CMS ile geri geldi (aşağıdaki bölüm).
 
 > **Ghostscript denenirken ölçülüp not edilen:** `pdfwrite` girdinin MediaBox'ını
 > korumuyor; ölçü açıkça verilmezse 100 × 150 mm sayfa 595 × 842 punto (A4) çıkıyordu.
 > Aynı tuzak PDF üreten başka bir araç eklenirse yine karşımıza çıkar.
+
+### CMYK için ICC profili (Little CMS)
+
+Uygulamanın RGB → CMYK çevrimi profilsiz bir aygıt çevrimidir (`js/renk.js`) ve matbaa
+işinde yetmiyor. Ölçüldü (U.S. Web Coated SWOP, ten rengi `rgb(235, 190, 165)`):
+
+| | C | M | Y | K |
+| --- | --- | --- | --- | --- |
+| Profilsiz aygıt çevrimi | %0 | %19 | %30 | **%8** |
+| Profilli ayrım | %6 | %29 | %35 | **%0** |
+
+Profilsiz çevrim tene siyah karıştırıyor — vesikalıkta yüz önce bundan bozulur. Orta grilerde
+fark daha da büyük (profilsiz K %50, profilli C53 M45 Y45 K10).
+
+- **Renk motoru `lcms-wasm`** (Little CMS'in WASM derlemesi, MIT). Kütüphane yazılmadı,
+  hazır ve doğru olan kullanıldı; lisansı ticari üründe ve mağaza sürümünde sorun çıkarmaz.
+- **Ana süreçte çalışır.** WebAssembly'yi arayüzde çalıştırmak içerik güvenlik ilkesini
+  gevşetmeyi gerektirirdi (`'wasm-unsafe-eval'`); çevrim zaten PDF yazılırken burada
+  yapılıyor. Modül ESM olduğu için ilk kullanımda dinamik `import()` ile yükleniyor —
+  açılışa yük binmiyor, CMYK seçilmeyen oturumda hiç okunmuyor.
+- **Akış:** arayüz ham RGB üçlülerini gönderir (`renk.rgbBaytlari`), ana süreç profili
+  okuyup Little CMS ile CMYK'ye çevirir ve kendi `pdf.cmykSayfaPdf`'imiz belgeyi yazar.
+  Ölçü taşıyıcısı yine PDF'in MediaBox'ıdır.
+- **Bağıl renk ölçümü** (relative colorimetric) kullanılıyor: gamut dışı renkler en yakın
+  basılabilir renge çekilir, gri dengesi korunur. Algısal niyetin tablosu profillerin
+  çoğunda yoktur ve sessizce bağıla düşer; açıkça bağıl istemek daha dürüst.
+- **RGB profili seçilirse reddedilir** ve sebebi yazılır; sessizce kabul edip ayrımı
+  bozmaktansa.
+
+**Ölçüldü:** 100 × 150 mm sayfa (2,09 milyon piksel) 67–104 ms'de çevriliyor; PDF üretimi
+profilli 0,4 sn, profilsiz 0,3 sn. Sayfa ölçüsü ikisinde de 283,46 × 425,20 punto.
+
+Paketleme: `node_modules` dışarıda kaldığı için `electron-builder.yml` yalnızca
+`lcms-wasm`'ın gereken dosyalarını geri alıyor (~400 KB); paketin kendi `tape` bağımlılığı
+yalnızca kendi testlerinde kullanılıyor ve girmiyor.
 
 ### Kağıt türü, kalite ve ölçü kalibrasyonu
 
