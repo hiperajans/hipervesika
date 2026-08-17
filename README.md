@@ -88,25 +88,21 @@ fotoğraf sürükle-bırak → otomatik hizalama → arka plan beyazlatma → r�
 - Gerçek oranlı canlı sayfa önizlemesi ve açılıp kapatılabilen kesim kılavuzu.
 - Baskı, sistemin yazdırma panelinden geçer: yazıcı, kopya, kağıt ve kalite orada seçilir.
   Sayfa ayrıca PDF ya da JPG/PNG olarak kaydedilebilir.
-- **Doğrudan yazıcıya gönderme (Ghostscript).** Ghostscript kuruluysa — ya da pakete
-  konmuşsa — *Doğrudan yazıcıya gönder* açılır: yazdırma paneli hiç açılmaz, yazıcı, kopya
-  ve baskı çözünürlüğü (300/600/1200 DPI) uygulamada seçilir ve iş doğrudan kuyruğa gider.
-  Ölçek %100'de sabitlenir, "kağıda sığdır" devreye giremez. Windows'ta iş sürücü üzerinden
-  gider (sürücüsü kurulu her yazıcı); macOS ve Linux'ta CUPS'a verilir, sürücüsüz ağ
-  yazıcıları için PostScript veya PCL üretilebilir. Kenarlıksız baskı için yazıcının
-  sürücüsünde de kenarlıksız kağıt seçili olmalıdır.
+- **Doğrudan yazıcıya gönderme.** *Doğrudan yazıcıya gönder* açıkken yazdırma paneli hiç
+  açılmaz: yazıcı, kopya ve baskı çözünürlüğü (300/600/1200 DPI) uygulamada seçilir ve iş
+  doğrudan kuyruğa gider. Ölçek %100'de sabitlenir, "kağıda sığdır" devreye giremez.
+  Windows'ta iş uygulamanın kendi baskı yolundan sürücüye gider (sürücüsü kurulu her
+  yazıcı); macOS ve Linux'ta CUPS'a verilir. Ek bir program kurmak gerekmez.
 - **Kağıt türü ve kalite.** macOS ve Linux'ta *Parlak / Mat / Düz* ve *Normal / Yüksek*
   doğrudan seçilir (CUPS'a IPP niteliği olarak gider). Windows'ta bu ayarlar sürücünün
-  DEVMODE'unda durur ve dışarıdan değiştirilemez; oradaki *Yazıcı tercihleri…* düğmesi
-  sürücünün kendi penceresini açar, seçim orada kalıcıdır.
+  kendi ayar alanında durur ve dışarıdan değiştirilemez; oradaki *Yazıcı tercihleri…*
+  düğmesi sürücünün penceresini açar, seçim orada kalıcıdır. Kenarlıksız baskı da bir
+  sürücü ayarıdır.
 - **Ölçü kalibrasyonu.** Yazıcılar kağıdı %1'e varan bir farkla basabilir. Uygulama
   ölçüleri bilinen bir kalibrasyon sayfası basar; çizgileri cetvelle ölçüp gerçek
   değerleri girersiniz ve düzeltme çarpanı **yazıcı başına** saklanıp sonraki doğrudan
   baskılarda uygulanır. Kaydedilen PDF ve görüntüler düzeltmesiz kalır — onlar başka bir
   yazıcıda basılabilir.
-- **CMYK için ICC profili.** Uygulamanın kendi RGB→CMYK çevrimi profilsizdir; Ghostscript
-  varsa matbaanızın ya da kağıdınızın ICC profilini seçip ayrımı ona göre yaptırabilirsiniz
-  (yalnızca kaydedilen PDF'te; yazıcıya giden işte rengi sürücü yönetir).
 - **Ölçü doğruluğu:** sayfa, kağıdın tam piksel karşılığında üretilir ve ölçüsü sabitlenmiş
   bir sayfaya yerleştirilir. Üretilen PDF üzerinden ölçüldüğünde 50 mm'lik bir vesikalığın
   kenarındaki sapma 0,04 mm'nin altındadır. Yazdırma panelinde ölçeklemenin
@@ -166,7 +162,6 @@ zorunludur; dosyalar sonradan tazelenmek istenirse `npm run vendor` yeterlidir.
 | `npm run paket:win` | Windows kurulum programı |
 | `npm run paket:linux` | Linux `AppImage` |
 | `npm run vendor` | `vendor/` dosyalarını yeniler |
-| `npm run ghostscript` | Bu makinedeki Ghostscript'i pakete hazırlar (isteğe bağlı) |
 
 ## Klavye kısayolları
 

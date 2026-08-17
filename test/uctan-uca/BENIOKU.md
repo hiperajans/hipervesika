@@ -37,7 +37,7 @@ Atlanan testler çıktıda `﹣` ile ve sebebiyle birlikte görünür.
 | `ayarlar.test.js` | Kullanıcı ön ayarları, son kullanılan değerler, bozuk ayar dosyası |
 | `baski.test.js` | Menü kısayolları, PDF ölçü doğruluğu, sayfa kaydetme, geri al/yinele |
 | `acilis.test.js` | Açılış penceresi: uygulama hazırlık bitene kadar görünmüyor |
-| `ghostscript.test.js` | Doğrudan baskı anahtarı, yazıcı/çözünürlük seçimi, geçersiz istek |
+| `dogrudan-baski.test.js` | Doğrudan baskı anahtarı, yazıcı/çözünürlük seçimi, ölçü kalibrasyonu |
 | `olcu.test.js` | Hazır vesikalık ölçüleri ve kadraj profilinin arayüze bağlanması |
 | `yakinlik.test.js` | Arayüz ölçeği kısayolları, Görünüm menüsü, ölçeğin baskıya sızmaması |
 | `cikti.test.js` | JPG/PNG dışa aktarma, DPI bilgisi, renk düzeni, CMYK PDF |
@@ -54,8 +54,8 @@ Atlanan testler çıktıda `﹣` ile ve sebebiyle birlikte görünür.
 - Kaydetme pencereleri `dialog.showSaveDialog` değiştirilerek yönlendirilir,
   dosyalar geçici klasöre yazılır.
 - **Gerçek yazıcıya iş gönderilmez.** Yazıcı tanımlı bir makinede baskı testi
-  kendini atlar; ölçü doğruluğu PDF ve piksel üzerinden ölçülür. Ghostscript
-  testi de yalnızca arayüzü ve reddedilen istekleri sınar; komut satırının
-  kendisi birim testinde (`test/ghostscript.test.js`) doğrulanır.
+  kendini atlar; ölçü doğruluğu PDF ve piksel üzerinden ölçülür. Doğrudan baskı
+  testi de yalnızca arayüzü ve reddedilen istekleri sınar; CUPS komutunun
+  kendisi birim testinde (`test/dogrudan-baski.test.js`) doğrulanır.
 - Testler öğeleri `id` ile bulur (bkz. [`docs/ARAYUZ.md`](../../docs/ARAYUZ.md)
   → "Kimlikler mantığa aittir").

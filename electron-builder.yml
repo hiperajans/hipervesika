@@ -42,20 +42,6 @@ files:
 
 asar: true
 
-# Ghostscript ile dogrudan baski. vendor/ghostscript/<platform>/ klasoru
-# `npm run ghostscript` ile hazirlanir ve paketin kaynaklar klasorune girer;
-# uygulama once orayi, bulamazsa sistemdeki kurulumu arar (src/main/ghostscript.js).
-#
-# Klasor yoksa paket yine uretilir: ozellik o zaman yalnizca Ghostscript kurulu
-# makinelerde acilir. LISANS: Ghostscript AGPL'dir; paketle dagitmak urunun de
-# AGPL olmasini ya da Artifex ticari lisansini gerektirir ve magaza surumlerinde
-# kullanilmamalidir.
-extraResources:
-  - from: vendor/ghostscript
-    to: ghostscript
-    filter:
-      - '**/*'
-
 # macOS paketini ad-hoc imzalar; imzasiz arm64 uygulamasi Apple Silicon'da
 # hic acilmaz.
 afterPack: scripts/paket/imza.js

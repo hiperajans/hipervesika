@@ -514,26 +514,6 @@
                 <p id="renk-duzeni-aciklamasi" class="hv-ipucu"></p>
               </div>
 
-              <!--
-                CMYK ayrımı için ICC profili. Uygulamanın kendi çevrimi
-                profilsizdir; Ghostscript varsa ayrım gerçek bir profille
-                yapılır. Yalnızca CMYK seçiliyken ve Ghostscript bulunduğunda
-                görünür.
-              -->
-              <div id="icc-alani" class="hv-alan hv-gelismis d-none">
-                <span class="hv-etiket"><span>CMYK profili</span></span>
-                <div class="hv-dugme-cifti hv-dugme-cifti-esit">
-                  <button id="btn-icc-sec" type="button" class="btn hv-dugme hv-dugme-sade">
-                    <i class="bi bi-palette" aria-hidden="true"></i>
-                    Profil seç…
-                  </button>
-                  <button id="btn-icc-kaldir" type="button" class="btn hv-dugme hv-dugme-tehlike">
-                    <i class="bi bi-x-lg" aria-hidden="true"></i>
-                    Kaldır
-                  </button>
-                </div>
-                <p id="icc-durumu" class="hv-ipucu"></p>
-              </div>
 
               <div class="hv-alan">
                 <span class="hv-etiket"><span>Biçim</span></span>
@@ -654,9 +634,10 @@
 
               <!--
                 İki baskı yolu var. Varsayılan yol sistemin yazdırma panelinden
-                geçer: yazıcı, kopya ve kalite orada seçilir. Ghostscript kurulu
-                ya da paketle geldiyse iş doğrudan yazıcıya gönderilebilir;
-                panel açılmaz ve ölçek %100'de sabit kalır.
+                geçer: yazıcı, kopya ve kalite orada seçilir. Doğrudan baskıda
+                ise panel açılmaz; iş Windows'ta Chromium'un kendi baskı
+                yolundan, macOS ve Linux'ta CUPS'tan geçer ve ölçek %100'de
+                sabit kalır.
               -->
               <div class="form-check form-switch hv-anahtar">
                 <input class="form-check-input" type="checkbox" role="switch" id="dogrudan-baski" disabled />
@@ -693,13 +674,6 @@
                 <div id="baski-kalitesi-alani" class="hv-alan d-none">
                   <label for="baski-kalitesi" class="hv-etiket"><span>Baskı kalitesi</span></label>
                   <select id="baski-kalitesi" class="form-select form-select-sm"></select>
-                </div>
-
-                <!-- Aygıt seçimi yalnızca sürücüsüz ağ yazıcıları için gerekir;
-                     Windows'ta tek seçenek olduğu için gizli kalır. -->
-                <div id="baski-aygiti-alani" class="hv-alan hv-gelismis d-none">
-                  <label for="baski-aygiti" class="hv-etiket"><span>Baskı dili</span></label>
-                  <select id="baski-aygiti" class="form-select form-select-sm"></select>
                 </div>
 
                 <button id="btn-yazici-tercihleri" type="button"

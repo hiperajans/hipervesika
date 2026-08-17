@@ -28,7 +28,6 @@ const AD_UZUNLUGU = 40
 const EN_KUCUK_OLCEK = 0.9
 const EN_BUYUK_OLCEK = 1.1
 const YAZICI_ADI_UZUNLUGU = 200
-const ICC_YOLU_UZUNLUGU = 500
 
 // Arayuz modlari. 'basit' sihirbaz gezinmesi verir ve uzman denetimlerini
 // gizler, 'gelismis' her seyi gosterir. Ayarda null durmasi "kullaniciya henuz
@@ -42,9 +41,6 @@ function varsayilanAyarlar () {
     kagitOnayarlari: [],
     // Yazici basina olcu duzeltmesi (bkz. src/renderer/js/kalibrasyon.js).
     kalibrasyonlar: [],
-    // CMYK ayriminda kullanilacak ICC profilinin yolu. sonKullanilan icinde
-    // tutulamaz: oradaki dizgi siniri (200) uzun yollara yetmiyor.
-    iccProfili: null,
     sonKullanilan: {},
     // Tanitim turu bir kez gosterilir; kullanici Yardim menusunden tekrarlar.
     tanitimGoruldu: false,
@@ -126,17 +122,6 @@ function kalibrasyonTemizle (ham) {
   }
 }
 
-// ICC profili: yol ve dosya adi. Dosyanin hala yerinde olup olmadigina
-// bakilmaz — disk baglantisi gecici olabilir; kullanilacagi anda denetlenir
-// (src/main/index.js -> iccProfiliGecerliMi).
-function iccProfiliTemizle (ham) {
-  const yol = typeof ham?.yol === 'string' ? ham.yol.trim() : ''
-  if (!yol || yol.length > ICC_YOLU_UZUNLUGU || !/\.(icc|icm)$/i.test(yol)) return null
-
-  const ad = adTemizle(ham?.ad) ?? path.basename(yol)
-  return { yol, ad }
-}
-
 // Son kullanilan degerler yalnizca tur olarak dogrulanir; anlamsal denetimi
 // arayuz kendi sinirlariyla yapar (gecersiz deger uygulanmaz).
 function sonKullanilanTemizle (ham) {
@@ -159,7 +144,6 @@ function ayarlariDogrula (ham) {
   ayarlar.fotografOnayarlari = listeTemizle(ham.fotografOnayarlari, fotografOnayariTemizle)
   ayarlar.kagitOnayarlari = listeTemizle(ham.kagitOnayarlari, kagitOnayariTemizle)
   ayarlar.kalibrasyonlar = listeTemizle(ham.kalibrasyonlar, kalibrasyonTemizle, 'yazici')
-  ayarlar.iccProfili = iccProfiliTemizle(ham.iccProfili)
   ayarlar.sonKullanilan = sonKullanilanTemizle(ham.sonKullanilan)
   ayarlar.tanitimGoruldu = ham.tanitimGoruldu === true
   // Taninmayan mod null'a duser: bozuk dosyada kullaniciya yeniden sorulur,
@@ -234,7 +218,6 @@ module.exports = {
   varsayilanAyarlar,
   adTemizle,
   kalibrasyonTemizle,
-  iccProfiliTemizle,
   ayarlariDogrula,
   benzersizKod,
   dosyaYolu,

@@ -13,7 +13,7 @@ const baski = require('./baski.js')
 const ayarlar = require('./ayarlar.js')
 const pdf = require('./pdf.js')
 const yakinlik = require('./yakinlik.js')
-const ghostscript = require('./ghostscript.js')
+const dogrudanBaski = require('./dogrudan-baski.js')
 
 app.setName('Hiper Vesika')
 
@@ -290,7 +290,7 @@ async function sayfaPdfiUret (istek) {
     })
   }
 
-  const belge = await baskiSayfasindaCalis(istek, (baskiPenceresi, kagitMm) =>
+  return baskiSayfasindaCalis(istek, (baskiPenceresi, kagitMm) =>
     baskiPenceresi.webContents.printToPDF({
       printBackground: true,
       // Sayfa olcusu CSS'teki @page'ten alinir; ikisi ayni degeri yazar.
@@ -302,72 +302,72 @@ async function sayfaPdfiUret (istek) {
       }
     })
   )
-
-  // ICC profili verildiyse CMYK ayrimi profille yapilir; uygulamanin kendi
-  // cevrimi profilsizdir (bkz. js/renk.js).
-  if (!iccProfiliGecerliMi(istek?.iccYolu)) return belge
-
-  const durum = await ghostscriptDurumunuAl()
-  if (!durum.var) return belge
-
-  return ghostscript.cmykPdfUret({
-    gsYolu: durum.yol,
-    pdf: belge,
-    profilYolu: istek.iccYolu,
-    kagitMm: baski.sayfaOlcusu(istek.kagitMm),
-    geciciKlasor: app.getPath('temp')
-  })
 }
 
-// --- Ghostscript ile dogrudan baski ------------------------------------------
+// --- Dogrudan baski ----------------------------------------------------------
 
-// Paketle gelen kopyanin kokü. Gelistirmede depo icindeki vendor/ klasoru,
-// pakette uygulamanin kaynaklar klasoru (electron-builder extraResources).
-function ghostscriptKoku () {
-  return app.isPackaged
-    ? process.resourcesPath
-    : path.join(__dirname, '..', '..', 'vendor')
-}
+let dogrudanBaskiDurumu = null
 
-let ghostscriptDurumu = null
-
-// Durum bir kez okunur: ikili dosyayi aramak ve surumunu sormak diske gitmek
-// demek, her istekte tekrarlanmasin.
-async function ghostscriptDurumunuAl () {
-  ghostscriptDurumu ??= {
-    ...(await ghostscript.durum({ paketKoku: ghostscriptKoku() })),
+function dogrudanBaskiDurumunuAl () {
+  dogrudanBaskiDurumu ??= {
+    ...dogrudanBaski.durum(),
     // Rasterlestirme cozunurlugu de baski isinin bir parcasi; arayuz listeyi
     // ikinci kez yazmasin diye buradan gider.
     cozunurlukler: baski.BASKI_COZUNURLUKLERI,
     varsayilanCozunurluk: baski.VARSAYILAN_BASKI_DPI
   }
-  return ghostscriptDurumu
+  return dogrudanBaskiDurumu
 }
 
-// ICC profili yalnizca kendi actigimiz pencereden secilebiliyor; yine de
-// gelen yol dogrulanir (ana surec arayuze guvenmez).
-function iccProfiliGecerliMi (yol) {
-  if (typeof yol !== 'string' || !yol || yol.length > 500) return false
-  if (!/\.(icc|icm)$/i.test(yol)) return false
-  return fsSenkron.existsSync(yol)
+// Arayuzden gelen istegin dogrulanmis hali. Ana surec arayuze guvenmez:
+// olcu, kopya ve cozunurluk baski.js'teki sinirlardan gecer.
+function dogrudanBaskiIstegi (istek) {
+  const yazici = typeof istek?.yazici === 'string' ? istek.yazici.trim() : ''
+  if (!yazici || yazici.length > 200) throw new Error('Yazıcı seçilmedi.')
+
+  const secili = (liste, kod) =>
+    liste.some((oge) => oge.kod === kod) ? kod : 'otomatik'
+
+  return {
+    yazici,
+    kagitMm: baski.sayfaOlcusu(istek?.kagitMm),
+    kopya: baski.kopyaSayisi(istek?.kopya),
+    dpi: baski.baskiCozunurlugu(istek?.baskiDpi),
+    kenarliksiz: istek?.kenarliksiz === true,
+    kagitTuru: secili(dogrudanBaski.KAGIT_TURLERI, istek?.kagitTuru),
+    kalite: secili(dogrudanBaski.KALITELER, istek?.kalite)
+  }
 }
 
-function ghostscriptiKur () {
-  ipcMain.handle('ghostscript:durum', () => ghostscriptDurumunuAl())
-
-  ipcMain.handle('icc:sec', async (olay) => {
-    const { canceled, filePaths } = await dialog.showOpenDialog(
-      BrowserWindow.fromWebContents(olay.sender),
+// Windows: sayfa, olcusu tanimlanmis gizli pencerede acilir ve Chromium'un
+// kendi baski yolundan sessizce gonderilir. Panel acilmaz; yazici, kopya ve
+// cozunurluk buradan verilir, olcek %100'de sabit kalir.
+function sessizBas (istek, dogrulanmis) {
+  return baskiSayfasindaCalis(istek, (pencere, kagitMm) => new Promise((cozumle) => {
+    pencere.webContents.print(
       {
-        title: 'ICC profili seç',
-        properties: ['openFile'],
-        filters: [{ name: 'ICC profili', extensions: ['icc', 'icm'] }]
+        silent: true,
+        deviceName: dogrulanmis.yazici,
+        printBackground: true,
+        margins: { marginType: 'none' },
+        scaleFactor: 100,
+        copies: dogrulanmis.kopya,
+        dpi: { horizontal: dogrulanmis.dpi, vertical: dogrulanmis.dpi },
+        pageSize: {
+          width: baski.mikron(kagitMm.genislik),
+          height: baski.mikron(kagitMm.yukseklik)
+        }
+      },
+      (basarili, sebep) => {
+        if (basarili) return cozumle({ basildi: true })
+        cozumle({ basildi: false, hata: sebep || 'Baskı başlatılamadı.' })
       }
     )
+  }))
+}
 
-    if (canceled || !filePaths?.length) return { secildi: false }
-    return { secildi: true, yol: filePaths[0], ad: path.basename(filePaths[0]) }
-  })
+function dogrudanBaskiyiKur () {
+  ipcMain.handle('dogrudan-baski:durum', () => dogrudanBaskiDurumunuAl())
 
   // Kagit turu ve kalite Windows'ta yalnizca surucunun kendi penceresinden
   // ayarlanabiliyor; arayuz o pencereyi buradan actiriyor.
@@ -377,7 +377,7 @@ function ghostscriptiKur () {
     }
 
     try {
-      const komut = ghostscript.tercihKomutu(yazici)
+      const komut = dogrudanBaski.tercihKomutu(yazici)
 
       if (komut.adres) {
         await shell.openExternal(komut.adres)
@@ -394,38 +394,21 @@ function ghostscriptiKur () {
 
   ipcMain.handle('sayfa:dogrudan-bas', async (olay, istek) => {
     try {
-      const durum = await ghostscriptDurumunuAl()
-
+      const durum = dogrudanBaskiDurumunuAl()
       if (!durum.var) {
-        return { basildi: false, hata: 'Ghostscript bulunamadı.' }
+        return { basildi: false, hata: 'Doğrudan baskı bu sistemde kullanılamıyor.' }
       }
 
-      // Arayuzden gelen hicbir degere guvenilmez; olcu ve kopya sinirlari
-      // baski.js'teki dogrulayicilardan gecer.
-      const yazici = typeof istek?.yazici === 'string' ? istek.yazici.trim() : ''
-      if (!yazici || yazici.length > 200) {
-        return { basildi: false, hata: 'Yazıcı seçilmedi.' }
-      }
+      const dogrulanmis = dogrudanBaskiIstegi(istek)
 
-      const aygit = ghostscript.aygitGecerliMi(istek?.aygit) ? istek.aygit : 'otomatik'
-      const kagitMm = baski.sayfaOlcusu(istek?.kagitMm)
+      if (durum.sistem === 'chromium') return await sessizBas(istek, dogrulanmis)
 
-      await ghostscript.bas({
-        gsYolu: durum.yol,
+      // POSIX: is CUPS'a verilir; kagit turu ve kalite oradan gecer.
+      await dogrudanBaski.cupsaGonder({
+        lp: durum.lp,
         pdf: await sayfaPdfiUret(istek),
-        yazici,
-        kopya: baski.kopyaSayisi(istek?.kopya),
-        dpi: baski.baskiCozunurlugu(istek?.baskiDpi),
-        kagitMm,
-        aygit,
-        kenarliksiz: istek?.kenarliksiz === true,
-        kagitTuru: ghostscript.KAGIT_TURLERI.some((t) => t.kod === istek?.kagitTuru)
-          ? istek.kagitTuru
-          : 'otomatik',
-        kalite: ghostscript.KALITELER.some((k) => k.kod === istek?.kalite)
-          ? istek.kalite
-          : 'otomatik',
-        geciciKlasor: app.getPath('temp')
+        geciciKlasor: app.getPath('temp'),
+        ...dogrulanmis
       })
 
       return { basildi: true }
@@ -798,7 +781,7 @@ app.whenReady().then(() => {
   kaydetmeyiKur()
   baskiyiKur()
   ayarlariKur()
-  ghostscriptiKur()
+  dogrudanBaskiyiKur()
   olcegiKur()
   moduKur()
   hakkindaKur()

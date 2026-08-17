@@ -23,16 +23,13 @@ contextBridge.exposeInMainWorld('hiperVesika', {
   // Dizilmis sayfayi tam olculu PDF olarak kaydeder.
   sayfayiPdfKaydet: (istek) => ipcRenderer.invoke('sayfa:pdf', istek),
 
-  // Ghostscript ile dogrudan baski: yazdirma paneli acilmaz, is secilen
-  // yaziciya gider. { var, surum, kaynak, aygitlar } dondurur.
-  ghostscriptDurumu: () => ipcRenderer.invoke('ghostscript:durum'),
+  // Dogrudan baski: yazdirma paneli acilmaz, is secilen yaziciya gider.
+  // { var, sistem, kagitTurleri, kaliteler, cozunurlukler } dondurur.
+  dogrudanBaskiDurumu: () => ipcRenderer.invoke('dogrudan-baski:durum'),
   sayfayiDogrudanBas: (istek) => ipcRenderer.invoke('sayfa:dogrudan-bas', istek),
 
   // Kagit turu ve kalite Windows'ta surucunun kendi penceresinde ayarlanir.
   yaziciTercihleriniAc: (yazici) => ipcRenderer.invoke('yazici:tercihler', yazici),
-
-  // CMYK ayriminda kullanilacak ICC profilini sectirir.
-  iccProfiliSec: () => ipcRenderer.invoke('icc:sec'),
 
   // Kullanici ayarlari (kendi on ayarlari ve son kullanilan degerler).
   ayarlariOku: () => ipcRenderer.invoke('ayarlar:oku'),

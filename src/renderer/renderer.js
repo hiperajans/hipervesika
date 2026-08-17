@@ -82,8 +82,6 @@ const el = {
   yaziciSecimi: document.getElementById('yazici-secimi'),
   kopyaSayisi: document.getElementById('kopya-sayisi'),
   baskiCozunurlugu: document.getElementById('baski-cozunurlugu'),
-  baskiAygitiAlani: document.getElementById('baski-aygiti-alani'),
-  baskiAygiti: document.getElementById('baski-aygiti'),
   kagitTuruAlani: document.getElementById('kagit-turu-alani'),
   kagitTuru: document.getElementById('kagit-turu'),
   baskiKalitesiAlani: document.getElementById('baski-kalitesi-alani'),
@@ -119,10 +117,6 @@ const el = {
   gozDurumu: document.getElementById('goz-durumu'),
   renkDuzeni: document.getElementById('renk-duzeni'),
   renkDuzeniAciklamasi: document.getElementById('renk-duzeni-aciklamasi'),
-  iccAlani: document.getElementById('icc-alani'),
-  iccSec: document.getElementById('btn-icc-sec'),
-  iccKaldir: document.getElementById('btn-icc-kaldir'),
-  iccDurumu: document.getElementById('icc-durumu'),
   sihirbazGeri: document.getElementById('btn-sihirbaz-geri'),
   sihirbazIleri: document.getElementById('btn-sihirbaz-ileri'),
   sihirbazIleriYazi: document.getElementById('sihirbaz-ileri-yazi'),
@@ -616,43 +610,6 @@ function renkDuzeniniOku () {
 
 function renkAciklamasiniGuncelle () {
   el.renkDuzeniAciklamasi.textContent = window.HV.renk.duzenBul(renkDuzeniniOku()).aciklama
-  iccDurumunuGuncelle()
-}
-
-// --- CMYK icin ICC profili ---------------------------------------------------
-
-// Uygulamanin kendi RGB -> CMYK cevrimi profilsizdir. Ghostscript varsa ayrim
-// gercek bir profille yapilabiliyor; secim yalnizca o zaman ve yalnizca CMYK
-// secildiginde anlamli.
-let iccProfili = null
-
-function iccDurumunuGuncelle () {
-  const kullanilabilir = ghostscript.var && renkDuzeniniOku() === 'cmyk'
-  el.iccAlani.classList.toggle('d-none', !kullanilabilir)
-  if (!kullanilabilir) return
-
-  el.iccKaldir.disabled = !iccProfili
-  el.iccDurumu.textContent = iccProfili
-    ? `${iccProfili.ad} kullanılacak. Ayrım Ghostscript ile bu profile göre yapılır.`
-    : 'Profil seçilmezse ayrım profilsiz yapılır (aygıt çevrimi). ' +
-      'Matbaanız kendi profilini uygulayacaksa sRGB verin.'
-}
-
-async function iccProfiliSec () {
-  const sonuc = await window.hiperVesika.iccProfiliSec()
-  if (!sonuc.secildi) return
-
-  iccProfili = { yol: sonuc.yol, ad: sonuc.ad }
-  kullaniciAyarlari.iccProfili = iccProfili
-  iccDurumunuGuncelle()
-  ayarlariKaydet({ hemen: true })
-}
-
-function iccProfiliniKaldir () {
-  iccProfili = null
-  kullaniciAyarlari.iccProfili = null
-  iccDurumunuGuncelle()
-  ayarlariKaydet({ hemen: true })
 }
 
 function lekeDurumunuGuncelle () {
@@ -1953,15 +1910,10 @@ async function sayfayiGoruntuKaydet () {
 
 // Ana surece gonderilecek PDF govdesi. PDF kaydetme ile dogrudan baski ayni
 // belgeyi kullanir; olcu dogrulugu tek yerden gelir.
-//
-// icc yalnizca kaydedilen PDF icin acilir: profilli ayrim matbaaya giden
-// belgenin isidir, yaziciya gonderilen iste rengi surucu yonetir.
-async function sayfaPdfIstegi (sayfa, { icc = false } = {}) {
+async function sayfaPdfIstegi (sayfa) {
   const istek = { kagitMm: sayfa.kagitMm }
-  const cmykMi = renkDuzeniniOku() === 'cmyk'
-  const profilliAyrim = icc && cmykMi && ghostscript.var && Boolean(iccProfili)
 
-  if (cmykMi && !profilliAyrim) {
+  if (renkDuzeniniOku() === 'cmyk') {
     // Sayfa piksel piksel CMYK'ye cevrilir; PDF'i ana surec yazar.
     istek.cmyk = {
       baytlar: window.HV.renk.cmykBaytlari(sayfa.tuval),
@@ -1973,9 +1925,6 @@ async function sayfaPdfIstegi (sayfa, { icc = false } = {}) {
 
   // PDF'e kayipsiz PNG gomulur; olcu tasiyicisi PDF'in kendisidir.
   istek.baytlar = await sayfaBaytlari(sayfa.tuval, 'png')
-  // Ayrimi Ghostscript profile gore yapacak.
-  if (profilliAyrim) istek.iccYolu = iccProfili.yol
-
   return istek
 }
 
@@ -1989,7 +1938,7 @@ async function sayfayiPdfKaydet () {
   try {
     const duzen = renkDuzeniniOku()
     const istek = {
-      ...(await sayfaPdfIstegi(sayfa, { icc: true })),
+      ...(await sayfaPdfIstegi(sayfa)),
       varsayilanAd: window.HV.sayfa.sayfaDosyaAdi(
         sayfa.kagitMm, sayfa.yerlesim.adet, dpi, 'pdf'
       )
@@ -2013,14 +1962,15 @@ async function sayfayiPdfKaydet () {
   }
 }
 
-// --- Ghostscript ile dogrudan baski ------------------------------------------
+// --- Dogrudan baski ----------------------------------------------------------
 
-// Ozellik yalnizca Ghostscript bulunduysa acilir; bulunamazsa anahtar kapali
-// kalir ve uygulama eskisi gibi sistemin yazdirma panelinden basar.
-let ghostscript = { var: false, aygitlar: [], cozunurlukler: [] }
+// Windows'ta is Chromium'un kendi baski yolundan, macOS ve Linux'ta CUPS'tan
+// gider. Ikisi de yoksa anahtar kapali kalir ve uygulama eskisi gibi sistemin
+// yazdirma panelinden basar.
+let dogrudan = { var: false, kagitTurleri: [], kaliteler: [], cozunurlukler: [] }
 
 function dogrudanBaskiAcikMi () {
-  return ghostscript.var && el.dogrudanBaski.checked
+  return dogrudan.var && el.dogrudanBaski.checked
 }
 
 function baskiYolunuGuncelle () {
@@ -2039,22 +1989,16 @@ function yazicilariDoldur (yazicilar) {
   if (varsayilan) el.yaziciSecimi.value = varsayilan.ad
 }
 
-function ghostscriptAyarlariniDoldur () {
-  for (const nokta of ghostscript.cozunurlukler ?? []) {
+function dogrudanBaskiAyarlariniDoldur () {
+  for (const nokta of dogrudan.cozunurlukler ?? []) {
     secenekEkle(el.baskiCozunurlugu, String(nokta), `${nokta} DPI`)
   }
-  el.baskiCozunurlugu.value = String(ghostscript.varsayilanCozunurluk ?? 600)
-
-  for (const aygit of ghostscript.aygitlar ?? []) {
-    secenekEkle(el.baskiAygiti, aygit.kod, aygit.ad)
-  }
-  // Tek secenek varsa (Windows) secim kutusu bir sey anlatmaz.
-  el.baskiAygitiAlani.classList.toggle('d-none', (ghostscript.aygitlar ?? []).length < 2)
+  el.baskiCozunurlugu.value = String(dogrudan.varsayilanCozunurluk ?? 600)
 
   // Kagit turu ve kalite yalnizca isletim sistemi kabul ediyorsa gosterilir.
   // Windows'ta liste bos gelir: orada bu ayarlar surucunun penceresinde.
-  const turler = ghostscript.kagitTurleri ?? []
-  const kaliteler = ghostscript.kaliteler ?? []
+  const turler = dogrudan.kagitTurleri ?? []
+  const kaliteler = dogrudan.kaliteler ?? []
 
   for (const tur of turler) secenekEkle(el.kagitTuru, tur.kod, tur.ad)
   for (const kalite of kaliteler) secenekEkle(el.baskiKalitesi, kalite.kod, kalite.ad)
@@ -2078,13 +2022,12 @@ async function yaziciTercihleriniAc () {
     : `Yazıcı tercihleri açılamadı: ${sonuc.hata}`, sonuc.acildi ? 'bilgi' : 'hata')
 }
 
-async function ghostscriptiDenetle () {
-  ghostscript = await window.hiperVesika.ghostscriptDurumu()
+async function dogrudanBaskiyiDenetle () {
+  dogrudan = await window.hiperVesika.dogrudanBaskiDurumu()
 
-  el.dogrudanBaski.disabled = !ghostscript.var
-  ghostscriptAyarlariniDoldur()
+  el.dogrudanBaski.disabled = !dogrudan.var
+  dogrudanBaskiAyarlariniDoldur()
   baskiYolunuGuncelle()
-  iccDurumunuGuncelle()
 }
 
 // --- Olcu kalibrasyonu -------------------------------------------------------
@@ -2156,7 +2099,6 @@ async function kalibrasyonSayfasiBas () {
       yazici,
       kopya: 1,
       baskiDpi: Number.parseInt(el.baskiCozunurlugu.value, 10),
-      aygit: el.baskiAygiti.value || 'otomatik',
       kagitTuru: el.kagitTuru.value || 'otomatik',
       kalite: el.baskiKalitesi.value || 'otomatik'
     })
@@ -2247,7 +2189,6 @@ async function sayfayiDogrudanBas () {
       yazici,
       kopya,
       baskiDpi: Number.parseInt(el.baskiCozunurlugu.value, 10),
-      aygit: el.baskiAygiti.value || 'otomatik',
       kenarliksiz: el.kenarliksiz.checked,
       kagitTuru: el.kagitTuru.value || 'otomatik',
       kalite: el.baskiKalitesi.value || 'otomatik'
@@ -2502,7 +2443,6 @@ function sonKullanilaniTopla () {
     yazici: el.yaziciSecimi.value,
     kopya: Number.parseInt(el.kopyaSayisi.value, 10) || 1,
     baskiDpi: Number.parseInt(el.baskiCozunurlugu.value, 10) || 0,
-    baskiAygiti: el.baskiAygiti.value,
     kagitTuru: el.kagitTuru.value,
     baskiKalitesi: el.baskiKalitesi.value,
     kenarliksiz: el.kenarliksiz.checked,
@@ -2572,9 +2512,6 @@ function sonKullanilaniUygula (son) {
   ) {
     el.baskiCozunurlugu.value = String(son.baskiDpi)
   }
-  if (son.baskiAygiti && [...el.baskiAygiti.options].some((o) => o.value === son.baskiAygiti)) {
-    el.baskiAygiti.value = son.baskiAygiti
-  }
   if (son.kagitTuru && [...el.kagitTuru.options].some((o) => o.value === son.kagitTuru)) {
     el.kagitTuru.value = son.kagitTuru
   }
@@ -2585,7 +2522,8 @@ function sonKullanilaniUygula (son) {
     el.baskiKalitesi.value = son.baskiKalitesi
   }
   if (typeof son.kenarliksiz === 'boolean') el.kenarliksiz.checked = son.kenarliksiz
-  // Ghostscript yoksa anahtar kapali kalir; kayitli deger onu acmamali.
+  // Dogrudan baski kullanilamiyorsa anahtar kapali kalir; kayitli deger onu
+  // acmamali.
   if (son.dogrudanBaski === true && !el.dogrudanBaski.disabled) {
     el.dogrudanBaski.checked = true
   }
@@ -2637,7 +2575,6 @@ async function ayarlariYukle () {
       fotografOnayarlari: okunan?.fotografOnayarlari ?? [],
       kagitOnayarlari: okunan?.kagitOnayarlari ?? [],
       kalibrasyonlar: okunan?.kalibrasyonlar ?? [],
-      iccProfili: okunan?.iccProfili ?? null,
       sonKullanilan: okunan?.sonKullanilan ?? {},
       tanitimGoruldu: okunan?.tanitimGoruldu === true,
       mod: okunan?.mod ?? null
@@ -2653,11 +2590,6 @@ async function ayarlariYukle () {
   // Mod, son kullanilan degerler yerine oturduktan sonra uygulanir: basit moda
   // gecis ciktiyi etkileyen uzman degerlerini sifirliyor, once onlarin okunmus
   // olmasi gerekiyor. Kayitli mod diske geri yazilmaz (kaydet: false).
-  // ICC profili son kullanilanlarda degil kendi alaninda duruyor (yol uzun
-  // olabilir); okunan deger arayuzun durumuna aktarilir.
-  iccProfili = kullaniciAyarlari.iccProfili ?? null
-  iccDurumunuGuncelle()
-
   if (kullaniciAyarlari.mod) modAta(kullaniciAyarlari.mod, { kaydet: false })
   else window.hiperVesika.moduBildir('gelismis')
 
@@ -3000,15 +2932,13 @@ el.dogrudanBaski.addEventListener('change', () => {
 })
 
 for (const denetim of [
-  el.yaziciSecimi, el.kopyaSayisi, el.baskiCozunurlugu, el.baskiAygiti,
+  el.yaziciSecimi, el.kopyaSayisi, el.baskiCozunurlugu,
   el.kagitTuru, el.baskiKalitesi, el.kenarliksiz
 ]) {
   denetim.addEventListener('change', () => ayarlariKaydet())
 }
 
 el.yaziciTercihleri.addEventListener('click', () => yaziciTercihleriniAc())
-el.iccSec.addEventListener('click', () => iccProfiliSec())
-el.iccKaldir.addEventListener('click', () => iccProfiliniKaldir())
 
 // --- Menu komutlari ----------------------------------------------------------
 
@@ -3102,7 +3032,7 @@ kisayollariYaz()
 // baslar; acilis penceresi ona bakiyor.
 async function acilisiTamamla () {
   try {
-    await ghostscriptiDenetle()
+    await dogrudanBaskiyiDenetle()
     await yazicilariDenetle()
     await ayarlariYukle()
   } finally {

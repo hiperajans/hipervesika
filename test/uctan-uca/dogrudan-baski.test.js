@@ -1,13 +1,13 @@
 'use strict'
 
-// Ghostscript ile dogrudan baski — arayuz tarafi.
+// Dogrudan baski — arayuz tarafi.
 //
 // GERCEK YAZICIYA IS GONDERILMEZ: sinanan sey ozelligin dogru acilip
 // kapandigi, secimlerin arayuze baglandigi ve ana surecin gecersiz istegi
-// reddettigidir. Komut satirinin kendisi test/ghostscript.test.js icinde.
+// reddettigidir. Komutun kendisi test/dogrudan-baski.test.js icinde.
 //
-// Ghostscript kurulu degilse (CI) anahtarin kapali kaldigi sinanir; kurulu
-// makinede tam akis calisir.
+// Windows'ta ozellik her zaman acik (is Chromium'un kendi baski yolundan
+// gider); macOS ve Linux'ta CUPS'un lp komutuna bagli.
 
 const test = require('node:test')
 const assert = require('node:assert/strict')
@@ -17,13 +17,13 @@ const path = require('node:path')
 const ortam = require('./ortam.js')
 const kalibrasyonMotoru = require(path.join(ortam.DEPO, 'src/renderer/js/kalibrasyon.js'))
 
-const calisma = new ortam.Calisma('ghostscript')
+const calisma = new ortam.Calisma('dogrudan-baski')
 let sayfa, hatalar, kapat, durum
 
 test.before(async () => {
   ;({ sayfa, hatalar, kapat } = await ortam.hazirla(calisma, { fotograf: calisma.fotograf(0) }))
   await ortam.adima(sayfa, 'cikti')
-  durum = await sayfa.evaluate(() => window.hiperVesika.ghostscriptDurumu())
+  durum = await sayfa.evaluate(() => window.hiperVesika.dogrudanBaskiDurumu())
 })
 
 test.after(async () => {
@@ -34,20 +34,21 @@ test.after(async () => {
 const gorunur = (secici) => sayfa.evaluate(
   (s) => !document.querySelector(s).classList.contains('d-none'), secici)
 
-test('Ghostscript durumu okunabiliyor', () => {
+test('dogrudan baski durumu okunabiliyor', () => {
   assert.equal(typeof durum.var, 'boolean')
-  assert.ok(Array.isArray(durum.aygitlar) && durum.aygitlar.length >= 1)
+  assert.ok(['chromium', 'cups'].includes(durum.sistem))
   assert.ok(Array.isArray(durum.cozunurlukler) && durum.cozunurlukler.length >= 1)
 
-  if (durum.var) {
-    assert.match(durum.surum, /^\d+\.\d+/)
-    assert.ok(['paket', 'sistem'].includes(durum.kaynak))
+  // Windows'ta ek bir ikiliye ihtiyac yok: Chromium'un kendi baski yolu.
+  if (process.platform === 'win32') {
+    assert.equal(durum.sistem, 'chromium')
+    assert.equal(durum.var, true)
   }
 })
 
-test('Ghostscript yoksa dogrudan baski acilamaz', async (t) => {
+test('kullanilamadigi sistemde anahtar kapali kalir', async (t) => {
   if (durum.var) {
-    t.skip('Ghostscript kurulu; kapali durum sinanamaz')
+    t.skip('Doğrudan baskı kullanılabiliyor; kapalı durum sınanamaz')
     return
   }
 
@@ -58,7 +59,7 @@ test('Ghostscript yoksa dogrudan baski acilamaz', async (t) => {
 
 test('anahtar acilinca yazici secimi ve dugme yazisi degisiyor', async (t) => {
   if (!durum.var) {
-    t.skip(`Ghostscript bulunamadı: ${JSON.stringify(durum)}`)
+    t.skip(`Doğrudan baskı kullanılamıyor: ${JSON.stringify(durum)}`)
     return
   }
 
@@ -85,20 +86,31 @@ test('anahtar acilinca yazici secimi ve dugme yazisi degisiyor', async (t) => {
   assert.equal(await gorunur('#dogrudan-ayarlari'), false)
 })
 
-test('aygit secimi platformun sundugu kadar', () => {
-  const kodlar = durum.aygitlar.map((a) => a.kod)
-  assert.ok(kodlar.includes('otomatik'))
+test('kagit turu ve kalite yalnizca CUPS ta sunulur', async () => {
+  const kodlar = (liste) => liste.map((oge) => oge.kod)
 
-  // Windows'ta is her zaman surucuye gider; baska bir aygit sunulmaz.
-  if (process.platform === 'win32') assert.deepEqual(kodlar, ['otomatik'])
-  else assert.deepEqual(kodlar, ['otomatik', 'postscript', 'pcl'])
+  if (process.platform === 'win32') {
+    // Surucunun DEVMODE ayarina disaridan mudahale edilemiyor; calismayan bir
+    // secim kutusu yerine surucunun kendi penceresini acan dugme var.
+    assert.deepEqual(durum.kagitTurleri, [])
+    assert.deepEqual(durum.kaliteler, [])
+    assert.equal(await gorunur('#kagit-turu-alani'), false)
+    assert.equal(await gorunur('#baski-kalitesi-alani'), false)
+    assert.equal(await gorunur('#btn-yazici-tercihleri'), true)
+    return
+  }
+
+  assert.deepEqual(kodlar(durum.kagitTurleri), ['otomatik', 'parlak', 'mat', 'duz'])
+  assert.deepEqual(kodlar(durum.kaliteler), ['otomatik', 'normal', 'yuksek'])
+  assert.equal(await gorunur('#kagit-turu-alani'), true)
+  assert.equal(await gorunur('#btn-yazici-tercihleri'), false)
 })
 
 // GERCEK BASKI YOK: kalibrasyon sayfasini basan dugmeye dokunulmaz, yalnizca
 // olcum -> duzeltme yolu sinanir.
 test('olcum girilince duzeltme yaziciya kaydediliyor', async (t) => {
   if (!durum.var) {
-    t.skip('Ghostscript kurulu değil; doğrudan baskı açılamıyor')
+    t.skip('Doğrudan baskı kullanılamıyor')
     return
   }
 
@@ -149,7 +161,7 @@ test('olcum girilince duzeltme yaziciya kaydediliyor', async (t) => {
 
 test('sacma olcum kaydedilmez', async (t) => {
   if (!durum.var) {
-    t.skip('Ghostscript kurulu değil')
+    t.skip('Doğrudan baskı kullanılamıyor')
     return
   }
 
@@ -167,36 +179,13 @@ test('sacma olcum kaydedilmez', async (t) => {
   await sayfa.waitForTimeout(300)
 })
 
-test('ICC profili yalnizca CMYK secilince sunulur', async (t) => {
-  if (!durum.var) {
-    t.skip('Ghostscript kurulu değil; ICC ayrımı yapılamıyor')
-    return
-  }
-
-  const gorunurMu = () => sayfa.evaluate(
-    () => !document.getElementById('icc-alani').classList.contains('d-none'))
-
-  await sayfa.selectOption('#renk-duzeni', 'srgb')
-  await sayfa.waitForTimeout(300)
-  assert.equal(await gorunurMu(), false)
-
-  await sayfa.selectOption('#renk-duzeni', 'cmyk')
-  await sayfa.waitForTimeout(300)
-  assert.equal(await gorunurMu(), true)
-  // Profil secilmeden once profilsiz cevrim yapilacagi yaziyor.
-  assert.match(await sayfa.textContent('#icc-durumu'), /profilsiz/i)
-
-  await sayfa.selectOption('#renk-duzeni', 'srgb')
-  await sayfa.waitForTimeout(300)
-})
-
 test('ana surec yazicisiz ve gecersiz olculu istegi reddediyor', async () => {
   const yazicisiz = await sayfa.evaluate(() => window.hiperVesika.sayfayiDogrudanBas({
     baytlar: new Uint8Array([1, 2, 3]),
     kagitMm: { genislik: 100, yukseklik: 150 }
   }))
   assert.equal(yazicisiz.basildi, false)
-  assert.match(yazicisiz.hata, /Yazıcı|Ghostscript/)
+  assert.match(yazicisiz.hata, /Yazıcı|kullanılamıyor/)
 
   const bozukOlcu = await sayfa.evaluate(() => window.hiperVesika.sayfayiDogrudanBas({
     baytlar: new Uint8Array([1, 2, 3]),
@@ -204,7 +193,7 @@ test('ana surec yazicisiz ve gecersiz olculu istegi reddediyor', async () => {
     yazici: 'Olmayan Yazıcı'
   }))
   assert.equal(bozukOlcu.basildi, false)
-  assert.match(bozukOlcu.hata, /geçersiz|Ghostscript/)
+  assert.match(bozukOlcu.hata, /geçersiz|kullanılamıyor/)
 
   assert.deepEqual(hatalar, [], 'arayuzde hata olusmamali')
 })

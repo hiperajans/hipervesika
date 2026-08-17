@@ -110,23 +110,4 @@ test('kalibrasyon sinirlari iki tarafta da ayni', () => {
 
 test('varsayilan ayarlarda kalibrasyon listesi bos', () => {
   assert.deepEqual(ayarlar.varsayilanAyarlar().kalibrasyonlar, [])
-  assert.equal(ayarlar.varsayilanAyarlar().iccProfili, null)
-})
-
-test('ICC profili yolu dogrulanir', () => {
-  assert.deepEqual(
-    ayarlar.iccProfiliTemizle({ yol: '/profiller/matbaa.icc', ad: 'matbaa.icc' }),
-    { yol: '/profiller/matbaa.icc', ad: 'matbaa.icc' }
-  )
-  // Ad verilmemisse dosya adindan turetilir.
-  assert.equal(ayarlar.iccProfiliTemizle({ yol: '/a/b/Foto.icm' }).ad, 'Foto.icm')
-
-  // ICC olmayan dosya ve bos yol atilir.
-  assert.equal(ayarlar.iccProfiliTemizle({ yol: '/a/b/resim.png' }), null)
-  assert.equal(ayarlar.iccProfiliTemizle({ yol: '' }), null)
-  assert.equal(ayarlar.iccProfiliTemizle(null), null)
-  assert.equal(ayarlar.iccProfiliTemizle({ yol: `/${'x'.repeat(600)}.icc` }), null)
-
-  // Ayarlar dosyasindan da ayni sekilde gecer.
-  assert.equal(ayarlar.ayarlariDogrula({ iccProfili: { yol: 'bozuk' } }).iccProfili, null)
 })

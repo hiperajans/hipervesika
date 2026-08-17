@@ -549,54 +549,64 @@ Mağazalara (Microsoft Store, Mac App Store) ve GitHub'a yayın öncesi yapılan
   1024×1024 (Mac App Store uygulama simgesi). Ayrı klasörde duruyorlar çünkü
   `build/icons/*.png` Linux simge seti olarak taranıyor.
 
-### Ghostscript ile doğrudan baskı
+### Doğrudan baskı
 
 Baskı sistemin yazdırma panelinden geçiyordu. Doğru bir varsayılan ama iki eksiği var:
 kullanıcı her baskıda panelden geçiyor ve panelde *kağıda sığdır* seçili kalırsa
 vesikalığın ölçüsü bozuluyor — ürünün temel vaadi orada kayboluyor.
 
-Ghostscript varsa sayfa doğrudan yazıcıya gönderilebiliyor: panel açılmıyor, ölçek
-sabitleniyor ve rasterleştirme çözünürlüğünü uygulama veriyor.
+*Doğrudan yazıcıya gönder* açıkken panel açılmıyor: yazıcı, kopya ve baskı çözünürlüğü
+uygulamada seçiliyor, ölçek %100'de sabit kalıyor.
 
-- **Aynı PDF.** Doğrudan baskı, *Sayfayı PDF olarak kaydet*'in ürettiği belgenin aynısını
-  kullanır (`sayfaPdfiUret`). Ölçü doğruluğu tek yerden gelir; CMYK seçiliyse kendi
-  DeviceCMYK yazıcımız devrededir.
-- **Windows:** `-sDEVICE=mswinpr2 -sOutputFile=%printer%<ad>` ile iş sürücüye gider —
-  sürücüsü kurulu her yazıcı (PostScript, PCL, foto) çalışır. `-dFIXEDMEDIA` +
-  `-dDEVICEWIDTH/HEIGHTPOINTS` ölçüyü dayatır, `-dPDFFitPage` verilmez.
-- **macOS / Linux:** iş CUPS'a (`lp`) verilir; CUPS zaten Ghostscript kullandığı için
-  araya ikinci bir çevrim konmaz. Sürücüsü olmayan ağ yazıcıları için `ps2write` ya da
-  `pxlcolor` ile PostScript/PCL üretilip öyle gönderilir. Ölçü `media=Custom.<G>x<Y>mm`
-  ile bildirilir, `fit-to-page=false` açıkça kapatılır.
-- **İkili arama sırası:** paketle gelen kopya → `PATH` → bilinen kurulum klasörleri.
-  Bulunamazsa özellik kapalı kalır ve mevcut baskı yolu aynen çalışır; hiçbir şey
-  bozulmaz.
-- **Kenarlıksız** bir sürücü yeteneğidir. Anahtar CUPS'a `page-border=none` geçirir, ama
-  gerçekten kenarlıksız çıkması için yazıcının sürücüsünde kenarlıksız kağıdın seçili
-  olması gerekir; arayüz bunu söyler.
-- Geçici PDF `app.getPath('temp')` altına yazılır ve iş bitince **her durumda** silinir:
-  vesikalık kişisel veridir.
+- **Windows:** iş Chromium'un kendi baskı yolundan gider (`webContents.print`,
+  `silent: true`, `deviceName`). Sürücüsü kurulu her yazıcı çalışır; ölçü `pageSize`'a
+  mikron cinsinden verilir, `scaleFactor: 100` ile ölçekleme kapalıdır.
+- **macOS / Linux:** iş CUPS'a (`lp`) verilir. Sebep Chromium'un sessiz baskıda kağıt
+  türü ve kaliteyi kabul etmemesi; CUPS ise IPP niteliği olarak alıyor. `lp` işletim
+  sisteminin parçası, paketlenen bir şey değil. Ölçü `media=Custom.<G>x<Y>mm` ile
+  bildirilir, `fit-to-page=false` açıkça kapatılır.
+- **Aynı belge.** POSIX yolunda gönderilen PDF, *Sayfayı PDF olarak kaydet*'in ürettiğinin
+  aynısıdır (`sayfaPdfiUret`); ölçü doğruluğu tek yerden gelir. Geçici PDF iş bitince
+  **her durumda** silinir: vesikalık kişisel veridir.
+- Kullanılamadığı yerde (POSIX'te `lp` yoksa) anahtar kapalı kalır ve sistem panelinden
+  baskı aynen çalışır.
 
-**Lisans.** Ghostscript AGPL ile dağıtılıyor. Uygulamayla birlikte paketlemek ürünün de
-AGPL olmasını ya da Artifex'ten ticari lisans alınmasını gerektirir; Microsoft Store ve
-Mac App Store AGPL ikili taşıyan paketleri kabul etmiyor. Bu yüzden `vendor/ghostscript/`
-klasörü depoda tutulmuyor, `npm run ghostscript` ile paketleme makinesinde hazırlanıyor ve
-betik her çalıştığında uyarıyı yazıyor. Klasör yoksa paket yine üretilir — özellik o zaman
-yalnızca Ghostscript kurulu makinelerde açılır.
+**Ölçüldü:** duraklatılmış bir yazıcıya gönderilen iş kuyrukta göründü (1 sayfa), 100 × 150
+mm sayfa için 300 ve 600 DPI'da 1,3 saniyede spooler'a düştü. Fiziksel ölçü doğrulaması
+kullanıcının kumpasına kalır; ölçü kalibrasyonu tam da bunun için var.
 
-**Ölçüldü:** ürettiğimiz 100 × 150 mm PDF, Ghostscript 10.01.2 ile 300 DPI'da
-1181 × 1772 piksele rasterleniyor — milimetre karşılığı tam.
+#### Neden Ghostscript değil
+
+Doğrudan baskı önce Ghostscript ile yazılmıştı (Windows'ta `mswinpr2`, POSIX'te `lp`,
+ayrıca ICC profilli CMYK ayrımı) ve çalışıyordu. **Lisans yüzünden kaldırıldı:**
+Ghostscript AGPL ile dağıtılıyor; uygulamayla birlikte paketlemek ürünün de AGPL olmasını
+ya da Artifex'ten ticari lisans alınmasını gerektirir, üstelik Mac App Store'un şartları
+AGPL ile uyumsuz — yol haritasındaki mağaza sürümlerinin önü kapanırdı.
+
+Ghostscript'i fork etmek de çözüm değil: fork da AGPL kalır. Yerine bakıldığında zaten
+izin verici lisanslı bir baskı yığını taşıdığımız görüldü — Electron'un içindeki Chromium
+(PDFium, Skia) ve işletim sisteminin CUPS'u. Paket 40 MB küçüldü, harici ikili kalmadı.
+
+Kaybedilen tek şey **ICC profilli CMYK ayrımı** oldu (uygulamanın kendi çevrimi profilsiz
+kalıyor, bkz. `js/renk.js`). Karşılığı Little CMS'tir (lcms2, MIT); gerektiğinde WASM
+olarak eklenebilir.
+
+> **Ghostscript denenirken ölçülüp not edilen:** `pdfwrite` girdinin MediaBox'ını
+> korumuyor; ölçü açıkça verilmezse 100 × 150 mm sayfa 595 × 842 punto (A4) çıkıyordu.
+> Aynı tuzak PDF üreten başka bir araç eklenirse yine karşımıza çıkar.
 
 ### Kağıt türü, kalite ve ölçü kalibrasyonu
 
-**Kağıt türü ile baskı kalitesi Ghostscript'in değil sürücünün ayarı.** CUPS onları IPP
-niteliğiyle kabul ettiği için macOS ve Linux'ta uygulamadan seçilebiliyor
+**Kağıt türü ile baskı kalitesi sürücünün ayarı.** CUPS onları IPP niteliğiyle kabul
+ettiği için macOS ve Linux'ta uygulamadan seçilebiliyor
 (`media-type=photographic-glossy|photographic-matte|stationery`, `print-quality=4|5`).
-Windows'ta iş GDI üzerinden sürücüye gidiyor ve DEVMODE'a taşınabilir bir yolla
-dokunulamıyor; orada iki seçim kutusu **hiç gösterilmiyor** — çalışmayan bir denetim
-göstermektense sürücünün kendi penceresini açan bir düğme konuldu
+Windows'ta bu ayarlar sürücünün DEVMODE'unda ve taşınabilir bir yolla dokunulamıyor;
+orada iki seçim kutusu **hiç gösterilmiyor** — çalışmayan bir denetim göstermektense
+sürücünün kendi penceresini açan bir düğme konuldu
 (`rundll32 printui.dll,PrintUIEntry /e /n <yazıcı>`; macOS'ta yazıcılar bölümü, Linux'ta
-CUPS arayüzü).
+CUPS arayüzü). Kenarlıksız baskı da aynı yere aittir: anahtar CUPS'a `page-border=none`
+geçirir ama gerçekten kenarlıksız çıkması için sürücüde kenarlıksız kağıdın seçili olması
+gerekir.
 
 **Ölçü kalibrasyonu.** Yazıcılar kağıdı %1'e varan bir farkla basabiliyor — sürücünün
 ölçeklemesi, besleme payı, mekanik tolerans. Vesikalıkta bu doğrudan ürünün vaadini
@@ -611,17 +621,6 @@ bozuyor. Çözüm donanımsız:
 Sapma %10'u aşarsa kaydedilmez: o bir ölçüm hatası ya da yanlış kağıttır, sessizce
 düzeltmek daha kötü olurdu. Düzeltme yalnızca doğrudan baskıya uygulanır — kaydedilen PDF
 başka bir yazıcıda basılabilir, ekran önizlemesi de gerçek yerleşimi göstermeli.
-
-**CMYK için ICC profili.** Uygulamanın kendi çevrimi aygıt çevrimidir (bkz. `js/renk.js`).
-Ghostscript varsa ayrım gerçek bir profille yapılıyor: RGB PDF `pdfwrite` ile
-`-dColorConversionStrategy=/CMYK -sOutputICCProfile=<profil>` üzerinden geçiriliyor,
-yeniden örnekleme ve kayıplı sıkıştırma kapatılıyor. Yalnızca kaydedilen PDF'te; yazıcıya
-giden işte rengi sürücü yönetir.
-
-> **Ölçüldü ve yakalandı:** `pdfwrite` girdinin MediaBox'ını korumuyor — ölçü açıkça
-> verilmezse 100 × 150 mm sayfa **595 × 842 punto (A4)** olarak çıkıyordu. Bu yüzden ICC
-> adımında da `-dFIXEDMEDIA` ve `-dDEVICEWIDTH/HEIGHTPOINTS` veriliyor; birim testi bunu
-> ayrıca bekliyor.
 
 ### Açılış penceresi
 

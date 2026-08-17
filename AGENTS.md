@@ -133,7 +133,6 @@ Komutlar:
 | `npm run paket:win` | Windows kurulum programı |
 | `npm run paket:linux` | Linux `AppImage` |
 | `npm run vendor` | `vendor/` dosyalarını yeniler |
-| `npm run ghostscript` | Doğrudan baskı için Ghostscript'i pakete hazırlar (isteğe bağlı) |
 
 Geliştirici araçları kapalıdır (`webPreferences.devTools: false`) ve *Görünüm* menüsünde
 görünmez; kullanıcıya sunulan uygulamada işi yok. Gerekirse açılır:
