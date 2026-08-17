@@ -33,6 +33,10 @@ window.HV.Tuval = class Tuval {
     this.bosluk = false
     this.imlecIcerde = false
 
+    // Orta tusla firca boyu ayari (Photoshop'taki gibi): basili tutup yukari
+    // asagi surukleyince firca buyur kuculur.
+    this.boyutAyari = null
+
     this.#olcuyuGuncelle()
     new ResizeObserver(() => {
       const oncekiGorsel = this.gorsel
@@ -184,9 +188,25 @@ window.HV.Tuval = class Tuval {
       this.yakinlastir(carpan, this.#imlecKonumu(olay))
     }, { passive: false })
 
+    // Orta tus tarayicida otomatik kaydirmayi baslatir; bizde firca boyunu
+    // ayarliyor, o yuzden varsayilan davranis kapatilir.
+    canvas.addEventListener('auxclick', (olay) => {
+      if (olay.button === 1) olay.preventDefault()
+    })
+
     canvas.addEventListener('pointerdown', (olay) => {
       if (!this.gorsel) return
       const ekran = this.#imlecKonumu(olay)
+
+      // Orta tus: yukari surukleme firçayi buyutur. Yalnizca boyu olan
+      // araclarda (firca, leke) is gorur.
+      if (olay.button === 1 && typeof this.etkilesim?.capAta === 'function') {
+        olay.preventDefault()
+        this.#yakala(olay)
+        this.boyutAyari = { y: ekran.y, cap: this.etkilesim.yaricap * 2 }
+        canvas.style.cursor = 'ns-resize'
+        return
+      }
 
       // Once kirpma cercevesi gibi ust katmanlara sorulur; olayi o sahiplenmezse
       // kaydirmaya duser. Bosluk basiliyken hic sorulmaz.
@@ -207,8 +227,19 @@ window.HV.Tuval = class Tuval {
     canvas.addEventListener('pointermove', (olay) => {
       const ekran = this.#imlecKonumu(olay)
 
+      if (this.boyutAyari) {
+        // Yukari cekmek buyutur; 1 piksel surukleme 1 piksel cap demek.
+        this.etkilesim.capAta(this.boyutAyari.cap + (this.boyutAyari.y - ekran.y))
+        this.ciz()
+        return
+      }
+
       if (this.etkilesimSuruyor) {
-        this.etkilesim.hareket(this.goruntuyeCevir(ekran), this.olcek)
+        const goruntu = this.goruntuyeCevir(ekran)
+        // Iz de guncellenmeli: surukleme sirasinda firca halkasi imlecin
+        // altinda kalmazsa kullanici nereyi boyadigini goremiyor.
+        this.etkilesim.izGuncelle?.(goruntu)
+        this.etkilesim.hareket(goruntu, this.olcek)
         this.ciz()
         return
       }
@@ -237,6 +268,13 @@ window.HV.Tuval = class Tuval {
     })
 
     const suruklemeyiBitir = (olay) => {
+      if (this.boyutAyari) {
+        this.boyutAyari = null
+        canvas.style.cursor = ''
+        if (canvas.hasPointerCapture(olay.pointerId)) canvas.releasePointerCapture(olay.pointerId)
+        return
+      }
+
       if (this.etkilesimSuruyor) {
         this.etkilesimSuruyor = false
         this.etkilesim.bitir()

@@ -161,12 +161,29 @@ const kirpma = new window.HV.KirpmaAraci(tuval, {
   }
 })
 
+// Orta tusla firca boyu ayarlaninca kaydirac guncellenir; yaricap oradan geri
+// gelir (bkz. asagidaki 'input' isleyicileri). Tek kaynak kaydirac olsun diye
+// arac kendi yaricapini yazmaz.
+function boyuKaydiracaYaz (kaydirac) {
+  return (cap) => {
+    const sinirli = Math.min(
+      Number(kaydirac.max), Math.max(Number(kaydirac.min), Math.round(cap))
+    )
+    if (kaydirac.value === String(sinirli)) return
+
+    kaydirac.value = String(sinirli)
+    // Deger koddan verilince 'input' tetiklenmez; elle gonderilir.
+    kaydirac.dispatchEvent(new Event('input'))
+  }
+}
+
 const firca = new window.HV.Firca(tuval, {
   maskeyiAl: () => hamMaske,
   gorseliAl: () => yuklenenGorsel,
   degisimde: () => gosterimiTazele(),
   // Darbenin tamami tek bir geri alma adimi olur.
-  bittiginde: () => durumuKaydet({ maskeDegisti: true })
+  bittiginde: () => durumuKaydet({ maskeDegisti: true }),
+  boyutDegisti: (cap) => boyuKaydiracaYaz(el.fircaBoyu)(cap)
 })
 
 const lekeFircasi = new window.HV.LekeFircasi(tuval, {
@@ -174,9 +191,12 @@ const lekeFircasi = new window.HV.LekeFircasi(tuval, {
   lekeEkle: (leke) => {
     lekeler.push(leke)
     gosterimiTazele()
-    durumuKaydet()
     lekeDurumunuGuncelle()
-  }
+  },
+  // Surukleyerek atilan lekelerin tamami tek bir geri alma adimi olur; her
+  // leke ayri kaydedilseydi tek bir darbe gecmisi bastan sona doldururdu.
+  bittiginde: () => durumuKaydet(),
+  boyutDegisti: (cap) => boyuKaydiracaYaz(el.lekeBoyu)(cap)
 })
 
 let yuklenenGorsel = null

@@ -656,6 +656,24 @@ Sapma %10'u aşarsa kaydedilmez: o bir ölçüm hatası ya da yanlış kağıtt�
 düzeltmek daha kötü olurdu. Düzeltme yalnızca doğrudan baskıya uygulanır — kaydedilen PDF
 başka bir yazıcıda basılabilir, ekran önizlemesi de gerçek yerleşimi göstermeli.
 
+### Leke aracı sürükleyerek çalışıyor
+
+Leke temizleme tek tıklamalık bir işti: her leke için ayrı ayrı tıklamak gerekiyordu.
+Artık basılı tutup sürüklenen yer boyunca lekeleniyor — fotoğraf düzenleyicilerde alışılmış
+davranış.
+
+- **Aralık.** Her işaretçi olayına leke koymak listeyi şişirir ve önizlemeyi boğardı; yeni
+  leke ancak fırça yarıçapının yarısı kadar ilerleyince ekleniyor. Lekeler üst üste bindiği
+  için iz kesintisiz kalıyor.
+- **Tek geri alma adımı.** Sürüklemenin tamamı bir adım; her leke ayrı kaydedilseydi tek
+  bir darbe 15 adımlık geçmişi baştan sona doldururdu (maske fırçası da böyle çalışıyor).
+- **Fırça halkası artık sürüklerken de imleci izliyor.** `pointermove`'un sürükleme dalında
+  `izGuncelle` çağrılmıyordu; halka basıldığı yerde kalıyor, kullanıcı nereyi boyadığını
+  göremiyordu.
+- **Orta fare tuşu** basılı tutulup yukarı aşağı sürüklenince fırça boyu değişiyor
+  (1 piksel sürükleme = 1 piksel çap). Değer aracın içinde değil kaydıraçta tutuluyor;
+  araç `capAta` ile kaydıracı güncelliyor, yarıçap oradan geri geliyor.
+
 ### Tek örnek
 
 Uygulama simgesine ikinci kez basıldığında yeni bir pencere ve baştan bir açılış açılıyordu.

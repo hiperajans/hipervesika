@@ -48,6 +48,12 @@ hv-durum-cubugu    durum · işletim sistemi
   her tıklama araca gittiği için bu yol kapanıyordu; <kbd>Boşluk</kbd> basılıyken araç
   devreden çıkar ve sürükleme yine kaydırır. Tuş yalnızca **imleç tuvalin üzerindeyken**
   dinlenir — başka yerde boşluk odaktaki denetimin işidir.
+- **Fırça boyu, orta fare tuşu** basılı tutulup yukarı aşağı sürüklenerek değişir
+  (1 piksel sürükleme = 1 piksel çap). Tarayıcının orta tuşla otomatik kaydırması
+  kapatılır. Değer aracın içinde değil kaydıraçta tutulur: araç `capAta` ile kaydıracı
+  günceller, yarıçap oradan geri gelir — tek kaynak kaydıraçtır.
+- **Fırça halkası sürükleme sırasında da imleci izler.** İzlemediğinde kullanıcı nereyi
+  boyadığını göremiyordu.
 - `hv-panel`: yedi ayar kartı **üç adıma** indirildi — `1 Kadraj`, `2 Rötuş`, `3 Çıktı`.
   Sekmeler Bootstrap'in `data-bs-toggle="tab"` davranışını kullanır.
 - 992 px altında panel çalışma alanının altına iner ve sayfa bir bütün olarak kayar.

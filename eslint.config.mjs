@@ -107,6 +107,7 @@ export default [
         yuklenenGorsel: 'readonly',
         rotusAyarlari: 'readonly',
         lekeler: 'readonly',
+        lekeFircasi: 'readonly',
         olcuDurumu: 'readonly',
         kirpma: 'readonly',
         tuval: 'readonly',
