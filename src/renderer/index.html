@@ -643,7 +643,7 @@
               </div>
 
               <p id="dizme-durumu" class="hv-ipucu">
-                Sayfayı görmek için üstteki <em>Sayfa</em> görünümüne geçin.
+                Sayfa, üstteki <em>Sayfa</em> görünümünde canlı olarak çizilir.
               </p>
             </section>
 
@@ -730,7 +730,38 @@
                 uygulanır (bkz. src/renderer/js/kalibrasyon.js).
               -->
               <div id="kalibrasyon-alani" class="hv-gelismis d-none">
-                <h3 class="hv-alt-baslik">Ölçü kalibrasyonu</h3>
+                <h3 class="hv-alt-baslik">
+                  <span>Ölçü kalibrasyonu</span>
+                  <button id="btn-kalibrasyon-yardim" type="button" class="hv-simge"
+                    aria-expanded="false" aria-controls="kalibrasyon-yardimi"
+                    title="Ölçü kalibrasyonu ne işe yarar?">
+                    <i class="bi bi-question-circle" aria-hidden="true"></i>
+                    <span class="visually-hidden">Ölçü kalibrasyonu ne işe yarar?</span>
+                  </button>
+                </h3>
+
+                <div id="kalibrasyon-yardimi" class="hv-yardim d-none">
+                  <p>
+                    Yazıcılar kağıdı %1'e varan bir farkla basar; 50 mm'lik vesikalık
+                    49,6 mm çıkabilir. Kalibrasyon bu farkı ölçüp kapatır.
+                  </p>
+                  <ol>
+                    <li>
+                      <strong>Kalibrasyon sayfası bas</strong> — seçili yazıcıya, ölçüsü
+                      üzerinde yazan iki çizgiden oluşan bir sayfa gider. Bir yaprak kağıt
+                      harcar.
+                    </li>
+                    <li>Çıkan kağıttaki çizgileri cetvelle ölçün.</li>
+                    <li>
+                      Gerçek değerleri aşağıya yazıp <strong>Kaydet</strong> deyin.
+                    </li>
+                  </ol>
+                  <p>
+                    Düzeltme o yazıcı için saklanır ve bundan sonraki doğrudan
+                    baskılarda uygulanır; kaydettiğiniz PDF ve görüntüler düzeltmesiz
+                    kalır. Bir kez yapmanız yeterlidir.
+                  </p>
+                </div>
 
                 <button id="btn-kalibrasyon-bas" type="button"
                   class="btn hv-dugme hv-dugme-sade w-100">

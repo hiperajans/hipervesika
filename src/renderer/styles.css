@@ -605,6 +605,10 @@
    Bolum basligindan bir tik daha sessiz ve ustunde ayirici cizgi var: ayni
    kartin icinde ayri bir is oldugu okunsun. */
 .hv-alt-baslik {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   margin: 1rem 0 0.75rem;
   padding-top: 0.75rem;
   border-top: 1px solid var(--hv-kenar);
@@ -612,6 +616,42 @@
   font-weight: 600;
   letter-spacing: 0.05em;
   color: var(--hv-metin-ikincil);
+}
+
+/* Basligin yanindaki "?" ile acilan aciklama. Tanitim turu tum arayuzu
+   anlatir; buradaki tek bir denetimin ne ise yaradigini, tam yaninda ve
+   kullanici sorunca anlatir. */
+.hv-yardim {
+  margin-bottom: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--hv-kenar);
+  border-radius: var(--hv-yaricap-kucuk);
+  background-color: var(--hv-yuzey-ikincil);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--hv-metin-ikincil);
+}
+
+.hv-yardim p {
+  margin: 0 0 0.5rem;
+}
+
+.hv-yardim ol {
+  margin: 0 0 0.5rem;
+  padding-left: 1.125rem;
+}
+
+.hv-yardim li {
+  margin-bottom: 0.25rem;
+}
+
+.hv-yardim > :last-child {
+  margin-bottom: 0;
+}
+
+.hv-yardim strong {
+  color: var(--hv-metin);
+  font-weight: 600;
 }
 
 /* Tek bir ayar: etiket + denetim. */
@@ -868,6 +908,18 @@
    Pay, ikilinin kendi araligiyla ayni: grup her iki yonde ayni nefesi alir. */
 .hv-dugme.w-100 + .hv-dugme-cifti {
   margin-top: 0.625rem;
+}
+
+/* Dogrudan baski ayarlari ile "Yaziciya gonder" arasindaki pay. Basit modda
+   son denetim (kenarliksiz anahtari) gizli kaldigi icin "Yazici tercihleri..."
+   dugmesi ana eylem dugmesine yapisiyordu. Pay kaba veriliyor ve son ogenin
+   kendi payi sifirlaniyor; boylece bosluk iki modda da ayni. */
+#dogrudan-ayarlari {
+  margin-bottom: 0.625rem;
+}
+
+#dogrudan-ayarlari > :last-child {
+  margin-bottom: 0;
 }
 
 .hv-dugme-cifti > .hv-dugme:first-child {

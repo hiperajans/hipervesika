@@ -89,6 +89,8 @@ const el = {
   yaziciTercihleri: document.getElementById('btn-yazici-tercihleri'),
   kenarliksiz: document.getElementById('kenarliksiz'),
   kalibrasyonAlani: document.getElementById('kalibrasyon-alani'),
+  kalibrasyonYardim: document.getElementById('btn-kalibrasyon-yardim'),
+  kalibrasyonYardimi: document.getElementById('kalibrasyon-yardimi'),
   kalibrasyonBas: document.getElementById('btn-kalibrasyon-bas'),
   olculenYatay: document.getElementById('olculen-yatay'),
   olculenDikey: document.getElementById('olculen-dikey'),
@@ -1076,16 +1078,16 @@ function adimaGec (sira) {
   if (adim) adimDugmesi(adim.kod)?.click()
 }
 
-// Basit modda gorunum adimi izler: Cikti adiminda dizilmis sayfa, oncekilerde
-// fotograf gosterilir. Boylece panel "Sayfayi gormek icin ustteki Sayfa
-// gorunumune gecin" diye yon tarif etmek zorunda kalmiyor; o ipucu zaten
-// arayuzun kullaniciya is birakttigi yeri isaret ediyordu.
+// Gorunum adimi izler: Cikti adiminda dizilmis sayfa, Kadraj ve Rotus
+// adimlarinda fotograf gosterilir. Adim zaten "neye bakiyorum" sorusunun
+// cevabi; kullaniciyi ayrica gorunum dugmesine gonderen bir arayuz kendi isini
+// ona yaptirmis olurdu.
 //
-// Gelismis modda gorunum kullanicinin elinde kalir: adim degistirmek onun
-// secimini bozmamali.
+// Bu once yalnizca basit modda yapiliyordu, gelismis modda gorunum
+// kullanicinin elinde kalsin diye. Uygulamada gorulen sey, gelismis modda da
+// herkesin ayni sirayi izledigi oldu: adim degisince gorunum de degisiyor.
+// Elle degistirmek yine serbest — degisiklik yalnizca adim gecisinde olur.
 function gorunumuAdimaUydur () {
-  if (mod !== 'basit') return
-
   const sayfaOlmali = acikAdimSirasi() === SIHIRBAZ_ADIMLARI.length - 1
   if (el.gorunumSayfa.checked === sayfaOlmali) return
 
@@ -2971,6 +2973,14 @@ el.yinele.addEventListener('click', () => durumuUygula(gecmis.yinele()))
 el.sayfayiBas.addEventListener('click', () => sayfayiBas())
 el.sayfayiPdf.addEventListener('click', () => sayfayiPdfKaydet())
 el.sayfayiKaydet.addEventListener('click', () => sayfayiGoruntuKaydet())
+
+// Kalibrasyonun ne ise yaradigi soruldugunda anlatilir; panelde surekli duran
+// bir paragraf, isi bilen kullanicinin her gun okumak zorunda kaldigi bir sey
+// olurdu.
+el.kalibrasyonYardim.addEventListener('click', () => {
+  const gizli = el.kalibrasyonYardimi.classList.toggle('d-none')
+  el.kalibrasyonYardim.setAttribute('aria-expanded', String(!gizli))
+})
 
 el.kalibrasyonBas.addEventListener('click', () => kalibrasyonSayfasiBas())
 el.kalibrasyonKaydet.addEventListener('click', () => kalibrasyonuKaydet())

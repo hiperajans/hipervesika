@@ -164,11 +164,21 @@ test('basit modda gorunum adimi izler', async () => {
   assert.equal(await sayfa.isVisible('#tuval'), true)
 })
 
-test('gelismis modda gorunum kullanicinin elinde kalir', async () => {
+test('gelismis modda da gorunum adimi izler', async () => {
+  // Once yalnizca basit modda yapiliyordu, gelismis modda gorunum
+  // kullanicinin elinde kalsin diye. Uygulamada herkes ayni sirayi izliyor:
+  // Cikti adiminda sayfa, oncekilerde fotograf.
   await menudenModSec('Gelişmiş mod')
+
   await ortam.adima(sayfa, 'kadraj')
+  assert.equal(await sayfa.isChecked('#gorunum-sayfa'), false)
 
   await ortam.adima(sayfa, 'cikti')
+  assert.equal(await sayfa.isChecked('#gorunum-sayfa'), true)
+
+  // Elle degistirmek serbest: gorunum yalnizca adim gecisinde degisir.
+  await sayfa.click('label[for="gorunum-foto"]')
+  await sayfa.waitForTimeout(300)
   assert.equal(await sayfa.isChecked('#gorunum-sayfa'), false)
 
   await menudenModSec('Basit mod')

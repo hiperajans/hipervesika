@@ -18,10 +18,11 @@ const ortam = require('./ortam.js')
 const kalibrasyonMotoru = require(path.join(ortam.DEPO, 'src/renderer/js/kalibrasyon.js'))
 
 const calisma = new ortam.Calisma('dogrudan-baski')
-let sayfa, hatalar, kapat, durum
+let uygulama, sayfa, hatalar, kapat, durum
 
 test.before(async () => {
-  ;({ sayfa, hatalar, kapat } = await ortam.hazirla(calisma, { fotograf: calisma.fotograf(0) }))
+  ;({ uygulama, sayfa, hatalar, kapat } = await ortam.hazirla(
+    calisma, { fotograf: calisma.fotograf(0) }))
   await ortam.adima(sayfa, 'cikti')
   durum = await sayfa.evaluate(() => window.hiperVesika.dogrudanBaskiDurumu())
 })
@@ -192,6 +193,71 @@ test('ana eylem dugmesi ile ikili dipdibe durmuyor', async () => {
 
   assert.ok(aralik.dikey >= 8, `dikey aralık ${aralik.dikey} px`)
   assert.equal(aralik.dikey, aralik.yatay, JSON.stringify(aralik))
+})
+
+test('basit modda da dugmeler dipdibe durmuyor', async (t) => {
+  if (!durum.var) {
+    t.skip('Doğrudan baskı kullanılamıyor')
+    return
+  }
+
+  // Basit modda kenarliksiz anahtari gizli kaliyor; "Yazici tercihleri..." o
+  // zaman ana eylem dugmesine yapisiyordu.
+  const modSec = (etiket) => uygulama.evaluate(({ Menu }, ad) => {
+    const gorunum = Menu.getApplicationMenu().items.find((ust) => ust.label === 'Görünüm')
+    gorunum.submenu.items.find((oge) => oge.label === ad).click()
+  }, etiket)
+
+  await modSec('Basit mod')
+  await sayfa.waitForTimeout(600)
+  await ortam.adima(sayfa, 'cikti')
+  await sayfa.check('#dogrudan-baski')
+  await sayfa.waitForTimeout(400)
+
+  const aralik = await sayfa.evaluate(() => {
+    const kutu = (secici) => document.querySelector(secici).getBoundingClientRect()
+    return Math.round(kutu('#btn-sayfayi-bas').top - kutu('#btn-yazici-tercihleri').bottom)
+  })
+
+  await modSec('Gelişmiş mod')
+  await sayfa.waitForTimeout(600)
+  await ortam.adima(sayfa, 'cikti')
+
+  assert.ok(aralik >= 8, `basit modda aralık ${aralik} px`)
+})
+
+test('kalibrasyonun ne ise yaradigi soru isaretiyle aciliyor', async (t) => {
+  if (!durum.var) {
+    t.skip('Doğrudan baskı kullanılamıyor')
+    return
+  }
+
+  await sayfa.check('#dogrudan-baski')
+  await sayfa.waitForTimeout(300)
+
+  const acikMi = () => sayfa.evaluate(
+    () => !document.getElementById('kalibrasyon-yardimi').classList.contains('d-none'))
+
+  // Aciklama once kapalidir: isi bilen kullanici her gun okumak zorunda kalmaz.
+  assert.equal(await acikMi(), false)
+  assert.equal(await sayfa.getAttribute('#btn-kalibrasyon-yardim', 'aria-expanded'), 'false')
+
+  await sayfa.click('#btn-kalibrasyon-yardim')
+  await sayfa.waitForTimeout(200)
+
+  assert.equal(await acikMi(), true)
+  assert.equal(await sayfa.getAttribute('#btn-kalibrasyon-yardim', 'aria-expanded'), 'true')
+
+  const metin = await sayfa.textContent('#kalibrasyon-yardimi')
+  assert.match(metin, /cetvel/i)
+  assert.match(metin, /Kaydet/)
+
+  await sayfa.click('#btn-kalibrasyon-yardim')
+  await sayfa.waitForTimeout(200)
+  assert.equal(await acikMi(), false)
+
+  await sayfa.uncheck('#dogrudan-baski')
+  await sayfa.waitForTimeout(300)
 })
 
 test('ana surec yazicisiz ve gecersiz olculu istegi reddediyor', async () => {

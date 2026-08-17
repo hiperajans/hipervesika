@@ -100,12 +100,15 @@ tutulur ve arayüz her değişiklikte `moduBildir` ile haber verir.
 - **İleri düğmesi yön değil varış yeri yazar** ("Rötuşa geç"). "İleri" nereye gidildiğini
   söylemez. Son adımda düğme kalkar, `hv-sihirbaz-son` ile Geri şeridi doldurur.
 
-Basit modda **görünüm adımı izler**: Çıktı adımında dizilmiş sayfa, öncekilerde fotoğraf
-gösterilir (`gorunumuAdimaUydur`). Bunun öncesinde panel *"Sayfayı görmek için üstteki
-Sayfa görünümüne geçin"* diye yön tarif etmek zorunda kalıyordu; bir arayüzün kullanıcıya
-yol tarif etmesi orada iş bıraktığının işaretidir. Gelişmiş modda görünüm kullanıcının
-elinde kalır — adım değiştirmek onun seçimini bozmamalı. Değer koddan verildiği için
-`change` tetiklenmez, `gorunumuUygula` elle çağrılır.
+**Görünüm adımı izler** (iki modda da): Çıktı adımında dizilmiş sayfa, Kadraj ve Rötuşta
+fotoğraf gösterilir (`gorunumuAdimaUydur`). Bunun öncesinde panel *"Sayfayı görmek için
+üstteki Sayfa görünümüne geçin"* diye yön tarif etmek zorunda kalıyordu; bir arayüzün
+kullanıcıya yol tarif etmesi orada iş bıraktığının işaretidir.
+
+Bu önce yalnızca basit modda yapılıyordu, gelişmiş modda görünüm kullanıcının elinde
+kalsın diye. Uygulamada gelişmiş modda da herkesin aynı sırayı izlediği görüldü; artık iki
+modda da geçerli. Elle değiştirmek yine serbest — görünüm **yalnızca adım geçişinde**
+değişir. Değer koddan verildiği için `change` tetiklenmez, `gorunumuUygula` elle çağrılır.
 
 Basit moda geçilirken çıktıyı etkileyen uzman değerleri varsayılana döner (renk düzeni,
 DPI, JPEG kalitesi, kenar/aralık): kullanıcı göremediği bir ayarın etkisini yaşamamalı.
