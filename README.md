@@ -125,6 +125,8 @@ fotoğraf sürükle-bırak → otomatik hizalama → arka plan beyazlatma → r�
 - İlk açılışta rehberli tanıtım turu (`F1` ile her zaman tekrar açılabilir).
 - Fotoğrafı sürükleyerek taşıyabilirsiniz; leke ve fırça araçlarındayken `Boşluk` tuşunu
   basılı tutmanız yeter.
+- Uygulama tek örnek çalışır: simgeye ikinci kez basıldığında yeni bir pencere açılmaz,
+  açık olan pencere öne gelir.
 - Açılışta bir tanıtım penceresi çıkar ve hazırlık orada yapılır: yüz bulma ile arka plan
   ayırma modelleri yüklenip ısıtılınca uygulama açılır, böylece *Otomatik hizala* ilk
   tıklamada bekletmez. İlk açılış ~20 saniye sürer (ekran kartının önbelleği boştur),

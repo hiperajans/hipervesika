@@ -37,6 +37,7 @@ Atlanan testler çıktıda `﹣` ile ve sebebiyle birlikte görünür.
 | `ayarlar.test.js` | Kullanıcı ön ayarları, son kullanılan değerler, bozuk ayar dosyası |
 | `baski.test.js` | Menü kısayolları, PDF ölçü doğruluğu, sayfa kaydetme, geri al/yinele |
 | `acilis.test.js` | Açılış penceresi: uygulama hazırlık bitene kadar görünmüyor |
+| `tek-ornek.test.js` | İkinci örnek kendiliğinden kapanıyor, yeni pencere açılmıyor |
 | `dogrudan-baski.test.js` | Doğrudan baskı anahtarı, yazıcı/çözünürlük seçimi, ölçü kalibrasyonu |
 | `olcu.test.js` | Hazır vesikalık ölçüleri ve kadraj profilinin arayüze bağlanması |
 | `yakinlik.test.js` | Arayüz ölçeği kısayolları, Görünüm menüsü, ölçeğin baskıya sızmaması |

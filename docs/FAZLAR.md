@@ -656,6 +656,20 @@ Sapma %10'u aşarsa kaydedilmez: o bir ölçüm hatası ya da yanlış kağıtt�
 düzeltmek daha kötü olurdu. Düzeltme yalnızca doğrudan baskıya uygulanır — kaydedilen PDF
 başka bir yazıcıda basılabilir, ekran önizlemesi de gerçek yerleşimi göstermeli.
 
+### Tek örnek
+
+Uygulama simgesine ikinci kez basıldığında yeni bir pencere ve baştan bir açılış açılıyordu.
+`app.requestSingleInstanceLock()` ile artık ikinci süreç hiçbir pencere açmadan kapanıyor ve
+`second-instance` olayında açık olan pencere öne geliyor. Açılış sürüyorsa öne gelen açılış
+penceresidir; uygulama penceresi o sırada gizli ve onu erken göstermek açılışın işini bozar.
+
+Bunun ikinci bir faydası ölçülerek görüldü: aynı kullanıcı verisi klasörünü iki sürecin
+paylaşması GPU önbelleğini kilitliyordu, bu yüzden açılış her seferinde uzun yoldan
+(~23 saniye) gidiyor ve ayarlar dosyasına iki süreç birden yazıyordu.
+
+Kilit kullanıcı verisi klasörüne bağlıdır; uçtan uca testler kendi `--user-data-dir`
+klasöründe çalıştığı için birbirini engellemez.
+
 ### Açılış penceresi
 
 Modeller (yüz bulma + arka plan ayırma, toplam 11 MB) arayüz açıldıktan sonra arka planda

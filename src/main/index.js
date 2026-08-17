@@ -794,6 +794,10 @@ function menuyuKur () {
   Menu.setApplicationMenu(Menu.buildFromTemplate(sablon))
 }
 
+// Uygulama penceresi. Ikinci ornek acilmak istendiginde one getirilecek
+// pencere bu (bkz. pencereyiOneGetir).
+let anaPencere = null
+
 function createWindow () {
   const simge = pencereSimgesi()
   const window = new BrowserWindow({
@@ -833,42 +837,81 @@ function createWindow () {
 
   window.loadURL(`${ARAYUZ_KAYNAGI}/index.html`)
 
+  anaPencere = window
   return window
 }
 
-app.whenReady().then(() => {
-  // macOS'ta Dock simgesi pencereden degil uygulamadan gelir; paketlenmemis
-  // calistirmada Electron'un kendi simgesi gorunurdu.
-  if (process.platform === 'darwin' && !app.isPackaged) {
-    const simge = dockSimgesi()
-    if (simge) app.dock?.setIcon(simge)
-  }
+// Kullanici uygulamayi ikinci kez actiginda: yeni bir pencere ve yeni bir
+// acilis yerine acik olan pencere one gelir.
+//
+// Acilis suruyorsa one gelen acilis penceresidir; uygulama penceresi o sirada
+// gizli ve onu erken gostermek acilisin isini bozardi.
+function pencereyiOneGetir () {
+  const hedef = [acilisPenceresi, anaPencere].find(
+    (pencere) => pencere && !pencere.isDestroyed() && pencere.isVisible()
+  )
+  if (!hedef) return
 
-  protokoluKur()
-  kaydetmeyiKur()
-  baskiyiKur()
-  ayarlariKur()
-  icciKur()
-  dogrudanBaskiyiKur()
-  olcegiKur()
-  moduKur()
-  hakkindaKur()
-  menuyuKur()
+  if (hedef.isMinimized()) hedef.restore()
+  // Gorunur bir pencerede show() yalnizca one getirir; focus() tek basina
+  // Windows'ta arkada kalan pencereyi kaldirmiyor.
+  hedef.show()
+  hedef.focus()
+}
 
-  // Acilis penceresi once acilir: ana pencere modeller yuklenirken gizli
-  // durur ve is bitince (ya da sure asiminda) ekrana gelir.
-  if (ACILIS) acilisPenceresi = acilisPenceresiOlustur()
-  const pencere = createWindow()
-  if (ACILIS) acilisiKur(pencere)
+function uygulamayiBaslat () {
+  app.whenReady().then(() => {
+    // macOS'ta Dock simgesi pencereden degil uygulamadan gelir; paketlenmemis
+    // calistirmada Electron'un kendi simgesi gorunurdu.
+    if (process.platform === 'darwin' && !app.isPackaged) {
+      const simge = dockSimgesi()
+      if (simge) app.dock?.setIcon(simge)
+    }
 
-  // macOS'ta Dock'tan tiklaninca pencere yeniden acilir. Acilis penceresi
-  // yalnizca uygulamanin ilk acilisina aittir; burada tekrarlanmaz.
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    protokoluKur()
+    kaydetmeyiKur()
+    baskiyiKur()
+    ayarlariKur()
+    icciKur()
+    dogrudanBaskiyiKur()
+    olcegiKur()
+    moduKur()
+    hakkindaKur()
+    menuyuKur()
+
+    // Acilis penceresi once acilir: ana pencere modeller yuklenirken gizli
+    // durur ve is bitince (ya da sure asiminda) ekrana gelir.
+    if (ACILIS) acilisPenceresi = acilisPenceresiOlustur()
+    const pencere = createWindow()
+    if (ACILIS) acilisiKur(pencere)
+
+    // macOS'ta Dock'tan tiklaninca pencere yeniden acilir. Acilis penceresi
+    // yalnizca uygulamanin ilk acilisina aittir; burada tekrarlanmaz.
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    })
   })
-})
 
-// macOS disinda son pencere kapaninca uygulama da kapanir.
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
-})
+  // macOS disinda son pencere kapaninca uygulama da kapanir.
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit()
+  })
+}
+
+// Uygulama tek ornek calisir. Kullanici simgeye ikinci kez bastiginda yeni bir
+// pencere ve bastan bir acilis yerine acik olan pencere one gelir.
+//
+// Ayni kullanici verisi klasorunu iki surecin paylasmasi ayrica sorun
+// cikariyordu: GPU onbellegi kilitli kaldigi icin acilis her seferinde uzun
+// yoldan gidiyor (~23 sn) ve ayarlar dosyasina iki surec birden yaziyordu.
+//
+// Kilit kullanici verisi klasorune baglidir; uctan uca testler kendi
+// --user-data-dir klasorunde calistigi icin birbirini engellemez.
+if (app.requestSingleInstanceLock()) {
+  app.on('second-instance', () => pencereyiOneGetir())
+  uygulamayiBaslat()
+} else {
+  // Kilit baskasinda: bu surecin yapacagi bir sey yok, hicbir pencere acmadan
+  // kapanir. Acik olan uygulamayi one getirmek ilk surecin isi.
+  app.quit()
+}
