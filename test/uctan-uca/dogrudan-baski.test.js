@@ -179,6 +179,21 @@ test('sacma olcum kaydedilmez', async (t) => {
   await sayfa.waitForTimeout(300)
 })
 
+test('ana eylem dugmesi ile ikili dipdibe durmuyor', async () => {
+  // Dipdibe duran dugmeler tek bir blok gibi gorunuyor ve yanlis dugmeye
+  // basmak kolaylasiyor; pay her iki yonde de ayni.
+  const aralik = await sayfa.evaluate(() => {
+    const kutu = (secici) => document.querySelector(secici).getBoundingClientRect()
+    return {
+      dikey: Math.round(kutu('#btn-sayfayi-pdf').top - kutu('#btn-sayfayi-bas').bottom),
+      yatay: Math.round(kutu('#btn-sayfayi-kaydet').left - kutu('#btn-sayfayi-pdf').right)
+    }
+  })
+
+  assert.ok(aralik.dikey >= 8, `dikey aralık ${aralik.dikey} px`)
+  assert.equal(aralik.dikey, aralik.yatay, JSON.stringify(aralik))
+})
+
 test('ana surec yazicisiz ve gecersiz olculu istegi reddediyor', async () => {
   const yazicisiz = await sayfa.evaluate(() => window.hiperVesika.sayfayiDogrudanBas({
     baytlar: new Uint8Array([1, 2, 3]),

@@ -859,8 +859,15 @@
 
 .hv-dugme-cifti {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.625rem;
   margin-bottom: 0.75rem;
+}
+
+/* Tam genislikteki ana eylem dugmesi ile altindaki ikili dipdibe duruyordu;
+   ikisi tek bir blok gibi gorunuyor ve yanlis dugmeye basmak kolaylasiyordu.
+   Pay, ikilinin kendi araligiyla ayni: grup her iki yonde ayni nefesi alir. */
+.hv-dugme.w-100 + .hv-dugme-cifti {
+  margin-top: 0.625rem;
 }
 
 .hv-dugme-cifti > .hv-dugme:first-child {

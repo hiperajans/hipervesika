@@ -60,6 +60,7 @@ hv-durum-cubugu    durum · işletim sistemi
 | `hv-alan` + `hv-etiket` + `hv-deger` | Tek ayar: etiket solda, değer sağda bir pul içinde |
 | `hv-ikili`, `hv-uclu` | İki/üç kolonlu ayar ızgarası |
 | `hv-dugme` (+ `-sade`, `-tehlike`) | Düğme; `btn-primary` ile birlikte de kullanılır |
+| `hv-dugme-cifti` (+ `-esit`) | Yan yana iki düğme. Tam genişlikteki ana eylem düğmesinin hemen altındaysa aralarına pay girer — ikisi tek blok gibi görünmesin |
 | `hv-secim` | `btn-check` ile segment düğmesi (görünüm, araç, biçim) |
 | `hv-simge` (+ `-yazili`) | Simge düğmesi |
 | `hv-ipucu` | Açıklama ve durum satırı; renderer `text-danger/success` ekler |
