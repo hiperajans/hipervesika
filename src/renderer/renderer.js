@@ -84,7 +84,19 @@ const el = {
   baskiCozunurlugu: document.getElementById('baski-cozunurlugu'),
   baskiAygitiAlani: document.getElementById('baski-aygiti-alani'),
   baskiAygiti: document.getElementById('baski-aygiti'),
+  kagitTuruAlani: document.getElementById('kagit-turu-alani'),
+  kagitTuru: document.getElementById('kagit-turu'),
+  baskiKalitesiAlani: document.getElementById('baski-kalitesi-alani'),
+  baskiKalitesi: document.getElementById('baski-kalitesi'),
+  yaziciTercihleri: document.getElementById('btn-yazici-tercihleri'),
   kenarliksiz: document.getElementById('kenarliksiz'),
+  kalibrasyonAlani: document.getElementById('kalibrasyon-alani'),
+  kalibrasyonBas: document.getElementById('btn-kalibrasyon-bas'),
+  olculenYatay: document.getElementById('olculen-yatay'),
+  olculenDikey: document.getElementById('olculen-dikey'),
+  kalibrasyonKaydet: document.getElementById('btn-kalibrasyon-kaydet'),
+  kalibrasyonSil: document.getElementById('btn-kalibrasyon-sil'),
+  kalibrasyonDurumu: document.getElementById('kalibrasyon-durumu'),
   sayfayiPdf: document.getElementById('btn-sayfayi-pdf'),
   sayfayiKaydet: document.getElementById('btn-sayfayi-kaydet'),
   baskiDurumu: document.getElementById('baski-durumu'),
@@ -107,6 +119,10 @@ const el = {
   gozDurumu: document.getElementById('goz-durumu'),
   renkDuzeni: document.getElementById('renk-duzeni'),
   renkDuzeniAciklamasi: document.getElementById('renk-duzeni-aciklamasi'),
+  iccAlani: document.getElementById('icc-alani'),
+  iccSec: document.getElementById('btn-icc-sec'),
+  iccKaldir: document.getElementById('btn-icc-kaldir'),
+  iccDurumu: document.getElementById('icc-durumu'),
   sihirbazGeri: document.getElementById('btn-sihirbaz-geri'),
   sihirbazIleri: document.getElementById('btn-sihirbaz-ileri'),
   sihirbazIleriYazi: document.getElementById('sihirbaz-ileri-yazi'),
@@ -197,7 +213,12 @@ const gecmis = new window.HV.Gecmis()
 
 // Kullanicinin kendi on ayarlari ve son kullandigi degerler. Ana surecten
 // okunur; okunana kadar bos kabul edilir ve hicbir sey yazilmaz.
-let kullaniciAyarlari = { fotografOnayarlari: [], kagitOnayarlari: [], sonKullanilan: {} }
+let kullaniciAyarlari = {
+  fotografOnayarlari: [],
+  kagitOnayarlari: [],
+  kalibrasyonlar: [],
+  sonKullanilan: {}
+}
 let ayarlarHazir = false
 
 // Bir ada karsilik gelmeyen, listede kullanilmayan kod. Kullanici adi
@@ -595,6 +616,43 @@ function renkDuzeniniOku () {
 
 function renkAciklamasiniGuncelle () {
   el.renkDuzeniAciklamasi.textContent = window.HV.renk.duzenBul(renkDuzeniniOku()).aciklama
+  iccDurumunuGuncelle()
+}
+
+// --- CMYK icin ICC profili ---------------------------------------------------
+
+// Uygulamanin kendi RGB -> CMYK cevrimi profilsizdir. Ghostscript varsa ayrim
+// gercek bir profille yapilabiliyor; secim yalnizca o zaman ve yalnizca CMYK
+// secildiginde anlamli.
+let iccProfili = null
+
+function iccDurumunuGuncelle () {
+  const kullanilabilir = ghostscript.var && renkDuzeniniOku() === 'cmyk'
+  el.iccAlani.classList.toggle('d-none', !kullanilabilir)
+  if (!kullanilabilir) return
+
+  el.iccKaldir.disabled = !iccProfili
+  el.iccDurumu.textContent = iccProfili
+    ? `${iccProfili.ad} kullanılacak. Ayrım Ghostscript ile bu profile göre yapılır.`
+    : 'Profil seçilmezse ayrım profilsiz yapılır (aygıt çevrimi). ' +
+      'Matbaanız kendi profilini uygulayacaksa sRGB verin.'
+}
+
+async function iccProfiliSec () {
+  const sonuc = await window.hiperVesika.iccProfiliSec()
+  if (!sonuc.secildi) return
+
+  iccProfili = { yol: sonuc.yol, ad: sonuc.ad }
+  kullaniciAyarlari.iccProfili = iccProfili
+  iccDurumunuGuncelle()
+  ayarlariKaydet({ hemen: true })
+}
+
+function iccProfiliniKaldir () {
+  iccProfili = null
+  kullaniciAyarlari.iccProfili = null
+  iccDurumunuGuncelle()
+  ayarlariKaydet({ hemen: true })
 }
 
 function lekeDurumunuGuncelle () {
@@ -1789,7 +1847,9 @@ function baskiDurumu (mesaj, tur = 'bilgi') {
 // DPI'da yeniden uretilmis tam cozunurluklu vesikalik kullanilir. Tuvalin
 // piksel olcusu kagidin milimetre olcusunun tam karsiligidir; boylece sayfada
 // 1 mm her zaman ayni sayida piksele denk gelir.
-function baskiSayfasiUret () {
+// kalibrasyon yalnizca dogrudan baskida verilir; kaydedilen PDF/JPG ve ekran
+// onizlemesi duzeltmesiz kalir (bkz. js/kalibrasyon.js).
+function baskiSayfasiUret ({ kalibrasyon = null } = {}) {
   if (!yuklenenGorsel || !kirpma.cerceve) {
     baskiDurumu('Önce bir fotoğraf açıp kadrajı ayarlayın.', 'hata')
     return null
@@ -1830,7 +1890,8 @@ function baskiSayfasiUret () {
     fotoTuvali: kare,
     kesimKilavuzu: el.kesimKilavuzu.checked,
     // Kagidin kenarina cizgi cekilirse basilan kagitta gercek bir cerceve olur.
-    kagitKenari: false
+    kagitKenari: false,
+    kalibrasyon
   })
 
   return { tuval: sayfaTuvali, kagitMm, yerlesim }
@@ -1892,20 +1953,28 @@ async function sayfayiGoruntuKaydet () {
 
 // Ana surece gonderilecek PDF govdesi. PDF kaydetme ile dogrudan baski ayni
 // belgeyi kullanir; olcu dogrulugu tek yerden gelir.
-async function sayfaPdfIstegi (sayfa) {
+//
+// icc yalnizca kaydedilen PDF icin acilir: profilli ayrim matbaaya giden
+// belgenin isidir, yaziciya gonderilen iste rengi surucu yonetir.
+async function sayfaPdfIstegi (sayfa, { icc = false } = {}) {
   const istek = { kagitMm: sayfa.kagitMm }
+  const cmykMi = renkDuzeniniOku() === 'cmyk'
+  const profilliAyrim = icc && cmykMi && ghostscript.var && Boolean(iccProfili)
 
-  if (renkDuzeniniOku() === 'cmyk') {
+  if (cmykMi && !profilliAyrim) {
     // Sayfa piksel piksel CMYK'ye cevrilir; PDF'i ana surec yazar.
     istek.cmyk = {
       baytlar: window.HV.renk.cmykBaytlari(sayfa.tuval),
       genislik: sayfa.tuval.width,
       yukseklik: sayfa.tuval.height
     }
-  } else {
-    // PDF'e kayipsiz PNG gomulur; olcu tasiyicisi PDF'in kendisidir.
-    istek.baytlar = await sayfaBaytlari(sayfa.tuval, 'png')
+    return istek
   }
+
+  // PDF'e kayipsiz PNG gomulur; olcu tasiyicisi PDF'in kendisidir.
+  istek.baytlar = await sayfaBaytlari(sayfa.tuval, 'png')
+  // Ayrimi Ghostscript profile gore yapacak.
+  if (profilliAyrim) istek.iccYolu = iccProfili.yol
 
   return istek
 }
@@ -1920,7 +1989,7 @@ async function sayfayiPdfKaydet () {
   try {
     const duzen = renkDuzeniniOku()
     const istek = {
-      ...(await sayfaPdfIstegi(sayfa)),
+      ...(await sayfaPdfIstegi(sayfa, { icc: true })),
       varsayilanAd: window.HV.sayfa.sayfaDosyaAdi(
         sayfa.kagitMm, sayfa.yerlesim.adet, dpi, 'pdf'
       )
@@ -1981,6 +2050,32 @@ function ghostscriptAyarlariniDoldur () {
   }
   // Tek secenek varsa (Windows) secim kutusu bir sey anlatmaz.
   el.baskiAygitiAlani.classList.toggle('d-none', (ghostscript.aygitlar ?? []).length < 2)
+
+  // Kagit turu ve kalite yalnizca isletim sistemi kabul ediyorsa gosterilir.
+  // Windows'ta liste bos gelir: orada bu ayarlar surucunun penceresinde.
+  const turler = ghostscript.kagitTurleri ?? []
+  const kaliteler = ghostscript.kaliteler ?? []
+
+  for (const tur of turler) secenekEkle(el.kagitTuru, tur.kod, tur.ad)
+  for (const kalite of kaliteler) secenekEkle(el.baskiKalitesi, kalite.kod, kalite.ad)
+
+  el.kagitTuruAlani.classList.toggle('d-none', !turler.length)
+  el.baskiKalitesiAlani.classList.toggle('d-none', !kaliteler.length)
+  // Surucu penceresi, ayarin uygulamadan yapilamadigi yerde ise yarar.
+  el.yaziciTercihleri.classList.toggle('d-none', turler.length > 0)
+}
+
+async function yaziciTercihleriniAc () {
+  const yazici = el.yaziciSecimi.value
+  if (!yazici) {
+    baskiDurumu('Önce bir yazıcı seçin.', 'hata')
+    return
+  }
+
+  const sonuc = await window.hiperVesika.yaziciTercihleriniAc(yazici)
+  baskiDurumu(sonuc.acildi
+    ? 'Yazıcı tercihleri açıldı. Kağıt türü ve kalite orada seçilir; ayar sürücüde kalır.'
+    : `Yazıcı tercihleri açılamadı: ${sonuc.hata}`, sonuc.acildi ? 'bilgi' : 'hata')
 }
 
 async function ghostscriptiDenetle () {
@@ -1989,10 +2084,151 @@ async function ghostscriptiDenetle () {
   el.dogrudanBaski.disabled = !ghostscript.var
   ghostscriptAyarlariniDoldur()
   baskiYolunuGuncelle()
+  iccDurumunuGuncelle()
+}
+
+// --- Olcu kalibrasyonu -------------------------------------------------------
+
+const kalibrasyonMotoru = window.HV.kalibrasyon
+
+function secilenYazici () {
+  return el.yaziciSecimi.value || ''
+}
+
+function yazicininKalibrasyonu () {
+  return kalibrasyonMotoru.yaziciIcin(kullaniciAyarlari.kalibrasyonlar, secilenYazici())
+}
+
+function kalibrasyonDurumu (mesaj, tur = 'bilgi') {
+  el.kalibrasyonDurumu.textContent = mesaj
+  el.kalibrasyonDurumu.classList.toggle('text-danger', tur === 'hata')
+  el.kalibrasyonDurumu.classList.toggle('text-success', tur === 'basari')
+  el.kalibrasyonDurumu.classList.toggle('text-body-secondary', tur === 'bilgi')
+}
+
+function kalibrasyonuGoster () {
+  // Duzeltme yalnizca dogrudan baskida uygulanabiliyor: sistem panelinde
+  // hangi yaziciya gidildigini bilmiyoruz.
+  el.kalibrasyonAlani.classList.toggle('d-none', !dogrudanBaskiAcikMi())
+
+  const yazici = secilenYazici()
+  if (!yazici) {
+    kalibrasyonDurumu('Önce bir yazıcı seçin.')
+    return
+  }
+
+  const kalibrasyon = yazicininKalibrasyonu()
+  el.kalibrasyonSil.disabled = !kalibrasyonMotoru.etkinMi(kalibrasyon)
+
+  kalibrasyonDurumu(kalibrasyonMotoru.etkinMi(kalibrasyon)
+    ? `Uygulanan düzeltme — ${kalibrasyonMotoru.ozet(kalibrasyon)}`
+    : 'Düzeltme yok. Sayfayı basıp çizgileri ölçün, gerçek değerleri girin.')
+}
+
+// Kalibrasyon sayfasi duzeltmesiz basilir: olculecek olan yazicinin ham
+// davranisi.
+async function kalibrasyonSayfasiBas () {
+  const kagitMm = kagitOlcusu()
+  if (!kagitMm) {
+    kalibrasyonDurumu('Kağıt ölçüsü geçersiz.', 'hata')
+    return
+  }
+
+  const yazici = secilenYazici()
+  if (!yazici) {
+    kalibrasyonDurumu('Önce bir yazıcı seçin.', 'hata')
+    return
+  }
+
+  baskiDugmeleri(false)
+  el.kalibrasyonBas.disabled = true
+  kalibrasyonDurumu('Kalibrasyon sayfası gönderiliyor…')
+
+  try {
+    const tuval = document.createElement('canvas')
+    tuval.width = Math.round(olcuMotoru.mmDenPiksel(kagitMm.genislik, dpi))
+    tuval.height = Math.round(olcuMotoru.mmDenPiksel(kagitMm.yukseklik, dpi))
+    kalibrasyonMotoru.testSayfasiCiz(tuval, { kagitMm, yaziciAdi: yazici })
+
+    const sonuc = await window.hiperVesika.sayfayiDogrudanBas({
+      baytlar: await sayfaBaytlari(tuval, 'png'),
+      kagitMm,
+      yazici,
+      kopya: 1,
+      baskiDpi: Number.parseInt(el.baskiCozunurlugu.value, 10),
+      aygit: el.baskiAygiti.value || 'otomatik',
+      kagitTuru: el.kagitTuru.value || 'otomatik',
+      kalite: el.baskiKalitesi.value || 'otomatik'
+    })
+
+    const referans = kalibrasyonMotoru.referanslar(kagitMm)
+    if (sonuc.basildi) {
+      el.olculenYatay.value = ''
+      el.olculenDikey.value = ''
+      kalibrasyonDurumu(
+        `Sayfa gönderildi. Çizgiler ${referans.yatayMm} mm ve ${referans.dikeyMm} mm ` +
+        'olmalı; cetvelle ölçüp gerçek değerleri girin.'
+      )
+    } else {
+      kalibrasyonDurumu(`Sayfa basılamadı: ${sonuc.hata}`, 'hata')
+    }
+  } catch (hata) {
+    kalibrasyonDurumu(`Sayfa hazırlanamadı: ${hata.message}`, 'hata')
+  } finally {
+    el.kalibrasyonBas.disabled = false
+    baskiDugmeleri(true)
+  }
+}
+
+function kalibrasyonuKaydet () {
+  const kagitMm = kagitOlcusu()
+  const yazici = secilenYazici()
+  if (!kagitMm || !yazici) return
+
+  const referans = kalibrasyonMotoru.referanslar(kagitMm)
+  const olcekX = kalibrasyonMotoru.olcekHesapla(
+    referans.yatayMm, Number.parseFloat(el.olculenYatay.value)
+  )
+  const olcekY = kalibrasyonMotoru.olcekHesapla(
+    referans.dikeyMm, Number.parseFloat(el.olculenDikey.value)
+  )
+
+  if (olcekX === null || olcekY === null) {
+    kalibrasyonDurumu(
+      `Ölçümler ${referans.yatayMm} mm ve ${referans.dikeyMm} mm değerlerine yakın ` +
+      'olmalı. Sapma %10\'u geçiyorsa yanlış kağıt ya da ölçüm hatası vardır.',
+      'hata'
+    )
+    return
+  }
+
+  const kalanlar = kullaniciAyarlari.kalibrasyonlar.filter((oge) => oge.yazici !== yazici)
+  kullaniciAyarlari.kalibrasyonlar = [...kalanlar, { yazici, olcekX, olcekY }]
+  ayarlariKaydet({ hemen: true })
+
+  kalibrasyonuGoster()
+  kalibrasyonDurumu(
+    `Düzeltme kaydedildi — ${kalibrasyonMotoru.ozet({ olcekX, olcekY })}. ` +
+    'Bundan sonraki baskılarda uygulanır.',
+    'basari'
+  )
+}
+
+function kalibrasyonuSil () {
+  const yazici = secilenYazici()
+  if (!yazici) return
+
+  kullaniciAyarlari.kalibrasyonlar =
+    kullaniciAyarlari.kalibrasyonlar.filter((oge) => oge.yazici !== yazici)
+  ayarlariKaydet({ hemen: true })
+
+  el.olculenYatay.value = ''
+  el.olculenDikey.value = ''
+  kalibrasyonuGoster()
 }
 
 async function sayfayiDogrudanBas () {
-  const sayfa = baskiSayfasiUret()
+  const sayfa = baskiSayfasiUret({ kalibrasyon: yazicininKalibrasyonu() })
   if (!sayfa) return
 
   const yazici = el.yaziciSecimi.value
@@ -2012,7 +2248,9 @@ async function sayfayiDogrudanBas () {
       kopya,
       baskiDpi: Number.parseInt(el.baskiCozunurlugu.value, 10),
       aygit: el.baskiAygiti.value || 'otomatik',
-      kenarliksiz: el.kenarliksiz.checked
+      kenarliksiz: el.kenarliksiz.checked,
+      kagitTuru: el.kagitTuru.value || 'otomatik',
+      kalite: el.baskiKalitesi.value || 'otomatik'
     })
 
     if (sonuc.basildi) {
@@ -2265,6 +2503,8 @@ function sonKullanilaniTopla () {
     kopya: Number.parseInt(el.kopyaSayisi.value, 10) || 1,
     baskiDpi: Number.parseInt(el.baskiCozunurlugu.value, 10) || 0,
     baskiAygiti: el.baskiAygiti.value,
+    kagitTuru: el.kagitTuru.value,
+    baskiKalitesi: el.baskiKalitesi.value,
     kenarliksiz: el.kenarliksiz.checked,
     kenarMm: Number.parseFloat(el.dizmeKenar.value) || 0,
     aralikMm: Number.parseFloat(el.dizmeAralik.value) || 0,
@@ -2335,12 +2575,22 @@ function sonKullanilaniUygula (son) {
   if (son.baskiAygiti && [...el.baskiAygiti.options].some((o) => o.value === son.baskiAygiti)) {
     el.baskiAygiti.value = son.baskiAygiti
   }
+  if (son.kagitTuru && [...el.kagitTuru.options].some((o) => o.value === son.kagitTuru)) {
+    el.kagitTuru.value = son.kagitTuru
+  }
+  if (
+    son.baskiKalitesi &&
+    [...el.baskiKalitesi.options].some((o) => o.value === son.baskiKalitesi)
+  ) {
+    el.baskiKalitesi.value = son.baskiKalitesi
+  }
   if (typeof son.kenarliksiz === 'boolean') el.kenarliksiz.checked = son.kenarliksiz
   // Ghostscript yoksa anahtar kapali kalir; kayitli deger onu acmamali.
   if (son.dogrudanBaski === true && !el.dogrudanBaski.disabled) {
     el.dogrudanBaski.checked = true
   }
   baskiYolunuGuncelle()
+  kalibrasyonuGoster()
 
   if (Number.isFinite(son.kenarMm)) el.dizmeKenar.value = String(son.kenarMm)
   if (Number.isFinite(son.aralikMm)) el.dizmeAralik.value = String(son.aralikMm)
@@ -2386,6 +2636,8 @@ async function ayarlariYukle () {
     kullaniciAyarlari = {
       fotografOnayarlari: okunan?.fotografOnayarlari ?? [],
       kagitOnayarlari: okunan?.kagitOnayarlari ?? [],
+      kalibrasyonlar: okunan?.kalibrasyonlar ?? [],
+      iccProfili: okunan?.iccProfili ?? null,
       sonKullanilan: okunan?.sonKullanilan ?? {},
       tanitimGoruldu: okunan?.tanitimGoruldu === true,
       mod: okunan?.mod ?? null
@@ -2401,6 +2653,11 @@ async function ayarlariYukle () {
   // Mod, son kullanilan degerler yerine oturduktan sonra uygulanir: basit moda
   // gecis ciktiyi etkileyen uzman degerlerini sifirliyor, once onlarin okunmus
   // olmasi gerekiyor. Kayitli mod diske geri yazilmaz (kaydet: false).
+  // ICC profili son kullanilanlarda degil kendi alaninda duruyor (yol uzun
+  // olabilir); okunan deger arayuzun durumuna aktarilir.
+  iccProfili = kullaniciAyarlari.iccProfili ?? null
+  iccDurumunuGuncelle()
+
   if (kullaniciAyarlari.mod) modAta(kullaniciAyarlari.mod, { kaydet: false })
   else window.hiperVesika.moduBildir('gelismis')
 
@@ -2726,7 +2983,13 @@ el.sayfayiBas.addEventListener('click', () => sayfayiBas())
 el.sayfayiPdf.addEventListener('click', () => sayfayiPdfKaydet())
 el.sayfayiKaydet.addEventListener('click', () => sayfayiGoruntuKaydet())
 
+el.kalibrasyonBas.addEventListener('click', () => kalibrasyonSayfasiBas())
+el.kalibrasyonKaydet.addEventListener('click', () => kalibrasyonuKaydet())
+el.kalibrasyonSil.addEventListener('click', () => kalibrasyonuSil())
+el.yaziciSecimi.addEventListener('change', () => kalibrasyonuGoster())
+
 el.dogrudanBaski.addEventListener('change', () => {
+  kalibrasyonuGoster()
   baskiYolunuGuncelle()
   baskiDurumu(dogrudanBaskiAcikMi()
     ? 'İş seçilen yazıcıya doğrudan gider; yazdırma paneli açılmaz. ' +
@@ -2737,10 +3000,15 @@ el.dogrudanBaski.addEventListener('change', () => {
 })
 
 for (const denetim of [
-  el.yaziciSecimi, el.kopyaSayisi, el.baskiCozunurlugu, el.baskiAygiti, el.kenarliksiz
+  el.yaziciSecimi, el.kopyaSayisi, el.baskiCozunurlugu, el.baskiAygiti,
+  el.kagitTuru, el.baskiKalitesi, el.kenarliksiz
 ]) {
   denetim.addEventListener('change', () => ayarlariKaydet())
 }
+
+el.yaziciTercihleri.addEventListener('click', () => yaziciTercihleriniAc())
+el.iccSec.addEventListener('click', () => iccProfiliSec())
+el.iccKaldir.addEventListener('click', () => iccProfiliniKaldir())
 
 // --- Menu komutlari ----------------------------------------------------------
 

@@ -23,6 +23,13 @@ const EN_BUYUK_KAGIT_MM = 1000
 const EN_FAZLA_ONAYAR = 50
 const AD_UZUNLUGU = 40
 
+// Olcu duzeltmesinin makul araligi; arayuzdeki sinirin aynisi
+// (src/renderer/js/kalibrasyon.js). Disina cikan bir deger olcum hatasidir.
+const EN_KUCUK_OLCEK = 0.9
+const EN_BUYUK_OLCEK = 1.1
+const YAZICI_ADI_UZUNLUGU = 200
+const ICC_YOLU_UZUNLUGU = 500
+
 // Arayuz modlari. 'basit' sihirbaz gezinmesi verir ve uzman denetimlerini
 // gizler, 'gelismis' her seyi gosterir. Ayarda null durmasi "kullaniciya henuz
 // sorulmadi" demektir: ilk acilista mod secme penceresi bu yuzden acilir.
@@ -33,6 +40,11 @@ function varsayilanAyarlar () {
     surum: SURUM,
     fotografOnayarlari: [],
     kagitOnayarlari: [],
+    // Yazici basina olcu duzeltmesi (bkz. src/renderer/js/kalibrasyon.js).
+    kalibrasyonlar: [],
+    // CMYK ayriminda kullanilacak ICC profilinin yolu. sonKullanilan icinde
+    // tutulamaz: oradaki dizgi siniri (200) uzun yollara yetmiyor.
+    iccProfili: null,
     sonKullanilan: {},
     // Tanitim turu bir kez gosterilir; kullanici Yardim menusunden tekrarlar.
     tanitimGoruldu: false,
@@ -78,20 +90,51 @@ function kagitOnayariTemizle (ham) {
   return { kod, ad, genislik, yukseklik }
 }
 
-// Ayni kod iki kez bulunursa ilki kalir; liste uzunlugu sinirlanir.
-function listeTemizle (ham, temizleyici) {
+// Ayni anahtar iki kez bulunursa ilki kalir; liste uzunlugu sinirlanir.
+function listeTemizle (ham, temizleyici, anahtar = 'kod') {
   if (!Array.isArray(ham)) return []
 
-  const kodlar = new Set()
+  const anahtarlar = new Set()
   const liste = []
   for (const oge of ham) {
     const temiz = temizleyici(oge)
-    if (!temiz || kodlar.has(temiz.kod)) continue
-    kodlar.add(temiz.kod)
+    if (!temiz || anahtarlar.has(temiz[anahtar])) continue
+    anahtarlar.add(temiz[anahtar])
     liste.push(temiz)
     if (liste.length >= EN_FAZLA_ONAYAR) break
   }
   return liste
+}
+
+// Yazici basina olcu duzeltmesi. Yazici adi sistemden geldigi icin kod
+// bicimine uymaz; yalnizca uzunlugu sinirlanir.
+function kalibrasyonTemizle (ham) {
+  const yazici = typeof ham?.yazici === 'string' ? ham.yazici.trim() : ''
+  const olcekX = Number(ham?.olcekX)
+  const olcekY = Number(ham?.olcekY)
+
+  const gecerli = (olcek) =>
+    Number.isFinite(olcek) && olcek >= EN_KUCUK_OLCEK && olcek <= EN_BUYUK_OLCEK
+
+  if (!yazici || yazici.length > YAZICI_ADI_UZUNLUGU) return null
+  if (!gecerli(olcekX) || !gecerli(olcekY)) return null
+
+  return {
+    yazici,
+    olcekX: Math.round(olcekX * 100000) / 100000,
+    olcekY: Math.round(olcekY * 100000) / 100000
+  }
+}
+
+// ICC profili: yol ve dosya adi. Dosyanin hala yerinde olup olmadigina
+// bakilmaz — disk baglantisi gecici olabilir; kullanilacagi anda denetlenir
+// (src/main/index.js -> iccProfiliGecerliMi).
+function iccProfiliTemizle (ham) {
+  const yol = typeof ham?.yol === 'string' ? ham.yol.trim() : ''
+  if (!yol || yol.length > ICC_YOLU_UZUNLUGU || !/\.(icc|icm)$/i.test(yol)) return null
+
+  const ad = adTemizle(ham?.ad) ?? path.basename(yol)
+  return { yol, ad }
 }
 
 // Son kullanilan degerler yalnizca tur olarak dogrulanir; anlamsal denetimi
@@ -115,6 +158,8 @@ function ayarlariDogrula (ham) {
 
   ayarlar.fotografOnayarlari = listeTemizle(ham.fotografOnayarlari, fotografOnayariTemizle)
   ayarlar.kagitOnayarlari = listeTemizle(ham.kagitOnayarlari, kagitOnayariTemizle)
+  ayarlar.kalibrasyonlar = listeTemizle(ham.kalibrasyonlar, kalibrasyonTemizle, 'yazici')
+  ayarlar.iccProfili = iccProfiliTemizle(ham.iccProfili)
   ayarlar.sonKullanilan = sonKullanilanTemizle(ham.sonKullanilan)
   ayarlar.tanitimGoruldu = ham.tanitimGoruldu === true
   // Taninmayan mod null'a duser: bozuk dosyada kullaniciya yeniden sorulur,
@@ -184,8 +229,12 @@ module.exports = {
   EN_FAZLA_ONAYAR,
   AD_UZUNLUGU,
   MODLAR,
+  EN_KUCUK_OLCEK,
+  EN_BUYUK_OLCEK,
   varsayilanAyarlar,
   adTemizle,
+  kalibrasyonTemizle,
+  iccProfiliTemizle,
   ayarlariDogrula,
   benzersizKod,
   dosyaYolu,

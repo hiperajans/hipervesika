@@ -587,6 +587,42 @@ yalnızca Ghostscript kurulu makinelerde açılır.
 **Ölçüldü:** ürettiğimiz 100 × 150 mm PDF, Ghostscript 10.01.2 ile 300 DPI'da
 1181 × 1772 piksele rasterleniyor — milimetre karşılığı tam.
 
+### Kağıt türü, kalite ve ölçü kalibrasyonu
+
+**Kağıt türü ile baskı kalitesi Ghostscript'in değil sürücünün ayarı.** CUPS onları IPP
+niteliğiyle kabul ettiği için macOS ve Linux'ta uygulamadan seçilebiliyor
+(`media-type=photographic-glossy|photographic-matte|stationery`, `print-quality=4|5`).
+Windows'ta iş GDI üzerinden sürücüye gidiyor ve DEVMODE'a taşınabilir bir yolla
+dokunulamıyor; orada iki seçim kutusu **hiç gösterilmiyor** — çalışmayan bir denetim
+göstermektense sürücünün kendi penceresini açan bir düğme konuldu
+(`rundll32 printui.dll,PrintUIEntry /e /n <yazıcı>`; macOS'ta yazıcılar bölümü, Linux'ta
+CUPS arayüzü).
+
+**Ölçü kalibrasyonu.** Yazıcılar kağıdı %1'e varan bir farkla basabiliyor — sürücünün
+ölçeklemesi, besleme payı, mekanik tolerans. Vesikalıkta bu doğrudan ürünün vaadini
+bozuyor. Çözüm donanımsız:
+
+1. Uygulama ölçüleri bilinen bir sayfa basar (kağıda sığan en uzun yatay ve dikey çizgi,
+   10 mm'lik adımlara yuvarlanmış, 10 mm'de bir tırnaklı).
+2. Kullanıcı cetvelle ölçüp gerçek değeri girer.
+3. `olcek = beklenen / ölçülen` çarpanı **yazıcı başına** saklanır ve doğrudan baskıda
+   sayfa içeriği kağıdın merkezine göre o kadar büyütülüp küçültülür.
+
+Sapma %10'u aşarsa kaydedilmez: o bir ölçüm hatası ya da yanlış kağıttır, sessizce
+düzeltmek daha kötü olurdu. Düzeltme yalnızca doğrudan baskıya uygulanır — kaydedilen PDF
+başka bir yazıcıda basılabilir, ekran önizlemesi de gerçek yerleşimi göstermeli.
+
+**CMYK için ICC profili.** Uygulamanın kendi çevrimi aygıt çevrimidir (bkz. `js/renk.js`).
+Ghostscript varsa ayrım gerçek bir profille yapılıyor: RGB PDF `pdfwrite` ile
+`-dColorConversionStrategy=/CMYK -sOutputICCProfile=<profil>` üzerinden geçiriliyor,
+yeniden örnekleme ve kayıplı sıkıştırma kapatılıyor. Yalnızca kaydedilen PDF'te; yazıcıya
+giden işte rengi sürücü yönetir.
+
+> **Ölçüldü ve yakalandı:** `pdfwrite` girdinin MediaBox'ını korumuyor — ölçü açıkça
+> verilmezse 100 × 150 mm sayfa **595 × 842 punto (A4)** olarak çıkıyordu. Bu yüzden ICC
+> adımında da `-dFIXEDMEDIA` ve `-dDEVICEWIDTH/HEIGHTPOINTS` veriliyor; birim testi bunu
+> ayrıca bekliyor.
+
 ### Açılış penceresi
 
 Modeller (yüz bulma + arka plan ayırma, toplam 11 MB) arayüz açıldıktan sonra arka planda

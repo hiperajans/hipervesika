@@ -140,11 +140,15 @@
   // yakinlik ve kayma yalnizca ekranda kullanilir; varsayilan degerleri kagidi
   // tuvale ortalayip sigdirir, boylece baski yolu ekrandaki yakinliktan
   // etkilenmez.
+  // kalibrasyon yalnizca baskiya giden tuvalde verilir: yazicinin olcu
+  // sapmasini onceden telafi eder (bkz. js/kalibrasyon.js). Ekran onizlemesi
+  // ve kaydedilen dosyalar duzeltmesiz kalir — kaydedilen PDF baska bir
+  // yazicida basilabilir.
   function sayfayiCiz (
     tuval,
     {
       kagitMm, yerlesim, fotoTuvali, kesimKilavuzu = true, kagitKenari = true,
-      yakinlik = 1, kayma = { x: 0, y: 0 }
+      yakinlik = 1, kayma = { x: 0, y: 0 }, kalibrasyon = null
     }
   ) {
     const ctx = tuval.getContext('2d')
@@ -167,6 +171,14 @@
     ctx.save()
     ctx.translate(kaymaX, kaymaY)
     ctx.scale(olcek, olcek)
+
+    // Duzeltme kagidin merkezine gore uygulanir: sapma genelde sayfanin
+    // tamamina yayilir, bir kenardan buyumez.
+    if (kalibrasyon && (kalibrasyon.olcekX !== 1 || kalibrasyon.olcekY !== 1)) {
+      ctx.translate(kagitMm.genislik / 2, kagitMm.yukseklik / 2)
+      ctx.scale(kalibrasyon.olcekX, kalibrasyon.olcekY)
+      ctx.translate(-kagitMm.genislik / 2, -kagitMm.yukseklik / 2)
+    }
 
     const { fotoMm } = yerlesim
 

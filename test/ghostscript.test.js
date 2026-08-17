@@ -197,6 +197,64 @@ test('kenarliksiz secildiginde CUPS kenar boslugu istenmez', () => {
   assert.ok(adimlar.at(-1).argumanlar.includes('page-border=none'))
 })
 
+test('kagit turu ve kalite POSIX te IPP niteligi olarak gider', () => {
+  const adimlar = gs.baskiAdimlari({
+    platform: 'linux',
+    gsYolu: '/usr/bin/gs',
+    pdfYolu: '/tmp/sayfa.pdf',
+    yazici: 'Foto',
+    kopya: 1,
+    dpi: 1200,
+    kagitMm: KAGIT,
+    kagitTuru: 'parlak',
+    kalite: 'yuksek'
+  })
+
+  const argumanlar = adimlar.at(-1).argumanlar
+  assert.ok(argumanlar.includes('media-type=photographic-glossy'))
+  assert.ok(argumanlar.includes('print-quality=5'))
+})
+
+test('otomatik secildiginde surucunun ayari bozulmaz', () => {
+  const argumanlar = gs.baskiAdimlari({
+    platform: 'darwin',
+    gsYolu: '/usr/bin/gs',
+    pdfYolu: '/tmp/sayfa.pdf',
+    yazici: 'Foto',
+    kopya: 1,
+    dpi: 600,
+    kagitMm: KAGIT
+  }).at(-1).argumanlar
+
+  assert.equal(argumanlar.some((a) => a.startsWith('media-type=')), false)
+  assert.equal(argumanlar.some((a) => a.startsWith('print-quality=')), false)
+})
+
+test('kagit turu ve kalite Windows ta sunulmaz', () => {
+  // Surucunun DEVMODE ayarina disaridan mudahale edilemiyor; calismayan bir
+  // secim kutusu gostermektense hic gostermemek dogru.
+  assert.deepEqual(gs.kagitTuruSecenekleri('win32'), [])
+  assert.deepEqual(gs.kaliteSecenekleri('win32'), [])
+
+  assert.ok(gs.kagitTuruSecenekleri('linux').length >= 3)
+  assert.ok(gs.kaliteSecenekleri('darwin').length >= 2)
+  for (const tur of gs.KAGIT_TURLERI) assert.ok(tur.ad.length > 0, tur.kod)
+})
+
+test('tercih penceresi uc platformda da bir yol sunar', () => {
+  const windows = gs.tercihKomutu('Canon PIXMA', 'win32')
+  assert.equal(windows.komut, 'rundll32.exe')
+  assert.deepEqual(windows.argumanlar.slice(0, 3), ['printui.dll,PrintUIEntry', '/e', '/n'])
+  assert.equal(windows.argumanlar.at(-1), 'Canon PIXMA')
+
+  assert.match(gs.tercihKomutu('Foto', 'darwin').adres, /^x-apple\.systempreferences:/)
+  // Bosluklu yazici adi adreste kacisli olmali.
+  assert.equal(
+    gs.tercihKomutu('Ofis Yazicisi', 'linux').adres,
+    'http://localhost:631/printers/Ofis%20Yazicisi'
+  )
+})
+
 test('POSIX uc aygiti da sunar', () => {
   assert.deepEqual(
     gs.aygitSecenekleri('linux').map((a) => a.kod), ['otomatik', 'postscript', 'pcl']
@@ -204,6 +262,41 @@ test('POSIX uc aygiti da sunar', () => {
   for (const aygit of gs.AYGITLAR) {
     assert.ok(aygit.ad.length > 0 && aygit.aciklama.length > 0, aygit.kod)
   }
+})
+
+// --- ICC profilli CMYK ayrimi -------------------------------------------------
+
+test('ICC ayrimi olcuyu koruyup kayipsiz CMYK uretir', () => {
+  const adim = gs.cmykPdfAdimi({
+    gsYolu: '/usr/bin/gs',
+    girdiPdf: '/tmp/rgb.pdf',
+    ciktiPdf: '/tmp/cmyk.pdf',
+    profilYolu: '/tmp/matbaa.icc',
+    kagitMm: KAGIT
+  })
+
+  assert.ok(adim.argumanlar.includes('-sDEVICE=pdfwrite'))
+  assert.ok(adim.argumanlar.includes('-dProcessColorModel=/DeviceCMYK'))
+  assert.ok(adim.argumanlar.includes('-dColorConversionStrategy=/CMYK'))
+  assert.ok(adim.argumanlar.includes('-sOutputICCProfile=/tmp/matbaa.icc'))
+
+  // Olcu acikca verilmezse pdfwrite sayfayi A4'e dusuruyor; olculdu:
+  // 100x150 mm girdi 595x842 punto cikmisti.
+  assert.ok(adim.argumanlar.includes('-dFIXEDMEDIA'))
+  assert.equal(argumanDegeri(adim.argumanlar, '-dDEVICEWIDTHPOINTS='), String(PUNTO.genislik))
+  assert.equal(argumanDegeri(adim.argumanlar, '-dDEVICEHEIGHTPOINTS='), String(PUNTO.yukseklik))
+
+  // Vesikaligin cozunurlugu bizim verdigimiz DPI'da kalmali: yeniden
+  // ornekleme ve kayipli sikistirma kapali.
+  for (const arguman of [
+    '-dDownsampleColorImages=false',
+    '-dAutoFilterColorImages=false',
+    '-dColorImageFilter=/FlateEncode'
+  ]) {
+    assert.ok(adim.argumanlar.includes(arguman), arguman)
+  }
+
+  assert.equal(adim.argumanlar.at(-1), '/tmp/rgb.pdf')
 })
 
 test('yazici secilmeden komut kurulmaz', () => {

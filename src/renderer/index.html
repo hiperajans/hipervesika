@@ -514,6 +514,27 @@
                 <p id="renk-duzeni-aciklamasi" class="hv-ipucu"></p>
               </div>
 
+              <!--
+                CMYK ayrımı için ICC profili. Uygulamanın kendi çevrimi
+                profilsizdir; Ghostscript varsa ayrım gerçek bir profille
+                yapılır. Yalnızca CMYK seçiliyken ve Ghostscript bulunduğunda
+                görünür.
+              -->
+              <div id="icc-alani" class="hv-alan hv-gelismis d-none">
+                <span class="hv-etiket"><span>CMYK profili</span></span>
+                <div class="hv-dugme-cifti hv-dugme-cifti-esit">
+                  <button id="btn-icc-sec" type="button" class="btn hv-dugme hv-dugme-sade">
+                    <i class="bi bi-palette" aria-hidden="true"></i>
+                    Profil seç…
+                  </button>
+                  <button id="btn-icc-kaldir" type="button" class="btn hv-dugme hv-dugme-tehlike">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                    Kaldır
+                  </button>
+                </div>
+                <p id="icc-durumu" class="hv-ipucu"></p>
+              </div>
+
               <div class="hv-alan">
                 <span class="hv-etiket"><span>Biçim</span></span>
                 <div class="hv-arac-grubu hv-bicim" role="group" aria-label="Biçim">
@@ -660,12 +681,32 @@
                   </div>
                 </div>
 
+                <!-- Kağıt türü ve kalite sürücünün ayarıdır. CUPS bunları IPP
+                     niteliğiyle kabul ettiği için macOS ve Linux'ta buradan
+                     seçilebilir; Windows'ta alan gizlenir ve aşağıdaki düğme
+                     sürücünün kendi penceresini açar. -->
+                <div id="kagit-turu-alani" class="hv-alan d-none">
+                  <label for="kagit-turu" class="hv-etiket"><span>Kağıt türü</span></label>
+                  <select id="kagit-turu" class="form-select form-select-sm"></select>
+                </div>
+
+                <div id="baski-kalitesi-alani" class="hv-alan d-none">
+                  <label for="baski-kalitesi" class="hv-etiket"><span>Baskı kalitesi</span></label>
+                  <select id="baski-kalitesi" class="form-select form-select-sm"></select>
+                </div>
+
                 <!-- Aygıt seçimi yalnızca sürücüsüz ağ yazıcıları için gerekir;
                      Windows'ta tek seçenek olduğu için gizli kalır. -->
                 <div id="baski-aygiti-alani" class="hv-alan hv-gelismis d-none">
                   <label for="baski-aygiti" class="hv-etiket"><span>Baskı dili</span></label>
                   <select id="baski-aygiti" class="form-select form-select-sm"></select>
                 </div>
+
+                <button id="btn-yazici-tercihleri" type="button"
+                  class="btn hv-dugme hv-dugme-sade w-100 d-none">
+                  <i class="bi bi-sliders" aria-hidden="true"></i>
+                  Yazıcı tercihleri…
+                </button>
 
                 <div class="form-check hv-anahtar hv-gelismis">
                   <input class="form-check-input" type="checkbox" id="kenarliksiz" />
@@ -686,6 +727,52 @@
                   <i class="bi bi-file-earmark-image" aria-hidden="true"></i>
                   Görüntü
                 </button>
+              </div>
+
+              <!--
+                Ölçü kalibrasyonu. Yazıcılar kağıdı %1'e varan bir farkla
+                basabiliyor; kalibrasyon sayfası basılıp ölçülen değer girilince
+                düzeltme çarpanı yazıcı başına saklanır ve doğrudan baskıda
+                uygulanır (bkz. src/renderer/js/kalibrasyon.js).
+              -->
+              <div id="kalibrasyon-alani" class="hv-gelismis d-none">
+                <h3 class="hv-alt-baslik">Ölçü kalibrasyonu</h3>
+
+                <button id="btn-kalibrasyon-bas" type="button"
+                  class="btn hv-dugme hv-dugme-sade w-100">
+                  <i class="bi bi-rulers" aria-hidden="true"></i>
+                  Kalibrasyon sayfası bas
+                </button>
+
+                <div class="hv-ikili">
+                  <div class="hv-alan">
+                    <label for="olculen-yatay" class="hv-etiket">
+                      <span>Ölçülen yatay <span class="hv-birim">mm</span></span>
+                    </label>
+                    <input id="olculen-yatay" type="number" class="form-control form-control-sm"
+                      min="10" max="1000" step="0.1" />
+                  </div>
+                  <div class="hv-alan">
+                    <label for="olculen-dikey" class="hv-etiket">
+                      <span>Ölçülen dikey <span class="hv-birim">mm</span></span>
+                    </label>
+                    <input id="olculen-dikey" type="number" class="form-control form-control-sm"
+                      min="10" max="1000" step="0.1" />
+                  </div>
+                </div>
+
+                <div class="hv-dugme-cifti hv-dugme-cifti-esit">
+                  <button id="btn-kalibrasyon-kaydet" type="button" class="btn hv-dugme hv-dugme-sade">
+                    <i class="bi bi-check2" aria-hidden="true"></i>
+                    Kaydet
+                  </button>
+                  <button id="btn-kalibrasyon-sil" type="button" class="btn hv-dugme hv-dugme-tehlike">
+                    <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                    Sıfırla
+                  </button>
+                </div>
+
+                <p id="kalibrasyon-durumu" class="hv-ipucu"></p>
               </div>
 
               <p id="baski-durumu" class="hv-ipucu">
@@ -865,6 +952,7 @@
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="js/acilis.js"></script>
     <script src="js/kisayol.js"></script>
+    <script src="js/kalibrasyon.js"></script>
     <script src="js/secim.js"></script>
     <script src="js/olcu.js"></script>
     <script src="js/hizalama.js"></script>

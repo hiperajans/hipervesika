@@ -69,6 +69,7 @@ hv-durum-cubugu    durum · işletim sistemi
 | `hv-gelismis` | Basit modda gizlenen uzman denetimi |
 | `hv-sihirbaz` | Panelin altındaki İleri/Geri şeridi; yalnızca basit modda |
 | `hv-bekleme` | Uzun işlem penceresinin gövdesi: döndürücü, ne yapıldığı, ne kadar sürebileceği |
+| `hv-alt-baslik` | Bölüm içindeki alt blok başlığı (Baskı kartının altındaki *Ölçü kalibrasyonu*); üstünde ayırıcı çizgi vardır |
 
 ## Basit ve Gelişmiş mod
 

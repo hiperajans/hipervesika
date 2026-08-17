@@ -95,6 +95,18 @@ fotoğraf sürükle-bırak → otomatik hizalama → arka plan beyazlatma → r�
   gider (sürücüsü kurulu her yazıcı); macOS ve Linux'ta CUPS'a verilir, sürücüsüz ağ
   yazıcıları için PostScript veya PCL üretilebilir. Kenarlıksız baskı için yazıcının
   sürücüsünde de kenarlıksız kağıt seçili olmalıdır.
+- **Kağıt türü ve kalite.** macOS ve Linux'ta *Parlak / Mat / Düz* ve *Normal / Yüksek*
+  doğrudan seçilir (CUPS'a IPP niteliği olarak gider). Windows'ta bu ayarlar sürücünün
+  DEVMODE'unda durur ve dışarıdan değiştirilemez; oradaki *Yazıcı tercihleri…* düğmesi
+  sürücünün kendi penceresini açar, seçim orada kalıcıdır.
+- **Ölçü kalibrasyonu.** Yazıcılar kağıdı %1'e varan bir farkla basabilir. Uygulama
+  ölçüleri bilinen bir kalibrasyon sayfası basar; çizgileri cetvelle ölçüp gerçek
+  değerleri girersiniz ve düzeltme çarpanı **yazıcı başına** saklanıp sonraki doğrudan
+  baskılarda uygulanır. Kaydedilen PDF ve görüntüler düzeltmesiz kalır — onlar başka bir
+  yazıcıda basılabilir.
+- **CMYK için ICC profili.** Uygulamanın kendi RGB→CMYK çevrimi profilsizdir; Ghostscript
+  varsa matbaanızın ya da kağıdınızın ICC profilini seçip ayrımı ona göre yaptırabilirsiniz
+  (yalnızca kaydedilen PDF'te; yazıcıya giden işte rengi sürücü yönetir).
 - **Ölçü doğruluğu:** sayfa, kağıdın tam piksel karşılığında üretilir ve ölçüsü sabitlenmiş
   bir sayfaya yerleştirilir. Üretilen PDF üzerinden ölçüldüğünde 50 mm'lik bir vesikalığın
   kenarındaki sapma 0,04 mm'nin altındadır. Yazdırma panelinde ölçeklemenin

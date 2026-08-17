@@ -28,6 +28,12 @@ contextBridge.exposeInMainWorld('hiperVesika', {
   ghostscriptDurumu: () => ipcRenderer.invoke('ghostscript:durum'),
   sayfayiDogrudanBas: (istek) => ipcRenderer.invoke('sayfa:dogrudan-bas', istek),
 
+  // Kagit turu ve kalite Windows'ta surucunun kendi penceresinde ayarlanir.
+  yaziciTercihleriniAc: (yazici) => ipcRenderer.invoke('yazici:tercihler', yazici),
+
+  // CMYK ayriminda kullanilacak ICC profilini sectirir.
+  iccProfiliSec: () => ipcRenderer.invoke('icc:sec'),
+
   // Kullanici ayarlari (kendi on ayarlari ve son kullanilan degerler).
   ayarlariOku: () => ipcRenderer.invoke('ayarlar:oku'),
   ayarlariYaz: (ayarlar) => ipcRenderer.invoke('ayarlar:yaz', ayarlar),

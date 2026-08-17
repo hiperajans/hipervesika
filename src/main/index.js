@@ -4,6 +4,7 @@ const path = require('node:path')
 const fs = require('node:fs/promises')
 const fsSenkron = require('node:fs')
 const { pathToFileURL } = require('node:url')
+const { execFile } = require('node:child_process')
 const {
   app, BrowserWindow, Menu, shell, protocol, net, ipcMain, dialog, nativeImage
 } = require('electron')
@@ -289,7 +290,7 @@ async function sayfaPdfiUret (istek) {
     })
   }
 
-  return baskiSayfasindaCalis(istek, (baskiPenceresi, kagitMm) =>
+  const belge = await baskiSayfasindaCalis(istek, (baskiPenceresi, kagitMm) =>
     baskiPenceresi.webContents.printToPDF({
       printBackground: true,
       // Sayfa olcusu CSS'teki @page'ten alinir; ikisi ayni degeri yazar.
@@ -301,6 +302,21 @@ async function sayfaPdfiUret (istek) {
       }
     })
   )
+
+  // ICC profili verildiyse CMYK ayrimi profille yapilir; uygulamanin kendi
+  // cevrimi profilsizdir (bkz. js/renk.js).
+  if (!iccProfiliGecerliMi(istek?.iccYolu)) return belge
+
+  const durum = await ghostscriptDurumunuAl()
+  if (!durum.var) return belge
+
+  return ghostscript.cmykPdfUret({
+    gsYolu: durum.yol,
+    pdf: belge,
+    profilYolu: istek.iccYolu,
+    kagitMm: baski.sayfaOlcusu(istek.kagitMm),
+    geciciKlasor: app.getPath('temp')
+  })
 }
 
 // --- Ghostscript ile dogrudan baski ------------------------------------------
@@ -315,25 +331,70 @@ function ghostscriptKoku () {
 
 let ghostscriptDurumu = null
 
+// Durum bir kez okunur: ikili dosyayi aramak ve surumunu sormak diske gitmek
+// demek, her istekte tekrarlanmasin.
+async function ghostscriptDurumunuAl () {
+  ghostscriptDurumu ??= {
+    ...(await ghostscript.durum({ paketKoku: ghostscriptKoku() })),
+    // Rasterlestirme cozunurlugu de baski isinin bir parcasi; arayuz listeyi
+    // ikinci kez yazmasin diye buradan gider.
+    cozunurlukler: baski.BASKI_COZUNURLUKLERI,
+    varsayilanCozunurluk: baski.VARSAYILAN_BASKI_DPI
+  }
+  return ghostscriptDurumu
+}
+
+// ICC profili yalnizca kendi actigimiz pencereden secilebiliyor; yine de
+// gelen yol dogrulanir (ana surec arayuze guvenmez).
+function iccProfiliGecerliMi (yol) {
+  if (typeof yol !== 'string' || !yol || yol.length > 500) return false
+  if (!/\.(icc|icm)$/i.test(yol)) return false
+  return fsSenkron.existsSync(yol)
+}
+
 function ghostscriptiKur () {
-  // Durum bir kez okunur: ikili dosyayi aramak ve surumunu sormak diske
-  // gitmek demek, arayuz bunu her sorusunda tekrarlamasin.
-  ipcMain.handle('ghostscript:durum', async () => {
-    ghostscriptDurumu ??= {
-      ...(await ghostscript.durum({ paketKoku: ghostscriptKoku() })),
-      // Rasterlestirme cozunurlugu de baski isinin bir parcasi; arayuz listeyi
-      // ikinci kez yazmasin diye buradan gider.
-      cozunurlukler: baski.BASKI_COZUNURLUKLERI,
-      varsayilanCozunurluk: baski.VARSAYILAN_BASKI_DPI
+  ipcMain.handle('ghostscript:durum', () => ghostscriptDurumunuAl())
+
+  ipcMain.handle('icc:sec', async (olay) => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(
+      BrowserWindow.fromWebContents(olay.sender),
+      {
+        title: 'ICC profili seç',
+        properties: ['openFile'],
+        filters: [{ name: 'ICC profili', extensions: ['icc', 'icm'] }]
+      }
+    )
+
+    if (canceled || !filePaths?.length) return { secildi: false }
+    return { secildi: true, yol: filePaths[0], ad: path.basename(filePaths[0]) }
+  })
+
+  // Kagit turu ve kalite Windows'ta yalnizca surucunun kendi penceresinden
+  // ayarlanabiliyor; arayuz o pencereyi buradan actiriyor.
+  ipcMain.handle('yazici:tercihler', async (olay, yazici) => {
+    if (typeof yazici !== 'string' || !yazici || yazici.length > 200) {
+      return { acildi: false, hata: 'Yazıcı seçilmedi.' }
     }
-    return ghostscriptDurumu
+
+    try {
+      const komut = ghostscript.tercihKomutu(yazici)
+
+      if (komut.adres) {
+        await shell.openExternal(komut.adres)
+        return { acildi: true }
+      }
+
+      // Pencere kullanicinin onunde acilir ve kapanmasini beklemeyiz.
+      execFile(komut.komut, komut.argumanlar, { windowsHide: true })
+      return { acildi: true }
+    } catch (hata) {
+      return { acildi: false, hata: hata.message }
+    }
   })
 
   ipcMain.handle('sayfa:dogrudan-bas', async (olay, istek) => {
     try {
-      const durum = ghostscriptDurumu ??
-        await ghostscript.durum({ paketKoku: ghostscriptKoku() })
-      ghostscriptDurumu = durum
+      const durum = await ghostscriptDurumunuAl()
 
       if (!durum.var) {
         return { basildi: false, hata: 'Ghostscript bulunamadı.' }
@@ -358,6 +419,12 @@ function ghostscriptiKur () {
         kagitMm,
         aygit,
         kenarliksiz: istek?.kenarliksiz === true,
+        kagitTuru: ghostscript.KAGIT_TURLERI.some((t) => t.kod === istek?.kagitTuru)
+          ? istek.kagitTuru
+          : 'otomatik',
+        kalite: ghostscript.KALITELER.some((k) => k.kod === istek?.kalite)
+          ? istek.kalite
+          : 'otomatik',
         geciciKlasor: app.getPath('temp')
       })
 
