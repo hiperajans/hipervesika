@@ -47,7 +47,7 @@ const pencereler = () => uygulama.evaluate(({ BrowserWindow }) =>
 function ikinciOrnek () {
   const surec = spawn(
     require(path.join(ortam.DEPO, 'node_modules', 'electron')),
-    ['.', `--user-data-dir=${calisma.profil}`],
+    ['.', ...ortam.KUM_HAVUZU_BAYRAKLARI, `--user-data-dir=${calisma.profil}`],
     { cwd: ortam.DEPO, env: { ...process.env, HV_ACILIS: '0' }, stdio: ['ignore', 'pipe', 'pipe'] }
   )
 

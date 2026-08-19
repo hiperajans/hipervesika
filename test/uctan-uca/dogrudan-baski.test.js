@@ -18,14 +18,35 @@ const ortam = require('./ortam.js')
 const kalibrasyonMotoru = require(path.join(ortam.DEPO, 'src/renderer/js/kalibrasyon.js'))
 
 const calisma = new ortam.Calisma('dogrudan-baski')
-let uygulama, sayfa, hatalar, kapat, durum
+let uygulama, sayfa, hatalar, kapat, durum, yazicilar
 
 test.before(async () => {
   ;({ uygulama, sayfa, hatalar, kapat } = await ortam.hazirla(
     calisma, { fotograf: calisma.fotograf(0) }))
   await ortam.adima(sayfa, 'cikti')
   durum = await sayfa.evaluate(() => window.hiperVesika.dogrudanBaskiDurumu())
+  // Liste ana surecten okunur: arayuzdeki secim kutusunun dolmasini beklemek
+  // gerekmez ve sart, arayuzun kendi durumuna degil sisteme bakar.
+  const liste = await sayfa.evaluate(() => window.hiperVesika.yaziciListesi())
+  yazicilar = liste.yazicilar ?? []
 })
+
+// Anahtarin acilabilmesi iki ayri sarta bagli: baski yolunun bulunmasi
+// (macOS/Linux'ta lp, Windows'ta Chromium) ve tanimli en az bir yazici.
+// Ikisini ayirmak gerekiyor -- macOS kosucusunda lp var ama hic yazici tanimli
+// degil; uygulama o durumda anahtari hakli olarak kapali tutuyor, dolayisiyla
+// yalnizca durum.var'a bakan bir sart yetmiyor.
+function anahtarKullanilabilir (t) {
+  if (!durum.var) {
+    t.skip(`Doğrudan baskı kullanılamıyor: ${JSON.stringify(durum)}`)
+    return false
+  }
+  if (!yazicilar.length) {
+    t.skip('Tanımlı yazıcı yok; doğrudan baskı anahtarı açılamaz')
+    return false
+  }
+  return true
+}
 
 test.after(async () => {
   await kapat()
@@ -58,12 +79,26 @@ test('kullanilamadigi sistemde anahtar kapali kalir', async (t) => {
   assert.match(await sayfa.textContent('#baski-dugme-yazisi'), /yazdır/i)
 })
 
-test('anahtar acilinca yazici secimi ve dugme yazisi degisiyor', async (t) => {
-  if (!durum.var) {
-    t.skip(`Doğrudan baskı kullanılamıyor: ${JSON.stringify(durum)}`)
+// Baski yolu var ama hic yazici tanimli degil: anahtar yine kapali kalmali ve
+// sebep yazmali. macOS kosucusunun durumu tam olarak bu (lp var, yazici yok),
+// bu yuzden ortam elverdiginde sinanan bir sey oluyor.
+test('yazici tanimli degilse anahtar kapali kalir ve sebebi yazar', async (t) => {
+  if (!durum.var || yazicilar.length) {
+    t.skip('Tanımlı yazıcı var ya da baskı yolu yok; bu durum sınanamaz')
     return
   }
 
+  assert.equal(await sayfa.isDisabled('#dogrudan-baski'), true)
+  assert.equal(await gorunur('#dogrudan-ayarlari'), false)
+  assert.match(await sayfa.textContent('#baski-durumu'), /Tanımlı yazıcı yok/i)
+})
+
+test('anahtar acilinca yazici secimi ve dugme yazisi degisiyor', async (t) => {
+  if (!anahtarKullanilabilir(t)) return
+
+  // Yazici listesi ve baski yolu ayri ayri okunuyor; anahtar ikisi de gelince
+  // aciliyor.
+  await sayfa.waitForSelector('#dogrudan-baski:not([disabled])', { timeout: 15000 })
   assert.equal(await sayfa.isDisabled('#dogrudan-baski'), false)
   assert.equal(await gorunur('#dogrudan-ayarlari'), false)
 
@@ -110,21 +145,17 @@ test('kagit turu ve kalite yalnizca CUPS ta sunulur', async () => {
 // GERCEK BASKI YOK: kalibrasyon sayfasini basan dugmeye dokunulmaz, yalnizca
 // olcum -> duzeltme yolu sinanir.
 test('olcum girilince duzeltme yaziciya kaydediliyor', async (t) => {
-  if (!durum.var) {
-    t.skip('Doğrudan baskı kullanılamıyor')
-    return
-  }
-
-  const yazicilar = await sayfa.$$eval('#yazici-secimi option', (o) => o.map((s) => s.value))
-  if (!yazicilar.length) {
-    t.skip('Tanımlı yazıcı yok')
-    return
-  }
+  if (!anahtarKullanilabilir(t)) return
 
   await sayfa.check('#dogrudan-baski')
   await sayfa.fill('#kagit-genislik', '100')
   await sayfa.fill('#kagit-yukseklik', '150')
   await sayfa.waitForTimeout(500)
+
+  // Duzeltme secili yaziciya yazilir; listedeki ilk yazici degil, secili olan
+  // (varsayilan yazici listenin basinda olmak zorunda degil).
+  const secili = await sayfa.inputValue('#yazici-secimi')
+  assert.ok(secili, 'yazıcı seçilmedi')
 
   assert.equal(
     await sayfa.evaluate(
@@ -144,7 +175,7 @@ test('olcum girilince duzeltme yaziciya kaydediliyor', async (t) => {
   // Ayar dosyasina da yazilmali; uygulama kapanip acilinca duzeltme durmali.
   const ayarlar = JSON.parse(
     fs.readFileSync(path.join(calisma.profil, 'ayarlar.json'), 'utf8'))
-  const kayit = ayarlar.kalibrasyonlar.find((k) => k.yazici === yazicilar[0])
+  const kayit = ayarlar.kalibrasyonlar.find((k) => k.yazici === secili)
   assert.ok(kayit, `kalibrasyon kaydedilmedi: ${JSON.stringify(ayarlar.kalibrasyonlar)}`)
   assert.ok(kayit.olcekX > 1, `yatay düzeltme ${kayit.olcekX}`)
   assert.ok(kayit.olcekY < 1, `dikey düzeltme ${kayit.olcekY}`)
@@ -154,17 +185,14 @@ test('olcum girilince duzeltme yaziciya kaydediliyor', async (t) => {
   await sayfa.waitForTimeout(800)
   const sonra = JSON.parse(
     fs.readFileSync(path.join(calisma.profil, 'ayarlar.json'), 'utf8'))
-  assert.equal(sonra.kalibrasyonlar.some((k) => k.yazici === yazicilar[0]), false)
+  assert.equal(sonra.kalibrasyonlar.some((k) => k.yazici === secili), false)
 
   await sayfa.uncheck('#dogrudan-baski')
   await sayfa.waitForTimeout(300)
 })
 
 test('sacma olcum kaydedilmez', async (t) => {
-  if (!durum.var) {
-    t.skip('Doğrudan baskı kullanılamıyor')
-    return
-  }
+  if (!anahtarKullanilabilir(t)) return
 
   await sayfa.check('#dogrudan-baski')
   await sayfa.waitForTimeout(300)
@@ -196,10 +224,7 @@ test('ana eylem dugmesi ile ikili dipdibe durmuyor', async () => {
 })
 
 test('basit modda da dugmeler dipdibe durmuyor', async (t) => {
-  if (!durum.var) {
-    t.skip('Doğrudan baskı kullanılamıyor')
-    return
-  }
+  if (!anahtarKullanilabilir(t)) return
 
   // Basit modda kenarliksiz anahtari gizli kaliyor; "Yazici tercihleri..." o
   // zaman ana eylem dugmesine yapisiyordu.
@@ -227,10 +252,7 @@ test('basit modda da dugmeler dipdibe durmuyor', async (t) => {
 })
 
 test('kalibrasyonun ne ise yaradigi soru isaretiyle aciliyor', async (t) => {
-  if (!durum.var) {
-    t.skip('Doğrudan baskı kullanılamıyor')
-    return
-  }
+  if (!anahtarKullanilabilir(t)) return
 
   await sayfa.check('#dogrudan-baski')
   await sayfa.waitForTimeout(300)

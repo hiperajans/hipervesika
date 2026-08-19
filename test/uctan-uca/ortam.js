@@ -112,6 +112,15 @@ class Calisma {
 
 // --- Uygulama ----------------------------------------------------------------
 
+// Linux'ta Electron'u elle baslatirken gereken bayrak. Depoya npm ile kurulan
+// chrome-sandbox ikilisi root'a ait olmadigi ve 4755 kipinde olmadigi icin
+// Chromium "kum havuzu olmadan calismaktansa duruyorum" diyip FATAL ile
+// kapaniyor (surec SIGTRAP ile oluyor, hicbir uygulama kodu calismadan).
+// Playwright bu bayragi Linux'ta kendiliginden ekliyor, yani uctan uca
+// testlerin actigi uygulama zaten boyle calisiyor; elle baslatilan surecin de
+// aynisi olmasi gerekiyor ki iki surec karsilastirilabilir olsun.
+const KUM_HAVUZU_BAYRAKLARI = process.platform === 'linux' ? ['--no-sandbox'] : []
+
 // Acilis penceresi acikken ilk pencere odur; ana arayuz index.html yukleyendir.
 async function anaPencere (uygulama) {
   const uygun = (pencere) => pencere.url().includes('index.html')
@@ -234,6 +243,7 @@ async function hazirla (calisma, { fotograf = null, mod = 'gelismis', acilis = f
 
 module.exports = {
   DEPO,
+  KUM_HAVUZU_BAYRAKLARI,
   Calisma,
   gercekFotograflar,
   yuzGerekli,
