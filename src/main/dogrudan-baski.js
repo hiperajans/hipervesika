@@ -73,10 +73,16 @@ function dosyaVarMi (yol) {
   }
 }
 
+// Uygulama Finder ya da masaustu kisayolundan acildiginda PATH kabuktakinden
+// kisa gelir; bu yuzden lp standart yerlerinde de aranir. Liste disaridan
+// verilebilir: lp'nin hic bulunmadigi bir makine ancak boyle taklit edilebiliyor
+// (bkz. test/dogrudan-baski.test.js).
+const STANDART_KLASORLER = ['/usr/bin', '/bin', '/usr/local/bin']
+
 // lp CUPS ile birlikte gelir; masaustu bir macOS ya da Linux kurulumunda
 // bulunur. Yoksa dogrudan baski kapanir ve sistem paneli calismaya devam eder.
-function lpYolu (env = process.env) {
-  for (const klasor of [...yolKlasorleri(env), '/usr/bin', '/bin', '/usr/local/bin']) {
+function lpYolu (env = process.env, standart = STANDART_KLASORLER) {
+  for (const klasor of [...yolKlasorleri(env), ...standart]) {
     const yol = path.join(klasor, 'lp')
     if (dosyaVarMi(yol)) return yol
   }
@@ -141,8 +147,8 @@ function tercihKomutu (yazici, platform = process.platform) {
 
 // Ozelligin kullanilabilir olup olmadigi. Windows'ta her zaman acik (is
 // Chromium'dan gidiyor), POSIX'te lp bulunmasina bagli.
-function durum ({ platform = process.platform, env = process.env } = {}) {
-  const cups = windowsMu(platform) ? null : lpYolu(env)
+function durum ({ platform = process.platform, env = process.env, standart } = {}) {
+  const cups = windowsMu(platform) ? null : lpYolu(env, standart ?? STANDART_KLASORLER)
 
   return {
     var: windowsMu(platform) || Boolean(cups),
@@ -194,6 +200,7 @@ module.exports = {
   kagitTuruSecenekleri,
   kaliteSecenekleri,
   ippDegeri,
+  STANDART_KLASORLER,
   yolKlasorleri,
   lpYolu,
   lpAdimi,

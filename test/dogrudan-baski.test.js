@@ -26,14 +26,33 @@ test('Windows Chromium yolunu kullanir, POSIX CUPS u arar', () => {
   assert.deepEqual(windows.kagitTurleri, [])
   assert.deepEqual(windows.kaliteler, [])
 
+  // Bos PATH yetmez: lp standart klasorlerde de aranir ve testi calistiran
+  // makinede CUPS kurulu olabilir. `standart: []` lp'siz bir makineyi taklit
+  // eder; standart listenin kendisi asagida ayrica sinaniyor.
   const bos = fs.mkdtempSync(path.join(os.tmpdir(), 'hv-lp-bos-'))
   try {
-    const lpsiz = dogrudan.durum({ platform: 'linux', env: { PATH: bos } })
+    const lpsiz = dogrudan.durum({ platform: 'linux', env: { PATH: bos }, standart: [] })
     assert.equal(lpsiz.sistem, 'cups')
     // lp yoksa ozellik kapanir; uygulama sistem panelinden basmaya devam eder.
     assert.equal(lpsiz.var, false)
   } finally {
     fs.rmSync(bos, { recursive: true, force: true })
+  }
+})
+
+test('lp PATH disinda, standart klasorlerde de aranir', () => {
+  // Masaustu kisayolundan acilan uygulamada PATH kisa gelir; lp'nin bulundugu
+  // yerler bu yuzden listede sabit duruyor.
+  assert.ok(dogrudan.STANDART_KLASORLER.includes('/usr/bin'))
+
+  const kok = fs.mkdtempSync(path.join(os.tmpdir(), 'hv-lp-standart-'))
+  try {
+    fs.writeFileSync(path.join(kok, 'lp'), '')
+    // PATH bos; lp yalnizca standart listeden bulunabilir.
+    assert.equal(dogrudan.lpYolu({ PATH: '' }, [kok]), path.join(kok, 'lp'))
+    assert.equal(dogrudan.lpYolu({ PATH: '' }, []), null)
+  } finally {
+    fs.rmSync(kok, { recursive: true, force: true })
   }
 })
 
