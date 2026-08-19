@@ -13,10 +13,17 @@ const ortam = require('./ortam.js')
 const acilisMotoru = require(path.join(ortam.DEPO, 'src/renderer/js/acilis.js'))
 const paket = require(path.join(ortam.DEPO, 'package.json'))
 
-// Ilk acilis olculdu: ~23 sn (ekran kartinin onbellegi bos). Sinir onun
-// uzerinde, ana surecin kendi guvenlik suresinin (45 sn) altinda kalmali ki
-// test "acilis kendiliginden kapandi" ile "sure asimi" arasini ayirt edebilsin.
-const BEKLEME = 40000
+// Uygulama penceresi her makinede gorunur olmak zorunda: hazirlik biterse hemen,
+// bitmezse ana surecin guvenlik suresi (45 sn) devreye girip yine gosteriyor.
+// Sinir o surenin biraz uzerinde.
+const PENCERE_BEKLEMESI = 60000
+
+// Hazirligin kendisi icin ayri ve genis bir sinir. Ilk acilis bu makinede ~23 sn
+// olculdu ama ekran karti olmayan bir kosucuda yazilim isleyicisiyle kat kat
+// uzun suruyor; buradaki sinir "hazirlik hic bitiyor mu" sorusunu yanitlamak
+// icin, hiz olcmek icin degil. Hizi bir kosucunun saatiyle olcmek zaten
+// yanlis olurdu.
+const HAZIRLIK_BEKLEMESI = 180000
 
 const calisma = new ortam.Calisma('acilis')
 let uygulama, sayfa
@@ -73,9 +80,19 @@ test('acilis penceresinde marka, durum ve telif yazar', async () => {
   assert.ok(ray > 0 && ray <= 100, `ray ${ray}`)
 })
 
-test('hazirlik bitince acilis kapanir ve uygulama gorunur', async () => {
-  await sayfa.waitForFunction(
-    () => document.body.dataset.hvHazir === 'evet', null, { timeout: BEKLEME })
+// Kosul saglanana kadar bekler; playwright'in waitForFunction'i sayfada calisir,
+// buradaki kosullar ise ana surecten okunuyor.
+async function bekle (kosul, sure, mesaj) {
+  const bitis = Date.now() + sure
+  while (Date.now() < bitis) {
+    if (await kosul()) return
+    await new Promise((cozumle) => setTimeout(cozumle, 250))
+  }
+  assert.fail(`${mesaj} (${sure} ms beklendi)`)
+}
+
+test('acilis kapanir ve uygulama penceresi gorunur', async () => {
+  await bekle(anaPencereGorunur, PENCERE_BEKLEMESI, 'uygulama penceresi görünmedi')
 
   // Kapanma ve gosterme ana surecte pespese yapiliyor; bir kare beklenir.
   await sayfa.waitForTimeout(500)
@@ -83,5 +100,12 @@ test('hazirlik bitince acilis kapanir ve uygulama gorunur', async () => {
   const liste = await pencereler()
   assert.equal(liste.some((p) => p.adres.includes('acilis.html')), false,
     `açılış penceresi kapanmadı: ${JSON.stringify(liste)}`)
-  assert.ok(await anaPencereGorunur(), `uygulama penceresi açılmadı: ${JSON.stringify(liste)}`)
+})
+
+test('hazirlik sonunda tamamlaniyor', async () => {
+  // Hazirlik bittiginde arayuz bunu body'ye yaziyor. Asamalardan biri
+  // basarisiz olsa da yaziliyor; burada sinanan sey hazirligin bir yerde
+  // takilip kalmadigi.
+  await sayfa.waitForFunction(
+    () => document.body.dataset.hvHazir === 'evet', null, { timeout: HAZIRLIK_BEKLEMESI })
 })

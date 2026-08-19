@@ -151,7 +151,19 @@ async function uygulamayiAc (calisma, { ekArgumanlar = [], acilis = false } = {}
 // Testler arayuzun tamamiyla calistigi icin varsayilan olarak gelismis secilir;
 // basit modu sinayan testler 'basit' gonderir. Modu zaten secilmis bir profilde
 // pencere acilmaz, islev sessizce doner.
+//
+// Soru ayarlar okunduktan sonra soruluyor ve iki yoldan biri isliyor: kayitli
+// mod varsa body'ye hvMod yaziliyor, yoksa pencere aciliyor. Bu yuzden ikisinden
+// biri gerceklesene kadar beklenir. Tek bir anlik bakis yeterli degildi: yavas
+// bir makinede pencere henuz acilmamis oluyor, islev sessizce donuyor ve pencere
+// az sonra acilip butun tiklamalari yiyordu (macOS kosucusunda dogrudan baski
+// testlerinin tamami boyle dusuyordu).
 async function moduSec (sayfa, mod = 'gelismis') {
+  await sayfa.waitForFunction(() =>
+    document.body.dataset.hvMod !== undefined ||
+    document.getElementById('mod-modali')?.classList.contains('show') === true,
+  null, { timeout: 60000 })
+
   const acik = await sayfa.evaluate(
     () => document.getElementById('mod-modali')?.classList.contains('show') === true)
   if (!acik) return

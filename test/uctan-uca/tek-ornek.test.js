@@ -48,20 +48,34 @@ function ikinciOrnek () {
   const surec = spawn(
     require(path.join(ortam.DEPO, 'node_modules', 'electron')),
     ['.', `--user-data-dir=${calisma.profil}`],
-    { cwd: ortam.DEPO, env: { ...process.env, HV_ACILIS: '0' }, stdio: 'ignore' }
+    { cwd: ortam.DEPO, env: { ...process.env, HV_ACILIS: '0' }, stdio: ['ignore', 'pipe', 'pipe'] }
   )
+
+  // Cikti okunur: surec sinyalle olduruldugunde sebep yalnizca burada yaziyor
+  // (Chromium'un CHECK iletileri stderr'e gider) ve okunmayan bir boru dolunca
+  // surec ayrica takilabilir.
+  let cikti = ''
+  const oku = (akis) => akis.on('data', (parca) => { cikti += parca.toString() })
+  oku(surec.stdout)
+  oku(surec.stderr)
 
   return new Promise((cozumle) => {
     const zamanlayici = setTimeout(() => {
       surec.kill()
-      cozumle({ kapandi: false, kod: null, sinyal: null })
+      cozumle({ kapandi: false, kod: null, sinyal: null, cikti })
     }, 30000)
 
     surec.on('exit', (kod, sinyal) => {
       clearTimeout(zamanlayici)
-      cozumle({ kapandi: true, kod, sinyal })
+      cozumle({ kapandi: true, kod, sinyal, cikti })
     })
   })
+}
+
+// Cikti hata mesajina sigacak kadar kisaltilir; sebep genelde son satirlarda.
+function sonSatirlar (metin, adet = 15) {
+  const satirlar = metin.trim().split('\n')
+  return satirlar.slice(-adet).join('\n')
 }
 
 // Ilk surecin ikinci ornekten haber alip almadigi. Ikinci surec kilidi
@@ -76,8 +90,10 @@ test('ikinci ornek kendiliginden kapaniyor', async () => {
   assert.equal(oncekiler.length, 1, JSON.stringify(oncekiler))
 
   const sonuc = await ikinciOrnek()
-  assert.ok(sonuc.kapandi, 'ikinci örnek kapanmadı; kilit çalışmıyor')
-  assert.equal(sonuc.kod, 0, `çıkış kodu ${sonuc.kod}, sinyal ${sonuc.sinyal}`)
+  assert.ok(sonuc.kapandi, `ikinci örnek kapanmadı; kilit çalışmıyor\n${sonSatirlar(sonuc.cikti)}`)
+  assert.equal(
+    sonuc.kod, 0,
+    `çıkış kodu ${sonuc.kod}, sinyal ${sonuc.sinyal}\n${sonSatirlar(sonuc.cikti)}`)
 
   // Ilk surecte ikinci bir pencere acilmamis olmali.
   const sonrakiler = await pencereler()
