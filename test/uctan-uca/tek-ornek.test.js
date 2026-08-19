@@ -19,6 +19,13 @@ let uygulama, kapat
 
 test.before(async () => {
   ;({ uygulama, kapat } = await ortam.hazirla(calisma))
+
+  // Haberin ulastigini sayabilmek icin ek bir dinleyici; uygulamanin kendi
+  // dinleyicisi yerinde kalir.
+  await uygulama.evaluate(({ app }) => {
+    globalThis.__hvIkinciOrnek = 0
+    app.on('second-instance', () => { globalThis.__hvIkinciOrnek += 1 })
+  })
 })
 
 test.after(async () => {
@@ -34,6 +41,9 @@ const pencereler = () => uygulama.evaluate(({ BrowserWindow }) =>
 
 // Ikinci ornegi playwright ile degil dogrudan baslatiyoruz: kilit yuzunden hic
 // pencere acmadan kapaniyor, playwright ise pencere bekler.
+//
+// Sinyal de okunur: surec sinyalle olduruldugunde cikis kodu null gelir ve
+// yalnizca kodu bildiren bir hata mesaji sebebi gizler.
 function ikinciOrnek () {
   const surec = spawn(
     require(path.join(ortam.DEPO, 'node_modules', 'electron')),
@@ -44,14 +54,21 @@ function ikinciOrnek () {
   return new Promise((cozumle) => {
     const zamanlayici = setTimeout(() => {
       surec.kill()
-      cozumle({ kapandi: false, kod: null })
+      cozumle({ kapandi: false, kod: null, sinyal: null })
     }, 30000)
 
-    surec.on('exit', (kod) => {
+    surec.on('exit', (kod, sinyal) => {
       clearTimeout(zamanlayici)
-      cozumle({ kapandi: true, kod })
+      cozumle({ kapandi: true, kod, sinyal })
     })
   })
+}
+
+// Ilk surecin ikinci ornekten haber alip almadigi. Ikinci surec kilidi
+// kaybettigini gorunce hemen cikiyor; haber vermeden cikarsa acik pencere one
+// gelmez ve kullanici tiklamasinin hicbir karsiligi olmaz.
+async function haberSayisi () {
+  return uygulama.evaluate(() => globalThis.__hvIkinciOrnek ?? 0)
 }
 
 test('ikinci ornek kendiliginden kapaniyor', async () => {
@@ -60,11 +77,21 @@ test('ikinci ornek kendiliginden kapaniyor', async () => {
 
   const sonuc = await ikinciOrnek()
   assert.ok(sonuc.kapandi, 'ikinci örnek kapanmadı; kilit çalışmıyor')
-  assert.equal(sonuc.kod, 0, `çıkış kodu ${sonuc.kod}`)
+  assert.equal(sonuc.kod, 0, `çıkış kodu ${sonuc.kod}, sinyal ${sonuc.sinyal}`)
 
   // Ilk surecte ikinci bir pencere acilmamis olmali.
   const sonrakiler = await pencereler()
   assert.deepEqual(sonrakiler, oncekiler, JSON.stringify(sonrakiler))
+})
+
+test('ilk surec ikinci ornekten haber aliyor', async () => {
+  // Haber kilit istegi sirasinda gonderiliyor ama olay ilk surecte biraz sonra
+  // isleniyor; kisa bir sure beklenir.
+  for (let deneme = 0; deneme < 40 && (await haberSayisi()) === 0; deneme += 1) {
+    await new Promise((cozumle) => setTimeout(cozumle, 100))
+  }
+
+  assert.ok(await haberSayisi() >= 1, 'ilk surece second-instance ulasmadi')
 })
 
 test('acik pencere gorunur ve odakta kaliyor', async () => {

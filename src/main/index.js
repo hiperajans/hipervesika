@@ -912,6 +912,14 @@ if (app.requestSingleInstanceLock()) {
   uygulamayiBaslat()
 } else {
   // Kilit baskasinda: bu surecin yapacagi bir sey yok, hicbir pencere acmadan
-  // kapanir. Acik olan uygulamayi one getirmek ilk surecin isi.
-  app.quit()
+  // kapanir. Acik olan uygulamayi one getirmek ilk surecin isi; kilit istegi
+  // acik surece haber verildikten sonra doner, yani burada beklenecek bir sey
+  // kalmiyor.
+  //
+  // Nazik kapanma (app.quit) degil dogrudan cikis: quit, hazir bile olmamis bir
+  // tarayici surecinin yikimini baslatiyor ve Linux'ta bu yikim yaklasik 6,5
+  // saniye sonra sinyalle olumle bitiyordu (cikis kodu 0 degil null). Yikacak
+  // hicbir sey olmadigi icin -- pencere yok, ayar yazilmadi -- dogru olan
+  // hemen ve belirli bir kodla cikmak.
+  app.exit(0)
 }
