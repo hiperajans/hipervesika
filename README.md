@@ -10,9 +10,12 @@ Masaüstü uygulamasıdır (Electron); Windows, macOS ve Linux üzerinde çalı�
 alan terimleri Türkçedir. Tüm görüntü işleme cihazda yapılır: uygulama hiçbir ağ bağlantısı
 kurmaz, fotoğraflar hiçbir sunucuya gönderilmez.
 
-> **Durum:** Sürüm 1.0.0. Fotoğraf alma, hizalama, arka plan beyazlatma, rötuş, dışa
-> aktarma, dizme, baskı ve ön ayarlar çalışır durumdadır. Arayüz iki modda kullanılabilir:
-> adım adım ilerleten **Basit** ve her ayarın açık olduğu **Gelişmiş**.
+> **Durum:** Sürüm 1.1.0. Fotoğraf alma, hizalama, arka plan beyazlatma, rötuş, dışa
+> aktarma, dizme, baskı ve ön ayarlar çalışır durumdadır. 1.1.0 ile gelenler: yazdırma
+> panelini atlayan **doğrudan yazıcıya gönderme**, yazıcı başına **ölçü kalibrasyonu**,
+> CMYK ayrımı için **ICC profili** ve Türkiye vesikalık (45 × 60 mm) kadrajı. Arayüz iki
+> modda kullanılabilir: adım adım ilerleten **Basit** ve her ayarın açık olduğu
+> **Gelişmiş**.
 > Kurulabilir paketler: macOS (Intel + Apple Silicon `.dmg`), Windows (kurulum programı) ve
 > Linux (`AppImage`) — [Releases](https://github.com/hiperajans/hipervesika/releases)
 > altında. Paketler henüz imzalı değil; ilk açılışta işletim sistemi bir kez uyarır.

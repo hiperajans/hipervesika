@@ -179,6 +179,13 @@ jobs:
           ilerleten **Basit** ve her ayarın açık olduğu **Gelişmiş**; ilk açılışta hangisiyle
           çalışacağınız sorulur, seçim *Görünüm* menüsünden her zaman değiştirilebilir.
 
+          Baskı, sistemin yazdırma panelinden geçebileceği gibi **doğrudan yazıcıya** da
+          gönderilebilir: panel hiç açılmaz, yazıcı ve kopya uygulamada seçilir, ölçek
+          %100'de sabit kalır. Yazıcının kağıdı bir farkla basma ihtimaline karşı **ölçü
+          kalibrasyonu** vardır: bir kalibrasyon sayfası basılır, cetvelle ölçtüğünüz
+          değerler girilir ve düzeltme o yazıcı için saklanır. CMYK ayrımı, matbaanızın
+          ICC profilini seçtiğinizde o profile göre yapılır.
+
           Tüm görüntü işleme bilgisayarınızda yapılır: fotoğraflar hiçbir sunucuya
           gönderilmez, uygulama internet bağlantısı kurmaz.
           NOTLAR
